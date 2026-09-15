@@ -1,0 +1,499 @@
+Table,LIFNR,Org_Key,Field,Issue_Type,Issue_Description
+LFA1,0000100641,,PSTLZ,Missing Mandatory Field,PSTLZ is mandatory for LFA1 but is blank.
+LFA1,0000100516,,LAND1,Missing Mandatory Field,LAND1 is mandatory for LFA1 but is blank.
+LFA1,0000100422,,STCD1,Missing Mandatory Field,STCD1 is mandatory for LFA1 but is blank.
+LFA1,0000100837,,KTOKK,Missing Mandatory Field,KTOKK is mandatory for LFA1 but is blank.
+LFA1,0000100086,,STCD1,Missing Mandatory Field,STCD1 is mandatory for LFA1 but is blank.
+LFA1,0000100092,,PSTLZ,Missing Mandatory Field,PSTLZ is mandatory for LFA1 but is blank.
+LFA1,0000100181,,STCD1,Missing Mandatory Field,STCD1 is mandatory for LFA1 but is blank.
+LFA1,0000100821,,NAME1,Missing Mandatory Field,NAME1 is mandatory for LFA1 but is blank.
+LFA1,0000100775,,NAME1,Missing Mandatory Field,NAME1 is mandatory for LFA1 but is blank.
+LFA1,0000100682,,STCD1,Missing Mandatory Field,STCD1 is mandatory for LFA1 but is blank.
+LFA1,0000100126,,STCD1,Missing Mandatory Field,STCD1 is mandatory for LFA1 but is blank.
+LFA1,0000100197,,NAME1,Missing Mandatory Field,NAME1 is mandatory for LFA1 but is blank.
+LFA1,0000100958,,PSTLZ,Missing Mandatory Field,PSTLZ is mandatory for LFA1 but is blank.
+LFA1,0000100506,,STCD1,Missing Mandatory Field,STCD1 is mandatory for LFA1 but is blank.
+LFA1,0000100830,,NAME1,Missing Mandatory Field,NAME1 is mandatory for LFA1 but is blank.
+LFA1,0000100777,,NAME1,Missing Mandatory Field,NAME1 is mandatory for LFA1 but is blank.
+LFA1,0000100367,,KTOKK,Missing Mandatory Field,KTOKK is mandatory for LFA1 but is blank.
+LFA1,0000100723,,NAME1,Missing Mandatory Field,NAME1 is mandatory for LFA1 but is blank.
+LFA1,0000100401,,LAND1,Missing Mandatory Field,LAND1 is mandatory for LFA1 but is blank.
+LFA1,0000100427,,NAME1,Missing Mandatory Field,NAME1 is mandatory for LFA1 but is blank.
+LFA1,0000100443,,KTOKK,Missing Mandatory Field,KTOKK is mandatory for LFA1 but is blank.
+LFA1,0000100544,,PSTLZ,Missing Mandatory Field,PSTLZ is mandatory for LFA1 but is blank.
+LFA1,0000100445,,PSTLZ,Missing Mandatory Field,PSTLZ is mandatory for LFA1 but is blank.
+LFA1,0000100495,,STCD1,Missing Mandatory Field,STCD1 is mandatory for LFA1 but is blank.
+LFA1,0000100752,,LAND1,Missing Mandatory Field,LAND1 is mandatory for LFA1 but is blank.
+LFA1,0000100921,,KTOKK,Missing Mandatory Field,KTOKK is mandatory for LFA1 but is blank.
+LFA1,0000100706,,LAND1,Missing Mandatory Field,LAND1 is mandatory for LFA1 but is blank.
+LFA1,0000100636,,STCD1,Missing Mandatory Field,STCD1 is mandatory for LFA1 but is blank.
+LFA1,0000100083,,PSTLZ,Missing Mandatory Field,PSTLZ is mandatory for LFA1 but is blank.
+LFA1,0000100748,,KTOKK,Missing Mandatory Field,KTOKK is mandatory for LFA1 but is blank.
+LFB1,0000100799,5000,AKONT,Missing Mandatory Field,AKONT is mandatory for LFB1 but is blank.
+LFB1,0000100119,4000,ZTERM,Missing Mandatory Field,ZTERM is mandatory for LFB1 but is blank.
+LFB1,0000100451,4000,WAERS,Missing Mandatory Field,WAERS is mandatory for LFB1 but is blank.
+LFB1,0000100175,5000,ZTERM,Missing Mandatory Field,ZTERM is mandatory for LFB1 but is blank.
+LFB1,0000100676,2000,ZTERM,Missing Mandatory Field,ZTERM is mandatory for LFB1 but is blank.
+LFB1,0000100661,1000,WAERS,Missing Mandatory Field,WAERS is mandatory for LFB1 but is blank.
+LFB1,0000100304,2000,WAERS,Missing Mandatory Field,WAERS is mandatory for LFB1 but is blank.
+LFB1,0000100216,3000,ZTERM,Missing Mandatory Field,ZTERM is mandatory for LFB1 but is blank.
+LFB1,0000100696,4000,WAERS,Missing Mandatory Field,WAERS is mandatory for LFB1 but is blank.
+LFB1,0000100838,3000,AKONT,Missing Mandatory Field,AKONT is mandatory for LFB1 but is blank.
+LFB1,0000100883,3000,ZTERM,Missing Mandatory Field,ZTERM is mandatory for LFB1 but is blank.
+LFB1,0000100282,3000,AKONT,Missing Mandatory Field,AKONT is mandatory for LFB1 but is blank.
+LFB1,0000100396,2000,WAERS,Missing Mandatory Field,WAERS is mandatory for LFB1 but is blank.
+LFB1,0000100896,1000,ZTERM,Missing Mandatory Field,ZTERM is mandatory for LFB1 but is blank.
+LFB1,0000100351,2000,WAERS,Missing Mandatory Field,WAERS is mandatory for LFB1 but is blank.
+LFB1,0000100725,4000,ZTERM,Missing Mandatory Field,ZTERM is mandatory for LFB1 but is blank.
+LFB1,0000100766,3000,WAERS,Missing Mandatory Field,WAERS is mandatory for LFB1 but is blank.
+LFB1,0000100457,3000,WAERS,Missing Mandatory Field,WAERS is mandatory for LFB1 but is blank.
+LFB1,0000100554,3000,AKONT,Missing Mandatory Field,AKONT is mandatory for LFB1 but is blank.
+LFB1,0000100070,5000,WAERS,Missing Mandatory Field,WAERS is mandatory for LFB1 but is blank.
+LFB1,0000100825,1000,WAERS,Missing Mandatory Field,WAERS is mandatory for LFB1 but is blank.
+LFB1,0000100623,4000,ZTERM,Missing Mandatory Field,ZTERM is mandatory for LFB1 but is blank.
+LFB1,0000100431,2000,AKONT,Missing Mandatory Field,AKONT is mandatory for LFB1 but is blank.
+LFB1,0000100466,5000,AKONT,Missing Mandatory Field,AKONT is mandatory for LFB1 but is blank.
+LFB1,0000100781,5000,ZTERM,Missing Mandatory Field,ZTERM is mandatory for LFB1 but is blank.
+LFB1,0000100318,4000,AKONT,Missing Mandatory Field,AKONT is mandatory for LFB1 but is blank.
+LFB1,0000100927,3000,ZTERM,Missing Mandatory Field,ZTERM is mandatory for LFB1 but is blank.
+LFB1,0000100382,3000,WAERS,Missing Mandatory Field,WAERS is mandatory for LFB1 but is blank.
+LFB1,0000100149,1000,ZTERM,Missing Mandatory Field,ZTERM is mandatory for LFB1 but is blank.
+LFB1,0000100664,3000,AKONT,Missing Mandatory Field,AKONT is mandatory for LFB1 but is blank.
+LFB1,0000100897,5000,AKONT,Missing Mandatory Field,AKONT is mandatory for LFB1 but is blank.
+LFB1,0000100312,1000,WAERS,Missing Mandatory Field,WAERS is mandatory for LFB1 but is blank.
+LFB1,0000100088,1000,AKONT,Missing Mandatory Field,AKONT is mandatory for LFB1 but is blank.
+LFB1,0000100941,5000,AKONT,Missing Mandatory Field,AKONT is mandatory for LFB1 but is blank.
+LFB1,0000100430,4000,AKONT,Missing Mandatory Field,AKONT is mandatory for LFB1 but is blank.
+LFB1,0000100821,3000,ZTERM,Missing Mandatory Field,ZTERM is mandatory for LFB1 but is blank.
+LFB1,0000100357,5000,AKONT,Missing Mandatory Field,AKONT is mandatory for LFB1 but is blank.
+LFM1,0000100423,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100078,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100770,EK02,WAERS,Missing Mandatory Field,WAERS is mandatory for LFM1 but is blank.
+LFM1,0000100961,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100285,EK02,WAERS,Missing Mandatory Field,WAERS is mandatory for LFM1 but is blank.
+LFM1,0000100268,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100660,EK04,WAERS,Missing Mandatory Field,WAERS is mandatory for LFM1 but is blank.
+LFM1,0000100290,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100838,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100400,EK01,WAERS,Missing Mandatory Field,WAERS is mandatory for LFM1 but is blank.
+LFM1,0000100114,EK02,WAERS,Missing Mandatory Field,WAERS is mandatory for LFM1 but is blank.
+LFM1,0000100095,EK04,WAERS,Missing Mandatory Field,WAERS is mandatory for LFM1 but is blank.
+LFM1,0000100274,EK02,WAERS,Missing Mandatory Field,WAERS is mandatory for LFM1 but is blank.
+LFM1,0000100155,EK04,WAERS,Missing Mandatory Field,WAERS is mandatory for LFM1 but is blank.
+LFM1,0000100413,EK02,WAERS,Missing Mandatory Field,WAERS is mandatory for LFM1 but is blank.
+LFM1,0000100655,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100541,EK02,WAERS,Missing Mandatory Field,WAERS is mandatory for LFM1 but is blank.
+LFM1,0000100326,EK04,WAERS,Missing Mandatory Field,WAERS is mandatory for LFM1 but is blank.
+LFM1,0000100427,EK01,WAERS,Missing Mandatory Field,WAERS is mandatory for LFM1 but is blank.
+LFM1,0000100019,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100774,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100223,EK01,WAERS,Missing Mandatory Field,WAERS is mandatory for LFM1 but is blank.
+LFM1,0000100333,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100313,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100203,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100402,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100974,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100832,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100903,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100030,EK03,WAERS,Missing Mandatory Field,WAERS is mandatory for LFM1 but is blank.
+LFM1,0000100585,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100809,EK03,WAERS,Missing Mandatory Field,WAERS is mandatory for LFM1 but is blank.
+LFM1,0000100806,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100080,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100026,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100548,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100051,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFM1,0000100495,EK04,WAERS,Missing Mandatory Field,WAERS is mandatory for LFM1 but is blank.
+LFM1,0000100988,EK01,WAERS,Missing Mandatory Field,WAERS is mandatory for LFM1 but is blank.
+LFM1,0000100404,,EKORG,Missing Mandatory Field,EKORG is mandatory for LFM1 but is blank.
+LFBK,0000100719,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100077,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100300,74894555,KOINH,Missing Mandatory Field,KOINH is mandatory for LFBK but is blank.
+LFBK,0000100173,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100195,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100433,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100709,17144174,KOINH,Missing Mandatory Field,KOINH is mandatory for LFBK but is blank.
+LFBK,0000100539,23654831,KOINH,Missing Mandatory Field,KOINH is mandatory for LFBK but is blank.
+LFBK,0000100662,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100630,77185412,KOINH,Missing Mandatory Field,KOINH is mandatory for LFBK but is blank.
+LFBK,0000100294,00062716,KOINH,Missing Mandatory Field,KOINH is mandatory for LFBK but is blank.
+LFBK,0000100713,76522073,KOINH,Missing Mandatory Field,KOINH is mandatory for LFBK but is blank.
+LFBK,0000100758,69037889,KOINH,Missing Mandatory Field,KOINH is mandatory for LFBK but is blank.
+LFBK,0000100697,69633875,KOINH,Missing Mandatory Field,KOINH is mandatory for LFBK but is blank.
+LFBK,0000100483,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100125,28657817,KOINH,Missing Mandatory Field,KOINH is mandatory for LFBK but is blank.
+LFBK,0000100996,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100751,81055901,KOINH,Missing Mandatory Field,KOINH is mandatory for LFBK but is blank.
+LFBK,0000100881,00410633,KOINH,Missing Mandatory Field,KOINH is mandatory for LFBK but is blank.
+LFBK,0000100691,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100019,83308783,KOINH,Missing Mandatory Field,KOINH is mandatory for LFBK but is blank.
+LFBK,0000100583,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100651,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100425,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100627,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100796,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100411,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100434,16441048,KOINH,Missing Mandatory Field,KOINH is mandatory for LFBK but is blank.
+LFBK,0000100455,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100260,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100845,65384390,KOINH,Missing Mandatory Field,KOINH is mandatory for LFBK but is blank.
+LFBK,0000100442,52535434,KOINH,Missing Mandatory Field,KOINH is mandatory for LFBK but is blank.
+LFBK,0000100084,52831007,KOINH,Missing Mandatory Field,KOINH is mandatory for LFBK but is blank.
+LFBK,0000100570,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100094,81322070,KOINH,Missing Mandatory Field,KOINH is mandatory for LFBK but is blank.
+LFBK,0000100769,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFBK,0000100138,,BANKL,Missing Mandatory Field,BANKL is mandatory for LFBK but is blank.
+LFA1,0000100513,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100462,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100359,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100790,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100536,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100912,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100021,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100281,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100140,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100836,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100325,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100558,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100817,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100552,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100934,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100300,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100428,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100009,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100530,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100672,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100108,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100432,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100157,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100999,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100665,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100314,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100118,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100539,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100888,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100261,,STCD1,Invalid Format,Tax ID does not match the expected country format.
+LFA1,0000100521,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100965,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100409,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100426,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100975,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100739,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100880,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100043,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100466,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100177,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100116,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100877,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100314,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100835,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100090,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100150,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100879,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100334,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100515,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100912,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100662,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100885,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100500,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100161,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100293,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100770,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100221,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100249,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100021,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100951,,PSTLZ,Invalid Format,Postal code does not match the expected country format.
+LFA1,0000100687,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100738,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100120,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100666,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100759,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100170,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100713,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100500,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100311,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100422,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100273,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100292,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100025,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100013,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100800,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100140,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100129,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100917,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100414,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100485,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100912,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100576,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100225,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100944,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100198,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100954,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100084,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100017,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100487,,TELF1,Invalid Format,Phone number format is invalid.
+LFA1,0000100859,,TELF1,Invalid Format,Phone number format is invalid.
+LFBK,0000100544,56272739,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100906,09470913,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100413,56697375,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100150,11287574,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100460,42228135,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100761,94784744,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100340,64186381,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100245,42763516,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100132,07550474,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100779,07834347,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100391,30454366,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100599,37341926,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100923,44976836,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100301,87233184,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100177,20787613,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100708,06635460,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100880,01305408,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100704,23747726,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100025,69754199,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100401,86243049,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100817,82326301,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100467,88569601,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100289,35383376,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100657,00468959,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100229,55089703,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100603,46590534,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100191,33906528,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100569,23630058,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100140,45140804,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100616,68909950,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100896,77312250,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100766,38970456,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100752,05044769,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100791,05652156,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100008,01385333,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100832,73321218,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFBK,0000100414,33861807,IBAN,Invalid Format,"IBAN is malformed (wrong length, invalid characters, or missing country prefix)."
+LFA1,0000100532,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100532).
+LFA1,0000100800,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100800).
+LFA1,0000100699,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100699).
+LFA1,0000100052,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100052).
+LFA1,0000100827,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100827).
+LFA1,0000100113,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100113).
+LFA1,0000100392,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100392).
+LFA1,0000100823,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100823).
+LFA1,0000100447,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100447).
+LFA1,0000100192,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100192).
+LFA1,0000100150,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100150).
+LFA1,0000100020,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100020).
+LFA1,0000100566,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100566).
+LFA1,0000100054,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100054).
+LFA1,0000100677,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100677).
+LFA1,0000100426,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100426).
+LFA1,0000100513,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100513).
+LFA1,0000100587,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100587).
+LFA1,0000100172,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100172).
+LFA1,0000100317,,ALL,Duplicate Record,Duplicate primary-key row in LFA1 (LIFNR=0000100317).
+LFB1,0000100232,2000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100232, BUKRS=2000)."
+LFB1,0000100314,2000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100314, BUKRS=2000)."
+LFB1,0000100085,5000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100085, BUKRS=5000)."
+LFB1,0000100514,2000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100514, BUKRS=2000)."
+LFB1,0000100043,5000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100043, BUKRS=5000)."
+LFB1,0000100684,1000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100684, BUKRS=1000)."
+LFB1,0000100005,5000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100005, BUKRS=5000)."
+LFB1,0000100395,3000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100395, BUKRS=3000)."
+LFB1,0000100091,4000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100091, BUKRS=4000)."
+LFB1,0000100908,1000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100908, BUKRS=1000)."
+LFB1,0000100897,4000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100897, BUKRS=4000)."
+LFB1,0000100836,2000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100836, BUKRS=2000)."
+LFB1,0000100047,5000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100047, BUKRS=5000)."
+LFB1,0000100912,3000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100912, BUKRS=3000)."
+LFB1,0000100798,2000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100798, BUKRS=2000)."
+LFB1,0000100819,4000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100819, BUKRS=4000)."
+LFB1,0000100879,1000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100879, BUKRS=1000)."
+LFB1,0000100096,4000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100096, BUKRS=4000)."
+LFB1,0000100975,1000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100975, BUKRS=1000)."
+LFB1,0000100361,4000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100361, BUKRS=4000)."
+LFB1,0000100577,2000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100577, BUKRS=2000)."
+LFB1,0000100794,2000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100794, BUKRS=2000)."
+LFB1,0000100090,4000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100090, BUKRS=4000)."
+LFB1,0000100780,3000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100780, BUKRS=3000)."
+LFB1,0000100828,3000,ALL,Duplicate Record,"Duplicate primary-key row in LFB1 (LIFNR=0000100828, BUKRS=3000)."
+LFBK,0000100370,30777064,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100370, BANKL=30777064)."
+LFBK,0000100476,97556066,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100476, BANKL=97556066)."
+LFBK,0000100229,55089703,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100229, BANKL=55089703)."
+LFBK,0000100356,92577594,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100356, BANKL=92577594)."
+LFBK,0000100494,90421769,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100494, BANKL=90421769)."
+LFBK,0000100669,46936823,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100669, BANKL=46936823)."
+LFBK,0000100355,66236003,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100355, BANKL=66236003)."
+LFBK,0000100771,51325797,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100771, BANKL=51325797)."
+LFBK,0000100851,94785127,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100851, BANKL=94785127)."
+LFBK,0000100161,59078096,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100161, BANKL=59078096)."
+LFBK,0000100729,26898652,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100729, BANKL=26898652)."
+LFBK,0000100596,93120128,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100596, BANKL=93120128)."
+LFBK,0000100225,91959163,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100225, BANKL=91959163)."
+LFBK,0000100405,26173544,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100405, BANKL=26173544)."
+LFBK,0000100789,24199567,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100789, BANKL=24199567)."
+LFBK,0000100179,10049443,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100179, BANKL=10049443)."
+LFBK,0000100942,19903064,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100942, BANKL=19903064)."
+LFBK,0000100317,64934513,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100317, BANKL=64934513)."
+LFBK,0000100289,35383376,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100289, BANKL=35383376)."
+LFBK,0000100325,79855562,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100325, BANKL=79855562)."
+LFBK,0000100458,18268920,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100458, BANKL=18268920)."
+LFBK,0000100426,27035269,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100426, BANKL=27035269)."
+LFBK,0000100909,27525584,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100909, BANKL=27525584)."
+LFBK,0000100320,82407472,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100320, BANKL=82407472)."
+LFBK,0000100681,49778190,ALL,Duplicate Record,"Duplicate primary-key row in LFBK (LIFNR=0000100681, BANKL=49778190)."
+LFB1,0000999307,1000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999307 (was 0000100409) which does not exist in LFA1.
+LFB1,0000999159,3000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999159 (was 0000100449) which does not exist in LFA1.
+LFB1,0000999029,3000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999029 (was 0000100084) which does not exist in LFA1.
+LFB1,0000999852,3000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999852 (was 0000100962) which does not exist in LFA1.
+LFB1,0000999724,3000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999724 (was 0000100599) which does not exist in LFA1.
+LFB1,0000999397,3000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999397 (was 0000100730) which does not exist in LFA1.
+LFB1,0000999366,4000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999366 (was 0000100805) which does not exist in LFA1.
+LFB1,0000999638,2000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999638 (was 0000100160) which does not exist in LFA1.
+LFB1,0000999848,4000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999848 (was 0000100819) which does not exist in LFA1.
+LFB1,0000999599,5000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999599 (was 0000100968) which does not exist in LFA1.
+LFB1,0000999600,4000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999600 (was 0000100525) which does not exist in LFA1.
+LFB1,0000999331,1000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999331 (was 0000100582) which does not exist in LFA1.
+LFB1,0000999667,2000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999667 (was 0000100079) which does not exist in LFA1.
+LFB1,0000999675,5000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999675 (was 0000100941) which does not exist in LFA1.
+LFB1,0000999287,5000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999287 (was 0000100612) which does not exist in LFA1.
+LFB1,0000999281,1000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999281 (was 0000100908) which does not exist in LFA1.
+LFB1,0000999003,5000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999003 (was 0000100945) which does not exist in LFA1.
+LFB1,0000999562,1000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999562 (was 0000100250) which does not exist in LFA1.
+LFB1,0000999012,4000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999012 (was 0000100623) which does not exist in LFA1.
+LFB1,0000999748,2000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999748 (was 0000100967) which does not exist in LFA1.
+LFB1,0000999599,3000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999599 (was 0000100129) which does not exist in LFA1.
+LFB1,0000999595,5000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999595 (was 0000100088) which does not exist in LFA1.
+LFB1,0000999324,4000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999324 (was 0000100635) which does not exist in LFA1.
+LFB1,0000999573,1000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999573 (was 0000100807) which does not exist in LFA1.
+LFB1,0000999620,4000,LIFNR,Orphan Foreign Key,LFB1 row references LIFNR 0000999620 (was 0000100793) which does not exist in LFA1.
+LFM1,0000999159,EK04,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999159 (was 0000100732) which does not exist in LFA1.
+LFM1,0000999670,EK01,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999670 (was 0000100104) which does not exist in LFA1.
+LFM1,0000999678,EK04,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999678 (was 0000100724) which does not exist in LFA1.
+LFM1,0000999530,EK02,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999530 (was 0000100325) which does not exist in LFA1.
+LFM1,0000999143,EK04,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999143 (was 0000100758) which does not exist in LFA1.
+LFM1,0000999837,EK04,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999837 (was 0000100126) which does not exist in LFA1.
+LFM1,0000999118,EK03,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999118 (was 0000100650) which does not exist in LFA1.
+LFM1,0000999660,EK02,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999660 (was 0000100770) which does not exist in LFA1.
+LFM1,0000999342,EK04,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999342 (was 0000100912) which does not exist in LFA1.
+LFM1,0000999816,EK01,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999816 (was 0000100633) which does not exist in LFA1.
+LFM1,0000999313,EK03,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999313 (was 0000100199) which does not exist in LFA1.
+LFM1,0000999877,EK04,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999877 (was 0000100811) which does not exist in LFA1.
+LFM1,0000999830,EK03,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999830 (was 0000100076) which does not exist in LFA1.
+LFM1,0000999593,EK02,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999593 (was 0000100668) which does not exist in LFA1.
+LFM1,0000999791,EK03,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999791 (was 0000100719) which does not exist in LFA1.
+LFM1,0000999659,EK01,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999659 (was 0000100825) which does not exist in LFA1.
+LFM1,0000999705,EK03,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999705 (was 0000100709) which does not exist in LFA1.
+LFM1,0000999742,EK03,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999742 (was 0000100765) which does not exist in LFA1.
+LFM1,0000999436,EK03,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999436 (was 0000100357) which does not exist in LFA1.
+LFM1,0000999193,EK03,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999193 (was 0000100411) which does not exist in LFA1.
+LFM1,0000999011,EK01,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999011 (was 0000100893) which does not exist in LFA1.
+LFM1,0000999516,EK03,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999516 (was 0000100914) which does not exist in LFA1.
+LFM1,0000999240,EK03,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999240 (was 0000100792) which does not exist in LFA1.
+LFM1,0000999622,EK04,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999622 (was 0000100267) which does not exist in LFA1.
+LFM1,0000999713,EK04,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999713 (was 0000100108) which does not exist in LFA1.
+LFM1,0000999711,EK04,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999711 (was 0000100530) which does not exist in LFA1.
+LFM1,0000999490,EK04,LIFNR,Orphan Foreign Key,LFM1 row references LIFNR 0000999490 (was 0000100478) which does not exist in LFA1.
+LFBK,0000999489,81757970,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999489 (was 0000100011) which does not exist in LFA1.
+LFBK,0000999140,07988415,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999140 (was 0000100551) which does not exist in LFA1.
+LFBK,0000999672,35006693,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999672 (was 0000100098) which does not exist in LFA1.
+LFBK,0000999841,81722482,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999841 (was 0000100119) which does not exist in LFA1.
+LFBK,0000999347,08580721,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999347 (was 0000100422) which does not exist in LFA1.
+LFBK,0000999116,55808334,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999116 (was 0000100644) which does not exist in LFA1.
+LFBK,0000999554,16998902,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999554 (was 0000100596) which does not exist in LFA1.
+LFBK,0000999512,58587018,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999512 (was 0000100435) which does not exist in LFA1.
+LFBK,0000999234,74750968,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999234 (was 0000100479) which does not exist in LFA1.
+LFBK,0000999198,97028219,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999198 (was 0000100952) which does not exist in LFA1.
+LFBK,0000999574,64155272,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999574 (was 0000100464) which does not exist in LFA1.
+LFBK,0000999647,17979985,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999647 (was 0000100838) which does not exist in LFA1.
+LFBK,0000999604,00062716,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999604 (was 0000100294) which does not exist in LFA1.
+LFBK,0000999343,98947645,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999343 (was 0000100030) which does not exist in LFA1.
+LFBK,0000999249,66386873,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999249 (was 0000100266) which does not exist in LFA1.
+LFBK,0000999309,26555582,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999309 (was 0000100847) which does not exist in LFA1.
+LFBK,0000999836,50453820,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999836 (was 0000100124) which does not exist in LFA1.
+LFBK,0000999600,51266633,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999600 (was 0000100735) which does not exist in LFA1.
+LFBK,0000999080,09067155,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999080 (was 0000100695) which does not exist in LFA1.
+LFBK,0000999034,84528653,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999034 (was 0000100458) which does not exist in LFA1.
+LFBK,0000999182,76064272,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999182 (was 0000100987) which does not exist in LFA1.
+LFBK,0000999820,04092566,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999820 (was 0000100855) which does not exist in LFA1.
+LFBK,0000999397,41728526,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999397 (was 0000100720) which does not exist in LFA1.
+LFBK,0000999230,91275443,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999230 (was 0000100124) which does not exist in LFA1.
+LFBK,0000999611,47509010,LIFNR,Orphan Foreign Key,LFBK row references LIFNR 0000999611 (was 0000100883) which does not exist in LFA1.
+LFB1,0000100684,1000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100869,2000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100090,4000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100865,3000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100820,1000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100651,2000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100902,4000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100458,3000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100201,4000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100243,3000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100248,1000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100787,3000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100029,3000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100144,1000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100014,5000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100625,2000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100927,3000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100669,3000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100136,5000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100294,3000,LOEVM,Cross-Table Business Rule Violation,LFA1 marked for deletion (LOEVM=X) but LFB1 company code record is not flagged for deletion.
+LFB1,0000100641,3000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100204,1000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100843,2000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100126,3000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100757,3000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100548,2000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100824,5000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100460,4000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100701,2000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100450,4000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100120,3000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100849,5000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100512,4000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100087,5000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100928,4000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100115,2000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100707,1000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100774,5000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100040,1000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFB1,0000100558,5000,ZAHLS,Cross-Table Business Rule Violation,Vendor is centrally posting-blocked in LFA1 (SPERR=X) but LFB1 payment block (ZAHLS) is not set.
+LFM1,0000100042,EK01,WAERS,Cross-Table Business Rule Violation,LFM1 currency (INR) does not match LFB1 currency (JPY) for the same vendor.
+LFM1,0000100092,EK03,WAERS,Cross-Table Business Rule Violation,LFM1 currency (GBP) does not match LFB1 currency (USD) for the same vendor.
+LFM1,0000100381,EK03,WAERS,Cross-Table Business Rule Violation,LFM1 currency (BRL) does not match LFB1 currency (USD) for the same vendor.
+LFM1,0000100004,EK01,WAERS,Cross-Table Business Rule Violation,LFM1 currency (JPY) does not match LFB1 currency (CNY) for the same vendor.
+LFM1,0000100649,EK02,WAERS,Cross-Table Business Rule Violation,LFM1 currency (INR) does not match LFB1 currency (JPY) for the same vendor.
+LFM1,0000100993,EK04,WAERS,Cross-Table Business Rule Violation,LFM1 currency (CNY) does not match LFB1 currency (JPY) for the same vendor.
+LFM1,0000100461,EK02,WAERS,Cross-Table Business Rule Violation,LFM1 currency (USD) does not match LFB1 currency (JPY) for the same vendor.
+LFM1,0000100552,EK01,WAERS,Cross-Table Business Rule Violation,LFM1 currency (USD) does not match LFB1 currency (GBP) for the same vendor.
+LFM1,0000100259,EK03,WAERS,Cross-Table Business Rule Violation,LFM1 currency (USD) does not match LFB1 currency (BRL) for the same vendor.
+LFM1,0000100185,EK02,WAERS,Cross-Table Business Rule Violation,LFM1 currency (INR) does not match LFB1 currency (BRL) for the same vendor.
+LFM1,0000100414,EK02,WAERS,Cross-Table Business Rule Violation,LFM1 currency (INR) does not match LFB1 currency (EUR) for the same vendor.
+LFM1,0000100713,EK01,WAERS,Cross-Table Business Rule Violation,LFM1 currency (GBP) does not match LFB1 currency (JPY) for the same vendor.
+LFM1,0000100465,EK03,WAERS,Cross-Table Business Rule Violation,LFM1 currency (JPY) does not match LFB1 currency (BRL) for the same vendor.
+LFM1,0000100174,EK01,WAERS,Cross-Table Business Rule Violation,LFM1 currency (EUR) does not match LFB1 currency (INR) for the same vendor.
+LFM1,0000100600,EK02,WAERS,Cross-Table Business Rule Violation,LFM1 currency (JPY) does not match LFB1 currency (INR) for the same vendor.
+LFM1,0000100887,EK01,WAERS,Cross-Table Business Rule Violation,LFM1 currency (USD) does not match LFB1 currency (GBP) for the same vendor.
+LFM1,0000100219,EK01,WAERS,Cross-Table Business Rule Violation,LFM1 currency (USD) does not match LFB1 currency (GBP) for the same vendor.
+LFM1,0000100374,EK04,WAERS,Cross-Table Business Rule Violation,LFM1 currency (JPY) does not match LFB1 currency (CNY) for the same vendor.
+LFM1,0000100778,EK04,WAERS,Cross-Table Business Rule Violation,LFM1 currency (USD) does not match LFB1 currency (BRL) for the same vendor.
+LFM1,0000100798,EK02,WAERS,Cross-Table Business Rule Violation,LFM1 currency (CNY) does not match LFB1 currency (INR) for the same vendor.
+LFBK,0000100130,56809740,BANKS,Cross-Table Business Rule Violation,Bank country (JP) does not match vendor country in LFA1 (DE).
+LFBK,0000100692,38390276,BANKS,Cross-Table Business Rule Violation,Bank country (JP) does not match vendor country in LFA1 (GB).
+LFBK,0000100120,59923945,BANKS,Cross-Table Business Rule Violation,Bank country (CN) does not match vendor country in LFA1 (JP).
+LFBK,0000100476,97556066,BANKS,Cross-Table Business Rule Violation,Bank country (DE) does not match vendor country in LFA1 (FR).
+LFBK,0000100957,52905921,BANKS,Cross-Table Business Rule Violation,Bank country (DE) does not match vendor country in LFA1 (IN).
+LFBK,0000100623,90907777,BANKS,Cross-Table Business Rule Violation,Bank country (DE) does not match vendor country in LFA1 (IN).
+LFBK,0000100308,42919010,BANKS,Cross-Table Business Rule Violation,Bank country (BR) does not match vendor country in LFA1 (US).
+LFBK,0000100094,38742792,BANKS,Cross-Table Business Rule Violation,Bank country (BR) does not match vendor country in LFA1 (JP).
+LFBK,0000100646,30914019,BANKS,Cross-Table Business Rule Violation,Bank country (FR) does not match vendor country in LFA1 (US).
+LFBK,0000100508,99560597,BANKS,Cross-Table Business Rule Violation,Bank country (US) does not match vendor country in LFA1 (CN).
+LFBK,0000100281,04841785,BANKS,Cross-Table Business Rule Violation,Bank country (IN) does not match vendor country in LFA1 (CN).
+LFBK,0000100798,72105837,BANKS,Cross-Table Business Rule Violation,Bank country (US) does not match vendor country in LFA1 (IN).
+LFBK,0000100407,03698752,BANKS,Cross-Table Business Rule Violation,Bank country (FR) does not match vendor country in LFA1 (CN).
+LFBK,0000100990,70226601,BANKS,Cross-Table Business Rule Violation,Bank country (DE) does not match vendor country in LFA1 (US).
+LFBK,0000100621,31148984,BANKS,Cross-Table Business Rule Violation,Bank country (CN) does not match vendor country in LFA1 (IN).
+LFBK,0000100917,18098504,BANKS,Cross-Table Business Rule Violation,Bank country (JP) does not match vendor country in LFA1 (IN).
+LFBK,0000100434,16441048,BANKS,Cross-Table Business Rule Violation,Bank country (BR) does not match vendor country in LFA1 (JP).
+LFBK,0000100981,29401943,BANKS,Cross-Table Business Rule Violation,Bank country (JP) does not match vendor country in LFA1 (DE).
+LFBK,0000100405,26173544,BANKS,Cross-Table Business Rule Violation,Bank country (FR) does not match vendor country in LFA1 (GB).
+LFBK,0000100135,04462340,BANKS,Cross-Table Business Rule Violation,Bank country (FR) does not match vendor country in LFA1 (JP).

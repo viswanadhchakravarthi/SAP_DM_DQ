@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SAP DM Data Quality Review</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header>
+    <h1>Data Quality Findings Human Review</h1>
+
+    <div class="controls">
+      <label for="runSelect">Run:</label>
+      <select id="runSelect"></select>
+
+      <label for="statusFilter">Status:</label>
+      <select id="statusFilter">
+        <option value="">All</option>
+        <option value="PENDING" selected>Pending</option>
+        <option value="APPROVED">Approved</option>
+        <option value="REJECTED">Rejected</option>
+      </select>
+
+      <button id="refreshBtn">Refresh</button>
+      <button id="promoteBtn">Promote Approved Findings</button>
+    </div>
+
+    <div class="stats" id="statsBar"></div>
+  </header>
+
+  <main id="findingsContainer">
+    <p class="empty-state">Loading findings...</p>
+  </main>
+
+  <div id="detailModal" class="modal hidden">
+    <div class="modal-content">
+      <button id="closeModal" class="close-btn">&times;</button>
+      <h2>Finding Detail</h2>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

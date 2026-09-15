@@ -1,0 +1,137 @@
+# SAP_DM_DQ configuration.
+#
+# Non-secret, shareable settings live here and are committed to version
+# control. Secrets (API keys, tokens) and machine-specific values (like a
+# local GGUF model path) stay in a local, gitignored .env file instead -
+# see README.md.
+#
+# Every value below can also be overridden per-machine via an environment
+# variable without editing this file - see explorer_agent/config.py for the
+# exact variable name behind each setting.
+
+llm:
+  # Primary backend: "google" (Gemini API), "groq" (Groq API) or "local"
+  # (GGUF model via llama-cpp-python).
+  # Overridable with EXPLORER_LLM_PROVIDER, or --llm-provider on the CLI.
+  # The local model is only ever loaded into memory when "local" appears in
+  # the provider chain - never just because the code imports this module.
+  provider: google
+
+  # Tried in order when the primary fails (503 overload, 429 rate limit,
+  # timeout, request too large, unparseable structured output, ...).
+  # A fallback whose API key is missing is skipped with a warning.
+  # Overridable with EXPLORER_LLM_FALLBACKS (comma-separated), or
+  # --fallback-providers on the CLI ("--fallback-providers" alone = none).
+  fallback_providers: [groq]
+
+  # Retries per model after the first attempt (with backoff, done by the
+  # provider SDK) before moving to the next model in the chain. Keep this low
+  # when fallbacks exist so an overloaded model fails over quickly.
+  max_retries: 2 # EXPLORER_LLM_MAX_RETRIES
+  timeout_seconds: 120 # EXPLORER_LLM_TIMEOUT
+  # Extra attempts on the SAME model when it returns invalid/missing structured
+  # output (e.g. Groq "json_validate_failed") - often random, so worth a retry.
+  structured_output_retries: 1 # EXPLORER_LLM_STRUCTURED_OUTPUT_RETRIES
+
+  gemini:
+    model: gemini-3.6-flash
+    # null = model default. gemini-3.6-flash uses fixed sampling and ignores
+    # (and warns about) any explicit temperature.
+    temperature: null
+
+  groq:
+    # Ordered: each model is a fallback for the one above it. Free-tier rate
+    # limits are per model - see https://console.groq.com/settings/limits -
+    # so listing several models also spreads load across separate quotas.
+    # Entries may be a plain name or a dict of per-model options:
+    #   structured_output_method: json_schema | function_calling | json_mode
+    #   reasoning_effort: provider-specific (qwen: none|default, gpt-oss: low|medium|high)
+    #   max_tokens: output cap (reasoning tokens count against it)
+    # GROQ_MODELS (comma-separated names, default options) overrides this list.
+    models:
+      # Free tier caps OUTPUT at ~1000 tokens/min, while a CheckPlan is
+      # ~1.5-2.5k tokens: a fresh quota can serve one plan, but back-to-back
+      # planner calls are rejected ("Request too large") and fail over.
+      - name: qwen/qwen3.8-27b
+        reasoning_effort: none # halves output tokens for structured replies
+      # Free tier ~8000 total tokens/min: roughly one planner call per minute.
+      # Default reasoning ate most of the 2048-token default cap and truncated
+      # the JSON - hence low effort + a larger max_tokens.
+      - name: openai/gpt-oss-20b
+        reasoning_effort: low
+        max_tokens: 8192
+    temperature: 0.2
+    # Default for entries without their own structured_output_method.
+    # json_schema (Groq structured outputs) proved far more reliable than
+    # function_calling for the large, code-heavy CheckPlan schema.
+    structured_output_method: json_schema
+
+  local:
+    # Absolute path to a local GGUF model file. Left null here on purpose -
+    # this is machine-specific and often large/private. Set it per-machine
+    # in your local .env as EXPLORER_LOCAL_LLM_MODEL_PATH instead of editing
+    # this committed file.
+    model_path: null
+    n_ctx: 4096
+
+data:
+  # SAP table name -> source filename, resolved under --data-dir.
+  tables:
+    LFA1: LFA1.csv
+    LFB1: LFB1.csv
+    LFBK: LFBK.csv
+    LFM1: LFM1.csv
+  dictionary_file: Data_Dictionary.csv
+
+profiling:
+  top_n_frequent: 10
+  max_checks_per_table: 25
+  max_iterations_per_column: 5 # legacy, pre-batch-profiling explorer loop
+
+sandbox:
+  timeout_seconds: 10
+  mem_limit_mb: 512
+
+privacy:
+  max_result_list_len: 20
+
+memory:
+  vector_backend: chroma
+  base_dir: memory_store
+  chroma_collection: procedural_skills
+  retrieval_top_k: 3
+  dedup_distance_threshold: 0.25
+
+  # Semantic-memory embeddings: all-MiniLM-L6-v2 as ONNX, run locally on CPU
+  # via onnxruntime - free, no API calls, and never contacts Hugging Face.
+  # The model files (model.onnx + tokenizer.json) are located in this order:
+  embedding:
+    # 1. An existing folder containing model.onnx and tokenizer.json (e.g.
+    #    copied from another machine). EXPLORER_EMBEDDING_MODEL_DIR
+    model_dir: null
+    # 2. A Kaggle handle fetched with kagglehub (cached under ~/.cache/kagglehub),
+    #    e.g. a private dataset where you uploaded Chroma's onnx/ folder once.
+    #    Needs KAGGLE_API_TOKEN for private items.
+    #    EXPLORER_EMBEDDING_KAGGLE_HANDLE / EXPLORER_EMBEDDING_KAGGLE_TYPE
+    kaggle_handle: null # e.g. "<your-kaggle-user>/all-minilm-l6-v2-onnx"
+    kaggle_type: dataset # dataset | model
+    # 3. Chroma's cache (~/.cache/chroma/onnx_models/all-MiniLM-L6-v2/onnx).
+    #    If missing and allow_download is true, Chroma's official archive is
+    #    downloaded from chroma-onnx-models.s3.amazonaws.com (SHA256-verified).
+    #    Set false on locked-down servers to fail fast instead of downloading.
+    allow_download: true # EXPLORER_EMBEDDING_ALLOW_DOWNLOAD
+
+storage:
+  episodic_db_path: episodic_memory.db
+
+logging:
+  level: INFO
+  dir: logs
+
+cache:
+  enable_fast_path: true
+  skip_reflection_on_cache_hit: false
+
+review_app:
+  cors_origins:
+    - "*" # local-only tool; tighten if this ever leaves localhost

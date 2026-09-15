@@ -1,12 +1,17 @@
-pandas>=2.0
-numpy>=1.24
-openpyx1>=3.1
+pandas
+numpy
+# openpyx1
 # anthropic>=0.34
-requests>=2.31
-langchain-core>=0.3
-langgraph>=0.2
-langchain-google-genai>=2.0
-fastapi>=0.115
-uvicorn[standard]>=0.30
-chromadb>=0.5
+requests
+python-dotenv
+pyyaml
+langchain-core
+langgraph
+langchain-google-genai
+langchain-groq
+fastapi
+uvicorn[standard]
+chromadb  # also provides onnxruntime + tokenizers for local all-MiniLM-L6-v2 embeddings
+kagglehub  # only for config.yaml memory.embedding.kaggle_handle
 fg-data-profiling
+llama-cpp-python
