@@ -30,43 +30,63 @@ from .logging_config import get_logger
 
 logger = get_logger("graph")
 
-PLANNER_SYSTEM_PROMPT = """You are a data quality exploration agent for SAP data migration \
-projects. You are given a statistical profile of an ENTIRE table (aggregated stats and \
-masked top-values only - never raw data). Propose a batch of pandas checks in ONE response, \
-covering columns that look most likely to have issues. Skip columns that look clean.
+PLANNER_SYSTEM_PROMPT = """You are an expert data quality exploration agent for SAP data migration \
+and governance projects. You are given a statistical profile of an ENTIRE table (aggregated stats and \
+masked top-values only - never raw data). Propose a batch of pandas checks covering columns likely to have issues.
+
+Structure checks across the FOUR MAJOR DATA PROFILING PILLARS:
+1. ACTIVENESS:
+   - Check if records are actively used or dormant/obsolete.
+   - Look at creation date (ERDAT) aging, deletion flags (LOEVM == 'X'), posting blocks (SPERM/SPERR == 'X'), purchasing blocks.
+   - Tag category="ACTIVENESS".
+
+2. DUPLICATE:
+   - Evaluate composite matching across dynamic fields: Name (NAME1), Postal Code (PSTLZ), Tax Numbers (STCD1, STCD2, STCD3, STCEG), City (ORT01), Street (STRAS).
+   - Use exact and fuzzy similarity matching (Exact 100%, Probable 80-99%, Similar 70-80%).
+   - In code: compute aggregate count of potential duplicate groups or records.
+   - In detail_code: You can use the built-in sandbox helper `cluster_duplicates(df, key_col='LIFNR', name_col='NAME1', postal_col='PSTLZ')` which automatically clusters duplicates and assigns duplicate_group_id, similarity_score, match_type, match_reasons, and initial golden record candidate!
+   - Tag category="DUPLICATE".
+
+3. COMPLETENESS:
+   - Identify missing or blank mandatory fields (e.g. Payment Method ZWELS, Reconciliation Account AKONT, Tax Number STCD1, Company Code BUKRS).
+   - Classify each completeness issue as either:
+     * fix_type="AUTO_FIXABLE" with auto_fix_value (e.g. missing payment method defaults to 'NEFT' or 'T')
+     * fix_type="MANUAL_FIX" (e.g. missing Tax Number, Bank Account - requires business research)
+   - Tag category="COMPLETENESS".
+
+4. CORRECTNESS & STATISTICAL ANOMALIES:
+   - Format validation, invalid country codes (ISO length != 2), invalid special characters in names (e.g. '#', '$').
+   - STATISTICAL ANOMALY DETECTION: Distribution outliers (e.g. payment terms ZTERM where 95% are <= 60 days but some are 365 days).
+     You can use the built-in helper `detect_distribution_outliers(df['ZTERM'])` or compute IQR/percentile fences.
+   - Tag category="CORRECTNESS", and set is_anomaly=True if it is a statistical distribution outlier.
+
+RULE SCOPE CLASSIFICATION (set rule_scope for each check):
+- UNIVERSAL: Standard SAP integrity mandatory across all implementations (e.g. Reconciliation account present, Tax uniqueness, primary key).
+- INDUSTRY_SPECIFIC: Rules specific to an industry (e.g. Banking & Financial Services, Healthcare & Biotech, Manufacturing, Consumer & Retail, Energy & Utilities). Specify the industry name in `industry`.
+- CLIENT_SPECIFIC: Custom client naming conventions, allowed payment terms, internal code patterns.
 
 For EACH check, provide TWO code fields:
-
 1. `code` (REQUIRED): must set `result` to an AGGREGATE value (count/pct/bool/small dict).
    This is sent to an LLM for review - never include raw row values here.
 
-2. `detail_code` (STRONGLY RECOMMENDED whenever the check identifies specific offending
-   rows - e.g. duplicates, invalid formats, nulls in a key field): pandas code that sets
-   `result` to a list of dicts, one per offending row, each with keys:
-   - row_index (int): the dataframe row index
-   - key_field (str): name of a natural key column for this table (e.g. 'LIFNR')
-   - key_value (the value of that key field for this row)
-   - issue_detail (str): a specific, human-readable description of what's wrong with
-     THIS row (e.g. 'Duplicate tax number: 123-45-6789')
+2. `detail_code` (STRONGLY RECOMMENDED): pandas code that sets `result` to a list of dicts, one per offending row.
+   Keys:
+   - row_index (int): dataframe index
+   - key_field (str): name of natural key column (e.g. 'LIFNR')
+   - key_value: value of key field for this row
+   - issue_detail (str): specific description of the issue for THIS row
+   For DUPLICATE checks: ensure dicts also include duplicate_group_id, similarity_score, match_type, match_reasons.
+   (Calling `cluster_duplicates(df, key_col='LIFNR')` returns this format automatically).
 
-Cap that list at around 50 rows if many rows match (use .head(50) or similar).
-This detail_code output is for LOCAL HUMAN REVIEW ONLY and is never sent back to you.
-
-Both code fields must be complete, valid Python. Inside code use ONLY single quotes (') \
-for string literals - never double quotes, and no f-strings; build strings with + and str().
-
-Example of a check WITH detail_code (duplicate tax numbers):
-  code:
-    result = int(df['STCD1'].duplicated(keep=False).sum())
-  detail_code:
-    dupes = df[df.duplicated(subset=['STCD1'], keep=False) & df['STCD1'].notna()]
-    result = [{'row_index': int(idx), 'key_field': 'LIFNR', 'key_value': str(row['LIFNR']), 'issue_detail': 'Duplicate tax number: ' + str(row['STCD1'])} for idx, row in dupes.head(50).iterrows()]
+Cap detail_rows at around 50 rows (use .head(50)).
+Inside code use ONLY single quotes (') for string literals - never double quotes, and no f-strings; build strings with + and str().
 """
 
 REFLECTOR_SYSTEM_PROMPT = """You are reviewing outcomes of MULTIPLE data quality checks that \
-just ran, in one batch. For EACH result (identified by check_index), decide if it's a genuine \
-issue, its severity/confidence, a one-line summary, and whether it would generalize to other \
-similar datasets/clients (reusable)."""
+just ran, in one batch across Activeness, Duplicate, Completeness, and Correctness pillars. \
+For EACH result (identified by check_index), decide if it's a genuine issue, its severity/confidence, \
+a one-line summary, category, rule_scope, fix_type, auto_fix_value, is_anomaly, and whether it would \
+generalize to other similar datasets/clients (reusable)."""
 
 
 class TableExplorerState(TypedDict):
@@ -122,30 +142,42 @@ def build_explorer_graph(planner_structured, reflector_structured):
         metrics.reflector_llm_calls += 1
 
         results_by_index = {r["check_index"]: r for r in successful}
+        checks_by_index = {i: c for i, c in enumerate(state["proposed_checks"])}
         findings = []
+
         for j in batch.judgments:
             r = results_by_index.get(j.check_index)
+            check = checks_by_index.get(j.check_index)
             if r is None or not j.is_issue:
                 continue
+
+            # Inherit or override category and rule metadata
+            category = j.category or (check.category if check else "CORRECTNESS")
+            rule_scope = j.rule_scope or (check.rule_scope if check else "UNIVERSAL")
+            industry = j.industry or (check.industry if check else None)
+            fix_type = j.fix_type or (check.fix_type if check else None)
+            auto_fix_value = j.auto_fix_value or (check.auto_fix_value if check else None)
+            is_anomaly = bool(j.is_anomaly or (check.is_anomaly if check else False))
+
             findings.append({
                 "table": state["table_name"], "column": r["column"],
                 "hypothesis": r["hypothesis"], "check_code": r["check_code"],
                 "summary": j.summary, "severity": j.severity,
                 "confidence": j.confidence, "reusable": j.reusable,
+                "category": category, "rule_scope": rule_scope,
+                "industry": industry, "fix_type": fix_type,
+                "auto_fix_value": auto_fix_value, "is_anomaly": is_anomaly,
                 "raw_tool_result": str(r["result"]),
-                # FIX (bug found in review): this key was previously never set, so
-                # detail_rows extraction below always looked up None -> [] for every
-                # finding, silently dropping all row-level detail_code output.
                 "_check_index": r["check_index"],
             })
 
         # for each confirmed finding, extract row-level detail locally
-        checks_by_index = {i: c for i, c in enumerate(state["proposed_checks"])}
         for finding in findings:
             check_idx = finding.get("_check_index")
             check = checks_by_index.get(check_idx)
             if check:
-                finding["detail_rows"] = extract_detail_rows(check, state["df"], state["all_tables"])
+                detail_rows = extract_detail_rows(check, state["df"], state["all_tables"])
+                finding["detail_rows"] = detail_rows
             else:
                 finding["detail_rows"] = []
 

@@ -71,11 +71,29 @@ def _sandbox_worker(code: str, data_context: Dict[str, Any], result_queue,
 
     import pandas as pd
     import numpy as np
+    import re
+    import datetime
+    from .profiler_primitives import (
+        mask_value,
+        fuzzy_token_similarity,
+        cluster_duplicates,
+        detect_distribution_outliers,
+    )
 
     safe_builtins = dict(SAFE_BUILTINS)
     safe_builtins["__import__"] = _restricted_import
 
-    exec_globals: Dict[str, Any] = {"__builtins__": safe_builtins, "pd": pd, "np": np}
+    exec_globals: Dict[str, Any] = {
+        "__builtins__": safe_builtins,
+        "pd": pd,
+        "np": np,
+        "re": re,
+        "datetime": datetime,
+        "mask_value": mask_value,
+        "fuzzy_token_similarity": fuzzy_token_similarity,
+        "cluster_duplicates": cluster_duplicates,
+        "detect_distribution_outliers": detect_distribution_outliers,
+    }
     exec_globals.update(data_context)  # e.g. {"df": df}
 
     stdout_capture = io.StringIO()

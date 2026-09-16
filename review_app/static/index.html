@@ -8,22 +8,48 @@
 
 <body>
   <header>
-    <h1>Data Quality Findings Human Review</h1>
+    <div class="header-top">
+      <h1>Data Quality Findings & Governance</h1>
+      <div class="header-actions">
+        <button id="refreshBtn">Refresh</button>
+        <button id="promoteBtn" class="btn-promote">Promote Approved Skills</button>
+      </div>
+    </div>
 
     <div class="controls">
-      <label for="runSelect">Run:</label>
-      <select id="runSelect"></select>
+      <div class="control-group">
+        <label for="runSelect">Run:</label>
+        <select id="runSelect"></select>
+      </div>
 
-      <label for="statusFilter">Status:</label>
-      <select id="statusFilter">
-        <option value="">All</option>
-        <option value="PENDING" selected>Pending</option>
-        <option value="APPROVED">Approved</option>
-        <option value="REJECTED">Rejected</option>
-      </select>
+      <div class="control-group">
+        <label for="statusFilter">Status:</label>
+        <select id="statusFilter">
+          <option value="">All Statuses</option>
+          <option value="PENDING" selected>Pending</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
+        </select>
+      </div>
 
-      <button id="refreshBtn">Refresh</button>
-      <button id="promoteBtn">Promote Approved Findings</button>
+      <div class="control-group">
+        <label for="scopeFilter">Rule Scope:</label>
+        <select id="scopeFilter">
+          <option value="">All Scopes</option>
+          <option value="UNIVERSAL">Universal (Standard SAP)</option>
+          <option value="INDUSTRY_SPECIFIC">Industry-Specific</option>
+          <option value="CLIENT_SPECIFIC">Client-Specific</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="category-tabs" id="categoryTabs">
+      <button class="tab-btn active" data-category="">All Findings</button>
+      <button class="tab-btn" data-category="ACTIVENESS">🕒 Activeness</button>
+      <button class="tab-btn" data-category="DUPLICATE">👥 Duplicates</button>
+      <button class="tab-btn" data-category="COMPLETENESS">📋 Completeness</button>
+      <button class="tab-btn" data-category="CORRECTNESS">✅ Correctness</button>
+      <button class="tab-btn" data-category="ANOMALIES">⚡ Anomalies</button>
     </div>
 
     <div class="stats" id="statsBar"></div>

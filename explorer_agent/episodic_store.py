@@ -71,6 +71,18 @@ def _migrate(conn: sqlite3.Connection) -> None:
     existing_cols = [row["name"] for row in conn.execute("PRAGMA table_info(findings)").fetchall()]
     if "promoted_at" not in existing_cols:
         conn.execute("ALTER TABLE findings ADD COLUMN promoted_at TEXT")
+    if "category" not in existing_cols:
+        conn.execute("ALTER TABLE findings ADD COLUMN category TEXT DEFAULT 'CORRECTNESS'")
+    if "rule_scope" not in existing_cols:
+        conn.execute("ALTER TABLE findings ADD COLUMN rule_scope TEXT DEFAULT 'UNIVERSAL'")
+    if "industry" not in existing_cols:
+        conn.execute("ALTER TABLE findings ADD COLUMN industry TEXT")
+    if "fix_type" not in existing_cols:
+        conn.execute("ALTER TABLE findings ADD COLUMN fix_type TEXT")
+    if "auto_fix_value" not in existing_cols:
+        conn.execute("ALTER TABLE findings ADD COLUMN auto_fix_value TEXT")
+    if "is_anomaly" not in existing_cols:
+        conn.execute("ALTER TABLE findings ADD COLUMN is_anomaly INTEGER DEFAULT 0")
 
 
 def _migrate_finding_items(conn: sqlite3.Connection) -> None:
@@ -93,12 +105,29 @@ def _migrate_finding_items(conn: sqlite3.Connection) -> None:
     CREATE INDEX IF NOT EXISTS idx_finding_items_finding ON finding_items(finding_id);
     """)
 
+    existing_item_cols = [row["name"] for row in conn.execute("PRAGMA table_info(finding_items)").fetchall()]
+    if "duplicate_group_id" not in existing_item_cols:
+        conn.execute("ALTER TABLE finding_items ADD COLUMN duplicate_group_id TEXT")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_finding_items_dupgroup ON finding_items(duplicate_group_id)")
+    if "similarity_score" not in existing_item_cols:
+        conn.execute("ALTER TABLE finding_items ADD COLUMN similarity_score REAL")
+    if "match_type" not in existing_item_cols:
+        conn.execute("ALTER TABLE finding_items ADD COLUMN match_type TEXT")
+    if "match_reasons" not in existing_item_cols:
+        conn.execute("ALTER TABLE finding_items ADD COLUMN match_reasons TEXT")
+    if "is_golden_record" not in existing_item_cols:
+        conn.execute("ALTER TABLE finding_items ADD COLUMN is_golden_record INTEGER DEFAULT 0")
+    if "review_verdict" not in existing_item_cols:
+        conn.execute("ALTER TABLE finding_items ADD COLUMN review_verdict TEXT DEFAULT 'PENDING'")
+    if "suggested_action" not in existing_item_cols:
+        conn.execute("ALTER TABLE finding_items ADD COLUMN suggested_action TEXT")
+
 
 def init_db():
     with get_connection() as conn:
         conn.executescript(SCHEMA)
-        _migrate(conn)  # addition line for Week 3
-        _migrate_finding_items(conn)  # add this call
+        _migrate(conn)
+        _migrate_finding_items(conn)
 
 
 def create_run(model: str, table_names: List[str], notes: str = "") -> str:
@@ -113,24 +142,30 @@ def create_run(model: str, table_names: List[str], notes: str = "") -> str:
 
 def save_finding(run_id: str, table: str, column: str, hypothesis: str, check_code: str,
                  result_summary: str, severity: str, confidence: str, reusable: bool,
-                 raw_result: Any) -> str:
+                 raw_result: Any, category: str = "CORRECTNESS", rule_scope: str = "UNIVERSAL",
+                 industry: Optional[str] = None, fix_type: Optional[str] = None,
+                 auto_fix_value: Optional[str] = None, is_anomaly: bool = False) -> str:
     finding_id = str(uuid.uuid4())
     with get_connection() as conn:
         conn.execute(
             """INSERT INTO findings
             (id, run_id, table_name, column_name, hypothesis, check_code,
              result_summary, severity, confidence, reusable, raw_result,
-             created_at, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING')""",
+             created_at, status, category, rule_scope, industry, fix_type, auto_fix_value, is_anomaly)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, ?, ?, ?)""",
             (finding_id, run_id, table, column, hypothesis, check_code,
              result_summary, severity, confidence, int(bool(reusable)),
              json.dumps(raw_result, default=str),
-             datetime.now(timezone.utc).isoformat()),
+             datetime.now(timezone.utc).isoformat(),
+             category or "CORRECTNESS", rule_scope or "UNIVERSAL",
+             industry, fix_type, auto_fix_value, int(bool(is_anomaly))),
         )
     return finding_id
 
 
-def get_findings(run_id: Optional[str] = None, status: Optional[str] = None) -> List[Dict[str, Any]]:
+def get_findings(run_id: Optional[str] = None, status: Optional[str] = None,
+                 category: Optional[str] = None, rule_scope: Optional[str] = None,
+                 industry: Optional[str] = None, is_anomaly: Optional[bool] = None) -> List[Dict[str, Any]]:
     query = "SELECT * FROM findings WHERE 1=1"
     params: List[Any] = []
     if run_id:
@@ -139,6 +174,18 @@ def get_findings(run_id: Optional[str] = None, status: Optional[str] = None) -> 
     if status:
         query += " AND status = ?"
         params.append(status)
+    if category:
+        query += " AND category = ?"
+        params.append(category)
+    if rule_scope:
+        query += " AND rule_scope = ?"
+        params.append(rule_scope)
+    if industry:
+        query += " AND industry = ?"
+        params.append(industry)
+    if is_anomaly is not None:
+        query += " AND is_anomaly = ?"
+        params.append(1 if is_anomaly else 0)
     query += " ORDER BY created_at DESC"
 
     with get_connection() as conn:
@@ -169,23 +216,55 @@ def get_runs() -> List[Dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
-def get_stats(run_id: Optional[str] = None) -> Dict[str, int]:
-    query = "SELECT status, COUNT(*) as cnt FROM findings"
-    params: List[Any] = []
-    if run_id:
-        query += " WHERE run_id = ?"
-        params.append(run_id)
-    query += " GROUP BY status"
+def get_stats(run_id: Optional[str] = None) -> Dict[str, Any]:
     with get_connection() as conn:
-        rows = conn.execute(query, params).fetchall()
+        # Status counts
+        status_query = "SELECT status, COUNT(*) as cnt FROM findings WHERE 1=1"
+        params: List[Any] = []
+        if run_id:
+            status_query += " AND run_id = ?"
+            params.append(run_id)
+        status_query += " GROUP BY status"
+        rows = conn.execute(status_query, params).fetchall()
         stats = {"PENDING": 0, "APPROVED": 0, "REJECTED": 0}
         for r in rows:
             stats[r["status"]] = r["cnt"]
         stats["TOTAL"] = sum(v for k, v in stats.items())
+
+        # Category counts
+        cat_query = "SELECT category, COUNT(*) as cnt FROM findings WHERE 1=1"
+        if run_id:
+            cat_query += " AND run_id = ?"
+        cat_query += " GROUP BY category"
+        cat_rows = conn.execute(cat_query, params).fetchall()
+        categories = {"ACTIVENESS": 0, "DUPLICATE": 0, "COMPLETENESS": 0, "CORRECTNESS": 0}
+        for r in cat_rows:
+            if r["category"] in categories:
+                categories[r["category"]] = r["cnt"]
+        stats["categories"] = categories
+
+        # Anomaly count
+        anom_query = "SELECT COUNT(*) as cnt FROM findings WHERE is_anomaly = 1"
+        if run_id:
+            anom_query += " AND run_id = ?"
+        anom_row = conn.execute(anom_query, params).fetchone()
+        stats["anomalies"] = anom_row["cnt"] if anom_row else 0
+
+        # Rule scope counts
+        scope_query = "SELECT rule_scope, COUNT(*) as cnt FROM findings WHERE 1=1"
+        if run_id:
+            scope_query += " AND run_id = ?"
+        scope_query += " GROUP BY rule_scope"
+        scope_rows = conn.execute(scope_query, params).fetchall()
+        scopes = {"UNIVERSAL": 0, "INDUSTRY_SPECIFIC": 0, "CLIENT_SPECIFIC": 0}
+        for r in scope_rows:
+            if r["rule_scope"] in scopes:
+                scopes[r["rule_scope"]] = r["cnt"]
+        stats["rule_scopes"] = scopes
+
         return stats
 
 
-# Addition for Week 3
 def mark_promoted(finding_id: str) -> bool:
     with get_connection() as conn:
         cur = conn.execute(
@@ -195,7 +274,6 @@ def mark_promoted(finding_id: str) -> bool:
         return cur.rowcount > 0
 
 
-# Addition for Week 3
 def get_promotable_findings(run_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """Approved + marked reusable by LLM + not yet promoted + has captured code."""
     query = """SELECT * FROM findings
@@ -218,11 +296,20 @@ def save_finding_items(finding_id: str, items: List[Dict[str, Any]]) -> List[str
             conn.execute(
                 """INSERT INTO finding_items
                 (id, finding_id, row_index, key_field, key_value, issue_detail,
-                 corrected_data, status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING', ?)""",
+                 corrected_data, status, created_at,
+                 duplicate_group_id, similarity_score, match_type, match_reasons,
+                 is_golden_record, review_verdict, suggested_action)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (item_id, finding_id, item.get("row_index"), item.get("key_field"),
                  str(item.get("key_value")), item.get("issue_detail"), item.get("corrected_data", ""),
-                 datetime.now(timezone.utc).isoformat()),
+                 datetime.now(timezone.utc).isoformat(),
+                 item.get("duplicate_group_id"),
+                 item.get("similarity_score"),
+                 item.get("match_type"),
+                 item.get("match_reasons"),
+                 1 if item.get("is_golden_record") else 0,
+                 item.get("review_verdict", "PENDING"),
+                 item.get("suggested_action", "")),
             )
             ids.append(item_id)
     return ids
@@ -231,7 +318,8 @@ def save_finding_items(finding_id: str, items: List[Dict[str, Any]]) -> List[str
 def get_finding_items(finding_id: str) -> List[Dict[str, Any]]:
     with get_connection() as conn:
         rows = conn.execute(
-            "SELECT * FROM finding_items WHERE finding_id = ? ORDER BY row_index", (finding_id,)
+            "SELECT * FROM finding_items WHERE finding_id = ? ORDER BY duplicate_group_id, is_golden_record DESC, row_index",
+            (finding_id,)
         ).fetchall()
         return [dict(r) for r in rows]
 
@@ -248,7 +336,107 @@ def update_item_decision(item_id: str, status: str, corrected_data: str = "", co
         return cur.rowcount > 0
 
 
-def get_item_stats(finding_id: str) -> Dict[str, int]:
+def update_item_verdict(item_id: str, verdict: str, comment: str = "", corrected_data: str = "") -> bool:
+    """Updates review verdict (DUPLICATE, UNIQUE, TO_BE_CONFIRMED) on a finding item."""
+    if verdict not in ("DUPLICATE", "UNIQUE", "TO_BE_CONFIRMED", "PENDING", "APPROVED", "REJECTED"):
+        raise ValueError(f"Invalid verdict: {verdict}")
+
+    status = "APPROVED" if verdict in ("DUPLICATE", "UNIQUE") else "PENDING"
+    with get_connection() as conn:
+        cur = conn.execute(
+            """UPDATE finding_items SET review_verdict = ?, status = ?,
+               corrected_data = CASE WHEN ? != '' THEN ? ELSE corrected_data END,
+               reviewed_at = ?, reviewer_comment = ? WHERE id = ?""",
+            (verdict, status, corrected_data, corrected_data,
+             datetime.now(timezone.utc).isoformat(), comment, item_id),
+        )
+        return cur.rowcount > 0
+
+
+def set_golden_record(finding_id: str, group_id: str, golden_item_id: str) -> bool:
+    """Marks one record as Golden within a duplicate group, and marks siblings for merge."""
+    with get_connection() as conn:
+        # 1. Fetch golden item key value
+        golden_row = conn.execute(
+            "SELECT key_value FROM finding_items WHERE id = ? AND finding_id = ?",
+            (golden_item_id, finding_id),
+        ).fetchone()
+        if not golden_row:
+            return False
+        golden_key = golden_row["key_value"]
+
+        # 2. Reset other records in the same group to non-golden
+        conn.execute(
+            """UPDATE finding_items
+               SET is_golden_record = 0,
+                   review_verdict = 'DUPLICATE',
+                   status = 'APPROVED',
+                   suggested_action = 'MERGE_INTO_GOLDEN (Target: ' || ? || ')',
+                   reviewed_at = ?
+               WHERE finding_id = ? AND duplicate_group_id = ? AND id != ?""",
+            (golden_key, datetime.now(timezone.utc).isoformat(), finding_id, group_id, golden_item_id),
+        )
+
+        # 3. Mark target record as golden
+        conn.execute(
+            """UPDATE finding_items
+               SET is_golden_record = 1,
+                   review_verdict = 'DUPLICATE',
+                   status = 'APPROVED',
+                   suggested_action = 'RETAIN_AS_GOLDEN (Master Record)',
+                   reviewed_at = ?
+               WHERE id = ?""",
+            (datetime.now(timezone.utc).isoformat(), golden_item_id),
+        )
+        return True
+
+
+def get_duplicate_groups(finding_id: str) -> List[Dict[str, Any]]:
+    """Returns clustered duplicate groups with their members, similarity scores, and golden record."""
+    items = get_finding_items(finding_id)
+    grouped: Dict[str, List[Dict[str, Any]]] = {}
+
+    for item in items:
+        gid = item.get("duplicate_group_id") or "UNGROUPED"
+        grouped.setdefault(gid, []).append(item)
+
+    clusters = []
+    for gid, members in grouped.items():
+        if gid == "UNGROUPED" and len(members) == 0:
+            continue
+        max_score = max((m.get("similarity_score") or 0.0) for m in members)
+        match_types = [m.get("match_type") for m in members if m.get("match_type")]
+        primary_type = match_types[0] if match_types else ("EXACT" if max_score == 100.0 else "PROBABLE")
+        golden = next((m for m in members if m.get("is_golden_record") == 1), None)
+
+        clusters.append({
+            "duplicate_group_id": gid,
+            "similarity_score": max_score,
+            "match_type": primary_type,
+            "golden_record_id": golden["id"] if golden else None,
+            "golden_record_key": golden["key_value"] if golden else None,
+            "member_count": len(members),
+            "members": members,
+        })
+
+    clusters.sort(key=lambda c: c["similarity_score"], reverse=True)
+    return clusters
+
+
+def apply_auto_fix(item_id: str, fix_value: str) -> bool:
+    """Applies auto-fill value to an item and marks it reviewed/approved."""
+    with get_connection() as conn:
+        cur = conn.execute(
+            """UPDATE finding_items
+               SET corrected_data = ?, status = 'APPROVED',
+                   reviewed_at = ?, reviewer_comment = 'Auto-fix default applied'
+               WHERE id = ?""",
+            (fix_value, datetime.now(timezone.utc).isoformat(), item_id),
+        )
+        return cur.rowcount > 0
+
+
+def get_item_stats(finding_id: str) -> Dict[str, Any]:
     with get_connection() as conn:
         rows = conn.execute(
             "SELECT status, COUNT(*) as cnt FROM finding_items WHERE finding_id = ? GROUP BY status",
@@ -258,4 +446,15 @@ def get_item_stats(finding_id: str) -> Dict[str, int]:
         for r in rows:
             stats[r["status"]] = r["cnt"]
         stats["TOTAL"] = sum(v for k, v in stats.items())
+
+        verdict_rows = conn.execute(
+            "SELECT review_verdict, COUNT(*) as cnt FROM finding_items WHERE finding_id = ? GROUP BY review_verdict",
+            (finding_id,),
+        ).fetchall()
+        verdicts = {"PENDING": 0, "DUPLICATE": 0, "UNIQUE": 0, "TO_BE_CONFIRMED": 0}
+        for r in verdict_rows:
+            if r["review_verdict"] in verdicts:
+                verdicts[r["review_verdict"]] = r["cnt"]
+        stats["verdicts"] = verdicts
+
         return stats

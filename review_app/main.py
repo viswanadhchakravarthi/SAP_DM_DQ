@@ -33,14 +33,42 @@ class DecisionRequest(BaseModel):
     comment: Optional[str] = ""
 
 
+class ItemVerdictRequest(BaseModel):
+    verdict: str  # DUPLICATE, UNIQUE, TO_BE_CONFIRMED, APPROVED, REJECTED
+    comment: Optional[str] = ""
+    corrected_data: Optional[str] = ""
+
+
+class GoldenRecordRequest(BaseModel):
+    golden_item_id: str
+
+
+class AutoFillRequest(BaseModel):
+    fix_value: str
+
+
 @app.get("/api/runs")
 def list_runs():
     return store.get_runs()
 
 
 @app.get("/api/findings")
-def list_findings(run_id: Optional[str] = None, status: Optional[str] = None):
-    return store.get_findings(run_id=run_id, status=status)
+def list_findings(
+    run_id: Optional[str] = None,
+    status: Optional[str] = None,
+    category: Optional[str] = None,
+    rule_scope: Optional[str] = None,
+    industry: Optional[str] = None,
+    is_anomaly: Optional[bool] = None,
+):
+    return store.get_findings(
+        run_id=run_id,
+        status=status,
+        category=category,
+        rule_scope=rule_scope,
+        industry=industry,
+        is_anomaly=is_anomaly,
+    )
 
 
 @app.get("/api/findings/{finding_id}")
@@ -66,7 +94,7 @@ def stats(run_id: Optional[str] = None):
     return store.get_stats(run_id=run_id)
 
 
-# new additon in week 3
+# Promotion endpoints
 # ======================================
 from explorer_agent.memory.promotion import promote_approved_findings
 
@@ -83,9 +111,7 @@ def list_skills():
     return registry.get_all_skills()
 
 
-# ======================================
-
-# new addition for details in UI's view details
+# Finding items & duplicate governance endpoints
 # ======================================
 class ItemDecisionRequest(BaseModel):
     status: str
@@ -98,6 +124,19 @@ def get_finding_items(finding_id: str):
     return store.get_finding_items(finding_id)
 
 
+@app.get("/api/findings/{finding_id}/duplicate-groups")
+def get_finding_duplicate_groups(finding_id: str):
+    return store.get_duplicate_groups(finding_id)
+
+
+@app.post("/api/findings/{finding_id}/duplicate-groups/{group_id}/golden-record")
+def set_golden_record_endpoint(finding_id: str, group_id: str, body: GoldenRecordRequest):
+    ok = store.set_golden_record(finding_id, group_id, body.golden_item_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Finding or item not found")
+    return {"ok": True, "finding_id": finding_id, "group_id": group_id, "golden_item_id": body.golden_item_id}
+
+
 @app.post("/api/finding-items/{item_id}/decision")
 def decide_item(item_id: str, body: ItemDecisionRequest):
     if body.status not in ("APPROVED", "REJECTED"):
@@ -106,6 +145,24 @@ def decide_item(item_id: str, body: ItemDecisionRequest):
     if not ok:
         raise HTTPException(status_code=404, detail="Item not found")
     return {"ok": True, "item_id": item_id, "status": body.status}
+
+
+@app.post("/api/finding-items/{item_id}/verdict")
+def set_item_verdict_endpoint(item_id: str, body: ItemVerdictRequest):
+    if body.verdict not in ("DUPLICATE", "UNIQUE", "TO_BE_CONFIRMED", "PENDING", "APPROVED", "REJECTED"):
+        raise HTTPException(status_code=400, detail="Invalid verdict")
+    ok = store.update_item_verdict(item_id, body.verdict, body.comment or "", body.corrected_data or "")
+    if not ok:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return {"ok": True, "item_id": item_id, "verdict": body.verdict}
+
+
+@app.post("/api/finding-items/{item_id}/autofill")
+def apply_autofill_endpoint(item_id: str, body: AutoFillRequest):
+    ok = store.apply_auto_fix(item_id, body.fix_value)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return {"ok": True, "item_id": item_id, "auto_fixed_value": body.fix_value}
 
 
 @app.get("/api/findings/{finding_id}/item-stats")

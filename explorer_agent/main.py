@@ -159,6 +159,12 @@ def main():
                 result_summary=f["summary"], severity=f["severity"],
                 confidence=f["confidence"], reusable=f["reusable"],
                 raw_result=f.get("raw_tool_result"),
+                category=f.get("category", "CORRECTNESS"),
+                rule_scope=f.get("rule_scope", "UNIVERSAL"),
+                industry=f.get("industry"),
+                fix_type=f.get("fix_type"),
+                auto_fix_value=f.get("auto_fix_value"),
+                is_anomaly=bool(f.get("is_anomaly", False)),
             )
             detail_rows = f.get("detail_rows", [])
             if detail_rows:
