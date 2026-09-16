@@ -78,13 +78,16 @@ def _get_local_llm():
     global _local_llm_instance
     if _local_llm_instance is None:
         from llama_cpp import Llama  # imported here, not at module load time
-
+        import os
         logger.info(
             "Loading local GGUF model from %s (n_ctx=%d)...",
             Config.LOCAL_LLM_MODEL_PATH, Config.LOCAL_LLM_N_CTX,
         )
         _local_llm_instance = Llama(
-            model_path=Config.LOCAL_LLM_MODEL_PATH, n_ctx=Config.LOCAL_LLM_N_CTX,
+            model_path=Config.LOCAL_LLM_MODEL_PATH, 
+            n_ctx=Config.LOCAL_LLM_N_CTX,
+            n_threads=os.cpu_count(),
+            verbose=False,
         )
     return _local_llm_instance
 

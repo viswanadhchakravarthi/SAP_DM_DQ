@@ -2,6 +2,7 @@ import json
 import uuid
 from typing import Any, List, Optional, Sequence, Union, Dict
 
+from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import BaseMessage, AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.outputs import ChatResult, ChatGeneration
@@ -119,9 +120,13 @@ class QwenCoderGGUFChatModel(BaseChatModel):
             )
 
         try:
-            args = json.loads(raw_text)
+            # strict=False: the grammar lets the model emit literal newlines/tabs
+            # inside strings (common in multi-line `code` fields), which strict
+            # json.loads rejects as "Invalid control character".
+            args = json.loads(raw_text, strict=False)
         except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to parse JSON: {e}\nRaw: {raw_text[:500]}") from e
+            # OutputParserException => llm_providers retries on the same model.
+            raise OutputParserException(f"Failed to parse JSON: {e}\nRaw: {raw_text[:500]}") from e
 
         tool_call = {"name": tool_name, "args": args, "id": str(uuid.uuid4()), "type": "tool_call"}
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content="", tool_calls=[tool_call]))])
