@@ -42,21 +42,25 @@ For EACH check, provide TWO code fields:
 
 2. `detail_code` (STRONGLY RECOMMENDED whenever the check identifies specific offending
    rows - e.g. duplicates, invalid formats, nulls in a key field): pandas code that sets
-   `detail_rows` - a list of dicts, one per offending row, each with keys:
+   `result` to a list of dicts, one per offending row, each with keys:
    - row_index (int): the dataframe row index
-   - key_field (str): name of a natural key column for this table (e.g. "LIFNR")
+   - key_field (str): name of a natural key column for this table (e.g. 'LIFNR')
    - key_value (the value of that key field for this row)
    - issue_detail (str): a specific, human-readable description of what's wrong with
-     THIS row (e.g. "Duplicate tax number: 123-45-6789")
+     THIS row (e.g. 'Duplicate tax number: 123-45-6789')
 
-Cap detail_rows at around 50 rows if many rows match (use .head(50) or similar).
+Cap that list at around 50 rows if many rows match (use .head(50) or similar).
 This detail_code output is for LOCAL HUMAN REVIEW ONLY and is never sent back to you.
 
+Both code fields must be complete, valid Python. Inside code use ONLY single quotes (') \
+for string literals - never double quotes, and no f-strings; build strings with + and str().
+
 Example of a check WITH detail_code (duplicate tax numbers):
-  code: "result = df['STCD1'].duplicated(keep=False).sum()"
-  detail_code: "dupes = df[df.duplicated(subset=['STCD1'], keep=False) & df['STCD1'].notna()]\n\
-result = [{'row_index': int(idx), 'key_field': 'LIFNR', 'key_value': str(row['LIFNR']), \
-'issue_detail': f\"Duplicate tax number: {row['STCD1']}\"} for idx, row in dupes.head(50).iterrows()]"
+  code:
+    result = int(df['STCD1'].duplicated(keep=False).sum())
+  detail_code:
+    dupes = df[df.duplicated(subset=['STCD1'], keep=False) & df['STCD1'].notna()]
+    result = [{'row_index': int(idx), 'key_field': 'LIFNR', 'key_value': str(row['LIFNR']), 'issue_detail': 'Duplicate tax number: ' + str(row['STCD1'])} for idx, row in dupes.head(50).iterrows()]
 """
 
 REFLECTOR_SYSTEM_PROMPT = """You are reviewing outcomes of MULTIPLE data quality checks that \

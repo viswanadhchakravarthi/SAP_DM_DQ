@@ -23,7 +23,7 @@ class ProposedCheck(BaseModel):
     code: str = Field(description="Pandas code; must set `result` to an AGGREGATE value "
                                   "(count/pct/bool/small dict) - sent to LLM for reflection.")
     detail_code: Optional[str] = Field(default=None, description=
-        "OPTIONAL pandas code that sets `detail_rows` - a list of dicts, one per offending "
+        "OPTIONAL pandas code that sets `result` to a list of dicts, one per offending "
         "row, each with keys: row_index (int), key_field (str, name of a natural key column "
         "like LIFNR), key_value (that row's key value), issue_detail (str, what's wrong with "
         "THIS row). This is for LOCAL HUMAN REVIEW ONLY - it is NEVER sent back to the LLM. "
@@ -36,6 +36,22 @@ class ProposedCheck(BaseModel):
     def normalize_none_string(cls, v):
         if v in (None, "None", "null", ""):
             return None
+        return v
+
+    # Runs after normalize_none_string. Rejecting uncompilable code here turns
+    # it into a ValidationError, which llm_providers retries on the same model
+    # (then falls back) - instead of the plan being accepted and the code
+    # failing later in the sandbox. Typical cause: a small model emitting an
+    # unescaped `"` under grammar-constrained JSON, which ends the string early.
+    @field_validator("code", "detail_code")
+    @classmethod
+    def must_compile(cls, v, info):
+        if v is None:
+            return v
+        try:
+            compile(v, f"<{info.field_name}>", "exec")
+        except SyntaxError as e:
+            raise ValueError(f"{info.field_name} is not valid Python: {e.msg} (line {e.lineno})") from e
         return v
 
 class CheckPlan(BaseModel):
