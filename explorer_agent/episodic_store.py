@@ -83,6 +83,8 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE findings ADD COLUMN auto_fix_value TEXT")
     if "is_anomaly" not in existing_cols:
         conn.execute("ALTER TABLE findings ADD COLUMN is_anomaly INTEGER DEFAULT 0")
+    if "sub_type" not in existing_cols:
+        conn.execute("ALTER TABLE findings ADD COLUMN sub_type TEXT")
 
 
 def _migrate_finding_items(conn: sqlite3.Connection) -> None:
@@ -130,6 +132,45 @@ def init_db():
         _migrate_finding_items(conn)
 
 
+# --- Per-pillar review-verdict vocabulary -----------------------------------
+# finding_items.review_verdict is a plain TEXT column with no DB-level CHECK
+# constraint; the vocabulary below is validated in Python (update_item_verdict)
+# and lets each pillar's UI show a disposition that actually fits the kind of
+# decision being made, instead of one generic Approve/Reject everywhere.
+ITEM_DISPOSITIONS = {
+    "DUPLICATE": {"DUPLICATE", "UNIQUE", "TO_BE_CONFIRMED"},
+    "ACTIVENESS": {"ALLOWED_ACTIVE", "CONFIRMED_INACTIVE"},
+    "COMPLETENESS": {"MISSING_VALUE", "NOT_APPLICABLE", "INTENTIONALLY_BLANK", "REQUIRES_BUSINESS_INPUT"},
+    "CORRECTNESS_RELATIONSHIP": {
+        "CONFIRMED_ISSUE", "FALSE_POSITIVE", "REQUIRES_MASTER_DATA_CORRECTION",
+        "REQUIRES_BUSINESS_REVIEW", "EXCLUDE_FROM_PROFILING",
+    },
+    "ANOMALY": {"LEGITIMATE", "NEEDS_INVESTIGATION"},
+}
+ALL_VALID_VERDICTS = {"PENDING", "APPROVED", "REJECTED"}.union(*ITEM_DISPOSITIONS.values())
+# Verdicts meaning "still needs follow-up" keep status=PENDING; every other
+# verdict resolves the item to status=APPROVED.
+_OPEN_VERDICTS = {
+    "PENDING", "TO_BE_CONFIRMED", "REQUIRES_BUSINESS_INPUT",
+    "REQUIRES_BUSINESS_REVIEW", "REQUIRES_MASTER_DATA_CORRECTION", "NEEDS_INVESTIGATION",
+}
+
+_RELATIONSHIP_KEYWORDS = (
+    "not found in", "does not exist in", "missing from", "not present in",
+    "orphan", "referential", "master data", "cross-table", "tables[",
+)
+
+
+def _effective_sub_type(row: Dict[str, Any]) -> Optional[str]:
+    """sub_type, falling back to a keyword heuristic for rows an LLM left null."""
+    if row.get("category") != "CORRECTNESS":
+        return None
+    if row.get("sub_type"):
+        return row["sub_type"]
+    text = f"{row.get('hypothesis','')} {row.get('result_summary','')} {row.get('check_code','')}".lower()
+    return "RELATIONSHIP_INTEGRITY" if any(k in text for k in _RELATIONSHIP_KEYWORDS) else "VALUE_ERROR"
+
+
 def create_run(model: str, table_names: List[str], notes: str = "") -> str:
     run_id = str(uuid.uuid4())
     with get_connection() as conn:
@@ -144,21 +185,22 @@ def save_finding(run_id: str, table: str, column: str, hypothesis: str, check_co
                  result_summary: str, severity: str, confidence: str, reusable: bool,
                  raw_result: Any, category: str = "CORRECTNESS", rule_scope: str = "UNIVERSAL",
                  industry: Optional[str] = None, fix_type: Optional[str] = None,
-                 auto_fix_value: Optional[str] = None, is_anomaly: bool = False) -> str:
+                 auto_fix_value: Optional[str] = None, is_anomaly: bool = False,
+                 sub_type: Optional[str] = None) -> str:
     finding_id = str(uuid.uuid4())
     with get_connection() as conn:
         conn.execute(
             """INSERT INTO findings
             (id, run_id, table_name, column_name, hypothesis, check_code,
              result_summary, severity, confidence, reusable, raw_result,
-             created_at, status, category, rule_scope, industry, fix_type, auto_fix_value, is_anomaly)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, ?, ?, ?)""",
+             created_at, status, category, rule_scope, industry, fix_type, auto_fix_value, is_anomaly, sub_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, ?, ?, ?, ?)""",
             (finding_id, run_id, table, column, hypothesis, check_code,
              result_summary, severity, confidence, int(bool(reusable)),
              json.dumps(raw_result, default=str),
              datetime.now(timezone.utc).isoformat(),
              category or "CORRECTNESS", rule_scope or "UNIVERSAL",
-             industry, fix_type, auto_fix_value, int(bool(is_anomaly))),
+             industry, fix_type, auto_fix_value, int(bool(is_anomaly)), sub_type),
         )
     return finding_id
 
@@ -190,13 +232,64 @@ def get_findings(run_id: Optional[str] = None, status: Optional[str] = None,
 
     with get_connection() as conn:
         rows = conn.execute(query, params).fetchall()
-        return [dict(r) for r in rows]
+        results = [dict(r) for r in rows]
+        for r in results:
+            r["effective_sub_type"] = _effective_sub_type(r)
+        return results
+
+
+# Columns for the review app's list view - excludes the heavy check_code/
+# raw_result blobs so switching pillar tabs doesn't ship every finding's full
+# profile-result/check-code payload over the wire (see CR3: lazy loading).
+_LIGHT_COLUMNS = (
+    "id, run_id, table_name, column_name, hypothesis, result_summary, severity, "
+    "confidence, reusable, created_at, status, reviewed_at, reviewer_comment, promoted_at, "
+    "category, sub_type, rule_scope, industry, fix_type, auto_fix_value, is_anomaly"
+)
+
+
+def get_findings_light(run_id: Optional[str] = None, status: Optional[str] = None,
+                       category: Optional[str] = None, rule_scope: Optional[str] = None,
+                       industry: Optional[str] = None, is_anomaly: Optional[bool] = None) -> List[Dict[str, Any]]:
+    """Same filters as get_findings(), without the heavy check_code/raw_result columns."""
+    query = f"SELECT {_LIGHT_COLUMNS} FROM findings WHERE 1=1"
+    params: List[Any] = []
+    if run_id:
+        query += " AND run_id = ?"
+        params.append(run_id)
+    if status:
+        query += " AND status = ?"
+        params.append(status)
+    if category:
+        query += " AND category = ?"
+        params.append(category)
+    if rule_scope:
+        query += " AND rule_scope = ?"
+        params.append(rule_scope)
+    if industry:
+        query += " AND industry = ?"
+        params.append(industry)
+    if is_anomaly is not None:
+        query += " AND is_anomaly = ?"
+        params.append(1 if is_anomaly else 0)
+    query += " ORDER BY created_at DESC"
+
+    with get_connection() as conn:
+        rows = conn.execute(query, params).fetchall()
+        results = [dict(r) for r in rows]
+        for r in results:
+            r["effective_sub_type"] = _effective_sub_type(r)
+        return results
 
 
 def get_finding(finding_id: str) -> Optional[Dict[str, Any]]:
     with get_connection() as conn:
         row = conn.execute("SELECT * FROM findings WHERE id = ?", (finding_id,)).fetchone()
-        return dict(row) if row else None
+        if not row:
+            return None
+        result = dict(row)
+        result["effective_sub_type"] = _effective_sub_type(result)
+        return result
 
 
 def update_decision(finding_id: str, status: str, comment: str = "") -> bool:
@@ -337,11 +430,11 @@ def update_item_decision(item_id: str, status: str, corrected_data: str = "", co
 
 
 def update_item_verdict(item_id: str, verdict: str, comment: str = "", corrected_data: str = "") -> bool:
-    """Updates review verdict (DUPLICATE, UNIQUE, TO_BE_CONFIRMED) on a finding item."""
-    if verdict not in ("DUPLICATE", "UNIQUE", "TO_BE_CONFIRMED", "PENDING", "APPROVED", "REJECTED"):
+    """Updates the pillar-appropriate review verdict on a finding item (see ITEM_DISPOSITIONS)."""
+    if verdict not in ALL_VALID_VERDICTS:
         raise ValueError(f"Invalid verdict: {verdict}")
 
-    status = "APPROVED" if verdict in ("DUPLICATE", "UNIQUE") else "PENDING"
+    status = "PENDING" if verdict in _OPEN_VERDICTS else "APPROVED"
     with get_connection() as conn:
         cur = conn.execute(
             """UPDATE finding_items SET review_verdict = ?, status = ?,
@@ -353,8 +446,31 @@ def update_item_verdict(item_id: str, verdict: str, comment: str = "", corrected
         return cur.rowcount > 0
 
 
+def set_cluster_verdict(finding_id: str, group_id: str, verdict: str, comment: str = "") -> int:
+    """Applies one verdict to every item in a duplicate cluster at once (e.g. cluster-level 'To Be Confirmed')."""
+    if verdict not in ALL_VALID_VERDICTS:
+        raise ValueError(f"Invalid verdict: {verdict}")
+
+    status = "PENDING" if verdict in _OPEN_VERDICTS else "APPROVED"
+    with get_connection() as conn:
+        cur = conn.execute(
+            """UPDATE finding_items SET review_verdict = ?, status = ?,
+               reviewed_at = ?, reviewer_comment = ?
+               WHERE finding_id = ? AND duplicate_group_id = ?""",
+            (verdict, status, datetime.now(timezone.utc).isoformat(), comment, finding_id, group_id),
+        )
+        return cur.rowcount
+
+
 def set_golden_record(finding_id: str, group_id: str, golden_item_id: str) -> bool:
-    """Marks one record as Golden within a duplicate group, and marks siblings for merge."""
+    """Marks one record as Golden within a duplicate group, and marks siblings for merge.
+
+    No longer called by review_app's API - the golden-record workflow was removed from the
+    Duplicates UI (per-record/per-cluster verdicts replace it). Retained, along with the
+    is_golden_record column, for backward compatibility with historical data: this codebase's
+    SQLite migrations are additive-only (guarded ALTER TABLE, no drop/rebuild path), so old
+    golden-record markings stay readable via get_duplicate_groups() rather than being discarded.
+    """
     with get_connection() as conn:
         # 1. Fetch golden item key value
         golden_row = conn.execute(

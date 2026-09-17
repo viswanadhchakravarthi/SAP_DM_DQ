@@ -57,9 +57,18 @@ def explore_table(graph, table_name, df, dictionary, all_tables, skill_retriever
     hints_text = ("Relevant hints from past projects (suggestions, not rules - verify relevance):\n"
                   + "\n".join(hint_lines)) if hint_lines else "No relevant memory hints for this table."
 
-    other_tables_note = (f"Other registered tables available via tables['<name>']: "
-                         f"{[t for t in all_tables if t != table_name]}"
-                         if len(all_tables) > 1 else "No other tables registered.")
+    def _describe_other_table(name: str) -> str:
+        key_cols = sorted({
+            field for (tbl, field), desc in dictionary.items()
+            if tbl == name and "key" in desc.lower()
+        })
+        return f"{name} (key: {', '.join(key_cols)})" if key_cols else name
+
+    other_tables_note = (
+        "Other registered tables available via tables['<name>'] for cross-table lookups: "
+        f"{[_describe_other_table(t) for t in all_tables if t != table_name]}"
+        if len(all_tables) > 1 else "No other tables registered."
+    )
 
     cache_note = (f"Columns with EXISTING approved checks (deprioritize unless new insight): "
                   f"{sorted(columns_with_cache)}" if columns_with_cache else "No cached checks exist yet.")
@@ -165,6 +174,7 @@ def main():
                 fix_type=f.get("fix_type"),
                 auto_fix_value=f.get("auto_fix_value"),
                 is_anomaly=bool(f.get("is_anomaly", False)),
+                sub_type=f.get("sub_type"),
             )
             detail_rows = f.get("detail_rows", [])
             if detail_rows:

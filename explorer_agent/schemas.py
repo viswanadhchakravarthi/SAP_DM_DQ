@@ -9,6 +9,10 @@ Confidence = Literal["HIGH", "MEDIUM", "LOW"]
 Category = Literal["ACTIVENESS", "DUPLICATE", "COMPLETENESS", "CORRECTNESS"]
 RuleScope = Literal["UNIVERSAL", "INDUSTRY_SPECIFIC", "CLIENT_SPECIFIC"]
 FixType = Literal["AUTO_FIXABLE", "MANUAL_FIX"]
+# For CORRECTNESS checks only: a single wrong field value vs. a cross-table/
+# referential-integrity mismatch - the review app shows different correction
+# controls for each (a "corrected value" field makes no sense for the latter).
+SubType = Literal["VALUE_ERROR", "RELATIONSHIP_INTEGRITY"]
 
 class Reflection(BaseModel):
     """Structured judgment of a single data-quality check's result."""
@@ -23,6 +27,7 @@ class Reflection(BaseModel):
     fix_type: Optional[FixType] = Field(default=None, description="AUTO_FIXABLE or MANUAL_FIX (especially for completeness)")
     auto_fix_value: Optional[str] = Field(default=None, description="Recommended default value if AUTO_FIXABLE")
     is_anomaly: Optional[bool] = Field(default=False, description="True if this finding is a statistical outlier/anomaly")
+    sub_type: Optional[SubType] = Field(default=None, description="For CORRECTNESS only: VALUE_ERROR (single bad value) or RELATIONSHIP_INTEGRITY (cross-table/referential mismatch)")
 
 class ProposedCheck(BaseModel):
     column: str = Field(description="Primary column this check targets")
@@ -34,6 +39,7 @@ class ProposedCheck(BaseModel):
     auto_fix_value: Optional[str] = Field(default=None, description="Recommended default replacement value if AUTO_FIXABLE")
     is_anomaly: bool = Field(default=False, description="True if this check detects statistical distribution outliers")
     duplicate_fields: Optional[List[str]] = Field(default=None, description="Fields evaluated for duplicate matching (e.g. ['NAME1', 'PSTLZ', 'STCD1'])")
+    sub_type: Optional[SubType] = Field(default=None, description="For CORRECTNESS checks only: VALUE_ERROR (single bad value) or RELATIONSHIP_INTEGRITY (cross-table/referential mismatch, e.g. a vendor missing from the general vendor master)")
     code: str = Field(description="Pandas code; must set `result` to an AGGREGATE value "
                                   "(count/pct/bool/small dict) - sent to LLM for reflection.")
     detail_code: Optional[str] = Field(default=None, description=
@@ -65,6 +71,13 @@ class ProposedCheck(BaseModel):
     def normalize_rule_scope(cls, v):
         if not v or v not in ("UNIVERSAL", "INDUSTRY_SPECIFIC", "CLIENT_SPECIFIC"):
             return "UNIVERSAL"
+        return v
+
+    @field_validator("sub_type", mode="before")
+    @classmethod
+    def normalize_sub_type(cls, v):
+        if v not in ("VALUE_ERROR", "RELATIONSHIP_INTEGRITY"):
+            return None
         return v
 
     # Runs after normalize_none_string. Rejecting uncompilable code here turns
@@ -99,6 +112,7 @@ class FindingJudgment(BaseModel):
     fix_type: Optional[FixType] = Field(default=None)
     auto_fix_value: Optional[str] = Field(default=None)
     is_anomaly: Optional[bool] = Field(default=False)
+    sub_type: Optional[SubType] = Field(default=None)
 
     @field_validator("category", mode="before")
     @classmethod
@@ -112,6 +126,13 @@ class FindingJudgment(BaseModel):
     def normalize_rule_scope(cls, v):
         if not v or v not in ("UNIVERSAL", "INDUSTRY_SPECIFIC", "CLIENT_SPECIFIC"):
             return "UNIVERSAL"
+        return v
+
+    @field_validator("sub_type", mode="before")
+    @classmethod
+    def normalize_sub_type(cls, v):
+        if v not in ("VALUE_ERROR", "RELATIONSHIP_INTEGRITY"):
+            return None
         return v
 
 class ReflectionBatch(BaseModel):

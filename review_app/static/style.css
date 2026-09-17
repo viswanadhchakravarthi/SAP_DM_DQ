@@ -525,44 +525,6 @@ pre {
   transition: background 0.15s;
 }
 
-.btn-mark-golden {
-  background: #854d0e !important;
-  color: #fef08a !important;
-  border: 1px solid #ca8a04 !important;
-  font-weight: 600;
-}
-
-.btn-mark-golden:hover {
-  background: #a16207 !important;
-}
-
-.btn-verdict-duplicate {
-  border-color: #dc2626 !important;
-  color: #fca5a5 !important;
-}
-
-.btn-verdict-duplicate:hover {
-  background: #450a0a !important;
-}
-
-.btn-verdict-unique {
-  border-color: #16a34a !important;
-  color: #86efac !important;
-}
-
-.btn-verdict-unique:hover {
-  background: #052e16 !important;
-}
-
-.btn-verdict-tbc {
-  border-color: #d97706 !important;
-  color: #fde68a !important;
-}
-
-.btn-verdict-tbc:hover {
-  background: #451a03 !important;
-}
-
 .verdict-badge {
   font-size: 11px;
   padding: 2px 8px;
@@ -570,19 +532,19 @@ pre {
   font-weight: 600;
 }
 
-.verdict-DUPLICATE { background: #7f1d1d; color: #fecaca; }
-.verdict-UNIQUE { background: #14532d; color: #bbf7d0; }
-.verdict-TO_BE_CONFIRMED { background: #78350f; color: #fef3c7; }
+/* Generic disposition tones - reused by every pillar's verdict buttons/badges
+   instead of one hardcoded class per verdict literal (~15+ verdict values). */
+.btn-tone-positive, .verdict-tone-positive { border-color: #16a34a !important; color: #86efac !important; }
+.btn-tone-warning,  .verdict-tone-warning  { border-color: #d97706 !important; color: #fde68a !important; }
+.btn-tone-negative, .verdict-tone-negative { border-color: #dc2626 !important; color: #fca5a5 !important; }
 
-.merge-recommendation-box {
-  margin-top: 12px;
-  padding: 8px 12px;
-  background: #1e1b2e;
-  border: 1px dashed #6366f1;
-  border-radius: 6px;
-  font-size: 12px;
-  color: #c7d2fe;
-}
+.verdict-tone-positive { background: #14532d; }
+.verdict-tone-warning { background: #78350f; }
+.verdict-tone-negative { background: #7f1d1d; }
+
+.btn-tone-positive:hover { background: #052e16 !important; }
+.btn-tone-warning:hover  { background: #451a03 !important; }
+.btn-tone-negative:hover { background: #450a0a !important; }
 
 .btn-autofill {
   background: #065f46 !important;
@@ -597,4 +559,156 @@ pre {
 
 .btn-autofill:hover {
   background: #047857 !important;
+}
+
+/* CR1/CR2: hover tooltips for SAP table.column references and pillar tabs */
+.sap-ref {
+  border-bottom: 1px dotted #667280;
+  cursor: help;
+}
+
+.sap-tooltip {
+  position: fixed;
+  z-index: 1000;
+  background: #1c1f2e;
+  border: 1px solid #3a3f55;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #e6e6e6;
+  max-width: 320px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.sap-tooltip.hidden {
+  display: none;
+}
+
+.sap-tooltip .tt-title {
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 4px;
+}
+
+.sap-tooltip .tt-line {
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* CR3: lazy-load placeholder buttons in the detail modal */
+.btn-lazy-load {
+  background: #1f2230;
+  border: 1px solid #3a4f7a;
+  color: #8ab4f8;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-lazy-load:hover {
+  background: #2a2e42;
+}
+
+/* CR4: "Run Explorer Agent" button, modal form, and job status banner */
+.btn-run-explorer {
+  background: #0ea5e9 !important;
+  border-color: #38bdf8 !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+.btn-run-explorer:hover {
+  background: #0284c7 !important;
+}
+
+.run-explorer-form,
+#runExplorerModalBody .form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+#runExplorerModalBody label {
+  font-size: 12px;
+  color: #9aa0b4;
+}
+
+#runExplorerModalBody input[type="text"],
+#runExplorerModalBody input[type="number"],
+#runExplorerModalBody select {
+  background: #0f1117;
+  border: 1px solid #3a3f55;
+  color: #e6e6e6;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.checkbox-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px !important;
+  color: #cbd5e1;
+}
+
+.checkbox-row {
+  flex-direction: row !important;
+  align-items: center;
+}
+
+.advanced-options {
+  border-top: 1px solid #2d3142;
+  padding-top: 10px;
+  margin-bottom: 14px;
+}
+
+.advanced-options summary {
+  cursor: pointer;
+  color: #8ab4f8;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.run-explorer-error {
+  color: #f87171;
+  min-height: 16px;
+}
+
+.run-explorer-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.job-banner {
+  margin-top: 12px;
+  background: #13151f;
+  border: 1px solid #2d3248;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.job-banner.hidden {
+  display: none;
+}
+
+.job-banner-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.job-log-pre {
+  margin-top: 8px;
+  max-height: 200px;
+  overflow-y: auto;
 }

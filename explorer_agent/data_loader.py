@@ -53,6 +53,33 @@ def get_field_description(dictionary: Dict[Tuple[str, str], str], table_name: st
     return dictionary.get((table_name.upper(), column.upper()), "No description available")
 
 
+def load_data_dictionary_structured(path: str) -> Dict[str, Dict[str, str]]:
+    """
+    Loads the same Data_Dictionary.csv as load_data_dictionary(), but keeps
+    description/data_type/notes as separate fields instead of concatenating
+    them - used by review_app to render structured hover tooltips.
+
+    Returns: {"TABLE.FIELD": {"description":..., "data_type":..., "notes":...}}
+    """
+    df = pd.read_csv(path)
+    df.columns = [c.strip() for c in df.columns]
+
+    table_col, field_col, desc_col, datatype_col, notes_col = "Table", "Field", "Description", "Data_Type", "Notes"
+
+    lookup = {}
+    for _, row in df.iterrows():
+        table = str(row.get(table_col, "")).strip().upper()
+        field = str(row.get(field_col, "")).strip().upper()
+        if not table or not field:
+            continue
+        lookup[f"{table}.{field}"] = {
+            "description": str(row.get(desc_col, "")).strip(),
+            "data_type": str(row.get(datatype_col, "")).strip(),
+            "notes": str(row.get(notes_col, "")).strip(),
+        }
+    return lookup
+
+
 def load_all_tables(data_dir: str, table_files: Dict[str, str]) -> Dict[str, pd.DataFrame]:
     """
     table_files: {"LFA1": "LFA1.csv", "LFB1": "LFB1.csv", ...}

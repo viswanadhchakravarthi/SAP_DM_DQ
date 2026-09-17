@@ -83,6 +83,14 @@ data:
     LFM1: LFM1.csv
   dictionary_file: Data_Dictionary.csv
 
+  # One-line business meaning per SAP table, shown in the review app's
+  # hover tooltips (the dictionary CSV above only covers columns).
+  table_descriptions:
+    LFA1: "Vendor Master (General Data) - one row per vendor, client-independent (name, address, tax numbers)."
+    LFB1: "Vendor Master (Company Code Data) - a vendor's financial settings within one company code (payment terms, reconciliation account, blocks)."
+    LFBK: "Vendor Master (Bank Details) - one or more bank accounts registered for a vendor."
+    LFM1: "Vendor Master (Purchasing Organization Data) - a vendor's purchasing terms within one purchasing organization."
+
 profiling:
   top_n_frequent: 10
   max_checks_per_table: 25

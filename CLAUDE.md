@@ -75,6 +75,22 @@ This design intentionally costs exactly 2 LLM calls per table regardless of colu
 
 Each `ProposedCheck` (`explorer_agent/schemas.py`) has two code fields: `code` (must set an AGGREGATE `result` — this is what gets sent to the reflector LLM) and optional `detail_code` (sets `detail_rows`, a list of offending rows for local human review only — **never sent to any LLM**).
 
+### 4-pillar classification and duplicate governance
+
+Every `ProposedCheck` and `FindingJudgment` (`explorer_agent/schemas.py`) also carries a classification, produced by the same planner/reflector LLM calls (no extra calls):
+
+- **`category`** — `ACTIVENESS` / `DUPLICATE` / `COMPLETENESS` / `CORRECTNESS`, the four profiling pillars.
+- **`rule_scope`** — `UNIVERSAL` / `INDUSTRY_SPECIFIC` / `CLIENT_SPECIFIC`, a 3-tier scope for how broadly a check generalizes (invalid values fall back to `UNIVERSAL`/`CORRECTNESS` via `field_validator`s, never raise).
+- **`fix_type`** (`AUTO_FIXABLE` / `MANUAL_FIX`) + `auto_fix_value` — mainly for `COMPLETENESS` findings.
+- **`is_anomaly`** — statistical outlier flag.
+- **`duplicate_fields`** — for `DUPLICATE`-category checks, the fields used for match logic (e.g. `["NAME1", "PSTLZ", "STCD1"]`).
+
+Duplicate matching itself runs as pure Python, not LLM-generated logic: `explorer_agent/profiler_primitives.py` provides `fuzzy_token_similarity` (token-sorted `difflib.SequenceMatcher`, normalizes abbreviations like "XYZ Private Limited" vs "XYZ Pvt Ltd"), `cluster_duplicates` (disjoint-set clustering over dynamic composite fields — name, postal code, tax IDs, street, city, phone, email — into `100%` Exact / `80–99%` Probable / `70–79%` Similar tiers), and `detect_distribution_outliers` (IQR/quantile outlier detection, e.g. for payment-term anomalies). `explorer_agent/sandbox.py` injects these three functions (plus `re`/`datetime`) into the sandboxed execution namespace so a check's `code`/`detail_code` can call them directly instead of the LLM having to reimplement matching logic.
+
+For `DUPLICATE` checks, `detail_code` populates per-row `duplicate_group_id`, `similarity_score`, `match_type` (`EXACT`/`PROBABLE`/`SIMILAR`), and `match_reasons` (`episodic_store.py`'s `finding_items` table indexes on `duplicate_group_id`). Each row also tracks its own human review state, separate from the finding-level `PENDING`/`APPROVED`/`REJECTED` status: `review_verdict` (`PENDING`/`DUPLICATE`/`UNIQUE`/`TO_BE_CONFIRMED`), `is_golden_record`, and `suggested_action` (e.g. `MERGE_INTO_GOLDEN (Target: <id>)` / `RETAIN_AS_GOLDEN (Master Record)`, auto-derived when a golden record is set).
+
+The review app exposes this on top: `/api/findings/{id}/duplicate-groups` groups a finding's rows by `duplicate_group_id`; `/api/findings/{id}/duplicate-groups/{group_id}/golden-record` marks one row golden (clears golden status on the rest of the cluster and rewrites every member's `suggested_action`); `/api/finding-items/{id}/verdict` records the human's `DUPLICATE`/`UNIQUE`/`TO_BE_CONFIRMED` call on a row. `/api/findings` and `/api/stats` accept `category`/`rule_scope` filters for the classification breakdown, and `/api/finding-items/{id}/autofill` applies `auto_fix_value` for `AUTO_FIXABLE` `COMPLETENESS` rows.
+
 ### Cache fast path (`explorer_agent/cache_runner.py`)
 
 Before invoking the planner for a column, `explore_table()` checks for existing approved skills for that exact table+column (`skill_registry.get_skills_for_table_column`). If found, the cached check code re-runs against fresh data and the planner LLM call is skipped entirely for that column (only the reflector may still run, unless `SKIP_REFLECTION_ON_CACHE_HIT` is set, in which case a rule-based heuristic replaces it). `explorer_agent/metrics.py` tracks LLM call counts and cache hit/miss counts per run to make these savings concrete.
@@ -91,7 +107,7 @@ LLM-generated pandas code executes in a separate `multiprocessing` process (spaw
 
 ### Review app (`review_app/`)
 
-FastAPI app (`review_app/main.py`) serving a JSON API over `episodic_store` plus the promotion pipeline, with `review_app/static/` (vanilla HTML/CSS/JS) mounted last so `/api/*` routes take precedence. Key endpoints: `/api/runs`, `/api/findings`, `/api/findings/{id}/decision` (human approve/reject — the gate that `promotion.py` reads from), `/api/promote`, `/api/skills`, plus per-row endpoints (`/api/findings/{id}/items`, `/api/finding-items/{id}/decision`) for reviewing individual `detail_rows`.
+FastAPI app (`review_app/main.py`) serving a JSON API over `episodic_store` plus the promotion pipeline, with `review_app/static/` (vanilla HTML/CSS/JS) mounted last so `/api/*` routes take precedence. Key endpoints: `/api/runs`, `/api/findings` (filterable by `category`/`rule_scope`), `/api/findings/{id}/decision` (human approve/reject — the gate that `promotion.py` reads from), `/api/promote`, `/api/skills`, `/api/stats` (counts by category/rule_scope), plus per-row endpoints for reviewing individual `detail_rows`: `/api/findings/{id}/items`, `/api/finding-items/{id}/decision`, `/api/finding-items/{id}/verdict` and `/api/finding-items/{id}/autofill` (the `COMPLETENESS` auto-fix workflow), and duplicate governance (`/api/findings/{id}/duplicate-groups`, `/api/findings/{id}/duplicate-groups/{group_id}/golden-record`) — see "4-pillar classification and duplicate governance" above.
 
 ### Local LLM support (`explorer_agent/local_llms.py`)
 

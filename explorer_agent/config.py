@@ -157,6 +157,8 @@ class Config:
     DATA_DICTIONARY_FILE = _env_str(
         "EXPLORER_DICTIONARY_FILE", _get("data.dictionary_file", "Data_Dictionary.csv")
     )
+    # One-line business meaning per table, for review_app's hover tooltips.
+    SAP_TABLE_DESCRIPTIONS = _get("data.table_descriptions", {})
 
     # Batch profiling settings
     PROFILING_TOP_N_FREQUENT = _env_int("EXPLORER_PROFILE_TOP_N", _get("profiling.top_n_frequent", 10))

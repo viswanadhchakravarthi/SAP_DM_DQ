@@ -59,6 +59,10 @@ Structure checks across the FOUR MAJOR DATA PROFILING PILLARS:
    - STATISTICAL ANOMALY DETECTION: Distribution outliers (e.g. payment terms ZTERM where 95% are <= 60 days but some are 365 days).
      You can use the built-in helper `detect_distribution_outliers(df['ZTERM'])` or compute IQR/percentile fences.
    - Tag category="CORRECTNESS", and set is_anomaly=True if it is a statistical distribution outlier.
+   - Also set `sub_type` for every CORRECTNESS check:
+     * sub_type="VALUE_ERROR" for a single-field format/value/outlier problem (a "corrected value" makes sense here).
+     * sub_type="RELATIONSHIP_INTEGRITY" for a cross-table/referential check (e.g. "vendor exists in LFB1 but has no
+       row in LFA1") - there is no single corrected value for these, only a business decision, so never suggest one.
 
 RULE SCOPE CLASSIFICATION (set rule_scope for each check):
 - UNIVERSAL: Standard SAP integrity mandatory across all implementations (e.g. Reconciliation account present, Tax uniqueness, primary key).
@@ -78,6 +82,23 @@ For EACH check, provide TWO code fields:
    For DUPLICATE checks: ensure dicts also include duplicate_group_id, similarity_score, match_type, match_reasons.
    (Calling `cluster_duplicates(df, key_col='LIFNR')` returns this format automatically).
 
+CROSS-TABLE ENRICHMENT (make issue_detail actionable, not just an identifier): your `detail_code` has access to
+`tables['<OTHER_TABLE>']` for EVERY other registered table (a dict of full DataFrames, keyed by table name), not
+just `df` (the current table). PERFORMANCE - detail_code runs under a strict wall-clock timeout: first narrow to the
+offending rows and slice to at most 50 of them (e.g. `subset = df[mask].head(50)`), and only THEN do any per-row
+string building or cross-table lookups on that small subset - never enrich all matching rows before capping, and
+build lookup dicts (`.to_dict()`) once outside any loop, never inside one. When a row references a business key
+that also exists in another table (e.g. LIFNR in LFB1 also identifies a row in LFA1), look up human-readable
+context BEFORE building issue_detail:
+    name_lookup = tables['LFA1'].set_index('LIFNR')['NAME1'].to_dict()
+    vendor_name = name_lookup.get(row['LIFNR'], 'Unknown')
+Build each lookup dict ONCE outside any loop with `.to_dict()`, and ALWAYS read it with `.get(key, 'Unknown')`
+(never direct indexing) since the key may not exist in the other table. Compose issue_detail as a business-readable
+sentence, not a bare code: e.g. 'Vendor: 473 - ABC Supplies Pvt Ltd | Company Code: 1000 | Payment Terms: XXXX '
+'(expected/common: YYYY) | Suggested Action: Confirm with the AP team whether this term is intentional.' Include
+whatever of vendor id/name, company code, current value, expected/reference value, and a suggested action is
+actually available from the current table plus one cross-table lookup - do not invent fields that aren't there.
+
 Cap detail_rows at around 50 rows (use .head(50)).
 Inside code use ONLY single quotes (') for string literals - never double quotes, and no f-strings; build strings with + and str().
 """
@@ -86,7 +107,9 @@ REFLECTOR_SYSTEM_PROMPT = """You are reviewing outcomes of MULTIPLE data quality
 just ran, in one batch across Activeness, Duplicate, Completeness, and Correctness pillars. \
 For EACH result (identified by check_index), decide if it's a genuine issue, its severity/confidence, \
 a one-line summary, category, rule_scope, fix_type, auto_fix_value, is_anomaly, and whether it would \
-generalize to other similar datasets/clients (reusable)."""
+generalize to other similar datasets/clients (reusable). For CORRECTNESS results, also confirm or set \
+sub_type: VALUE_ERROR for a single wrong field value, RELATIONSHIP_INTEGRITY for a cross-table/referential \
+mismatch (no single corrected value applies to those)."""
 
 
 class TableExplorerState(TypedDict):
@@ -158,6 +181,7 @@ def build_explorer_graph(planner_structured, reflector_structured):
             fix_type = j.fix_type or (check.fix_type if check else None)
             auto_fix_value = j.auto_fix_value or (check.auto_fix_value if check else None)
             is_anomaly = bool(j.is_anomaly or (check.is_anomaly if check else False))
+            sub_type = j.sub_type or (check.sub_type if check else None)
 
             findings.append({
                 "table": state["table_name"], "column": r["column"],
@@ -167,6 +191,7 @@ def build_explorer_graph(planner_structured, reflector_structured):
                 "category": category, "rule_scope": rule_scope,
                 "industry": industry, "fix_type": fix_type,
                 "auto_fix_value": auto_fix_value, "is_anomaly": is_anomaly,
+                "sub_type": sub_type,
                 "raw_tool_result": str(r["result"]),
                 "_check_index": r["check_index"],
             })
