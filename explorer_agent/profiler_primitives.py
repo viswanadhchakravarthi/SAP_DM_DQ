@@ -56,212 +56,33 @@ def cluster_duplicates(
     max_clusters: int = 30,
 ) -> List[Dict[str, Any]]:
     """
-    Cluster duplicate records using dynamic composite matching across available columns:
-    Name, Postal Code, Tax Identifiers, Street, City, etc.
+    Sandbox/legacy helper kept for previously generated check code and cached
+    skills. Delegates to explorer_agent.duplicate_detector, the single
+    implementation of duplicate matching (the planner no longer writes
+    duplicate checks). ``min_similarity`` is ignored in favour of
+    ``duplicates.fuzzy_name_threshold`` in config.yaml.
 
-    Returns a list of detail dicts formatted for finding_items storage and human review.
+    Returns detail dicts formatted for finding_items storage and human review.
     """
-    if key_col not in df.columns or name_col not in df.columns:
-        return []
+    from .duplicate_detector import find_duplicate_groups  # local import: detector imports this module
 
     if tax_cols is None:
-        tax_cols = [c for c in ["STCD1", "STCD2", "STCD3", "STCD4", "STCEG"] if c in df.columns]
-    else:
-        tax_cols = [c for c in tax_cols if c in df.columns]
-
+        tax_cols = ["STCD1", "STCD2", "STCD3", "STCD4", "STCEG"]
     if extra_cols is None:
-        extra_cols = [c for c in ["ORT01", "STRAS", "LAND1", "TELF1", "SMTP_ADDR"] if c in df.columns]
-    else:
-        extra_cols = [c for c in extra_cols if c in df.columns]
-
-    postal_col_active = postal_col if postal_col and postal_col in df.columns else None
-
-    # Pre-clean records
-    records = []
-    for idx, row in df.iterrows():
-        key_val = str(row[key_col]) if pd.notna(row[key_col]) else str(idx)
-        name_val = str(row[name_col]) if pd.notna(row[name_col]) else ""
-        norm_name = normalize_text(name_val)
-        postal_val = str(row[postal_col_active]).strip() if postal_col_active and pd.notna(row[postal_col_active]) else ""
-
-        taxes = {}
-        for tc in tax_cols:
-            tv = str(row[tc]).strip() if pd.notna(row[tc]) else ""
-            if tv:
-                taxes[tc] = tv
-
-        extras = {}
-        for ec in extra_cols:
-            ev = str(row[ec]).strip() if pd.notna(row[ec]) else ""
-            if ev:
-                extras[ec] = ev
-
-        records.append({
-            "row_index": int(idx),
-            "key": key_val,
-            "name": name_val,
-            "norm_name": norm_name,
-            "postal": postal_val,
-            "taxes": taxes,
-            "extras": extras,
-        })
-
-    # Grouping via Union-Find (Disjoint Set)
-    n = len(records)
-    parent = list(range(n))
-    pair_metadata = {}
-
-    def find(i):
-        if parent[i] == i:
-            return i
-        parent[i] = find(parent[i])
-        return parent[i]
-
-    def union(i, j, score, match_type, reasons):
-        root_i = find(i)
-        root_j = find(j)
-        if root_i != root_j:
-            parent[root_i] = root_j
-        pair_key = (min(i, j), max(i, j))
-        pair_metadata[pair_key] = (score, match_type, reasons)
-
-    # 1. Exact Tax Match
-    tax_index: Dict[Tuple[str, str], List[int]] = {}
-    for i, r in enumerate(records):
-        for tc, tv in r["taxes"].items():
-            if tv:
-                tax_index.setdefault((tc, tv), []).append(i)
-
-    for (tc, tv), indices in tax_index.items():
-        if len(indices) > 1:
-            for a in range(len(indices)):
-                for b in range(a + 1, len(indices)):
-                    idx_a, idx_b = indices[a], indices[b]
-                    reasons = f"Exact match on Tax ID ({tc}: '{tv}')"
-                    score = 100.0
-                    if records[idx_a]["name"] and records[idx_b]["name"]:
-                        name_sim = fuzzy_token_similarity(records[idx_a]["name"], records[idx_b]["name"])
-                        reasons += f"; Name similarity: {name_sim}% ('{records[idx_a]['name']}' vs '{records[idx_b]['name']}')"
-                    union(idx_a, idx_b, score, "EXACT", reasons)
-
-    # 2. Exact Name + Postal Code Match
-    name_postal_index: Dict[Tuple[str, str], List[int]] = {}
-    for i, r in enumerate(records):
-        if r["norm_name"] and r["postal"]:
-            name_postal_index.setdefault((r["norm_name"], r["postal"]), []).append(i)
-
-    for (n_norm, post), indices in name_postal_index.items():
-        if len(indices) > 1:
-            for a in range(len(indices)):
-                for b in range(a + 1, len(indices)):
-                    idx_a, idx_b = indices[a], indices[b]
-                    reasons = f"Exact match on Normalized Name ('{records[idx_a]['name']}') and Postal Code ('{post}')"
-                    union(idx_a, idx_b, 100.0, "EXACT", reasons)
-
-    # 3. Fuzzy Name Matching (+ Postal / City verification)
-    # Check pairwise on candidates (optimizing for reasonable dataset sizes)
-    step = 1 if n <= 400 else max(1, n // 400)
-    for i in range(0, n, step):
-        r_i = records[i]
-        if not r_i["norm_name"] or len(r_i["norm_name"]) < 4:
-            continue
-        for j in range(i + 1, min(i + 120, n)):
-            r_j = records[j]
-            if not r_j["norm_name"] or len(r_j["norm_name"]) < 4:
-                continue
-
-            sim = fuzzy_token_similarity(r_i["norm_name"], r_j["norm_name"])
-            if sim >= min_similarity:
-                same_postal = bool(r_i["postal"] and r_j["postal"] and r_i["postal"] == r_j["postal"])
-                same_city = bool(
-                    r_i["extras"].get("ORT01") and r_j["extras"].get("ORT01") and
-                    normalize_text(r_i["extras"]["ORT01"]) == normalize_text(r_j["extras"]["ORT01"])
-                )
-
-                if sim >= 95.0 or (sim >= 80.0 and (same_postal or same_city)):
-                    m_type = "PROBABLE" if sim < 100.0 else "EXACT"
-                    reasons = f"Fuzzy Name match ({sim}%: '{r_i['name']}' vs '{r_j['name']}')"
-                    if same_postal:
-                        reasons += f"; Matching Postal Code ({r_i['postal']})"
-                    if same_city:
-                        reasons += f"; Matching City ({r_i['extras'].get('ORT01')})"
-                    union(i, j, sim, m_type, reasons)
-                elif sim >= 70.0 and (same_postal or same_city):
-                    reasons = f"Similar Name ({sim}%: '{r_i['name']}' vs '{r_j['name']}') in same area (Postal: {r_i['postal'] or '-'}, City: {r_i['extras'].get('ORT01') or '-'})"
-                    union(i, j, sim, "SIMILAR", reasons)
-
-    # Assemble groups
-    groups: Dict[int, List[int]] = {}
-    for i in range(n):
-        root = find(i)
-        groups.setdefault(root, []).append(i)
-
-    # Filter only genuine multi-item clusters
-    dup_clusters = [members for members in groups.values() if len(members) > 1]
-    dup_clusters.sort(key=lambda m: len(m), reverse=True)
-    dup_clusters = dup_clusters[:max_clusters]
-
-    detail_items: List[Dict[str, Any]] = []
-    for g_idx, members in enumerate(dup_clusters, 1):
-        group_id = f"DUP-GRP-{g_idx:03d}"
-
-        # Find maximum similarity and reasons for this cluster
-        cluster_scores = []
-        cluster_reasons = []
-        cluster_types = []
-        for a in range(len(members)):
-            for b in range(a + 1, len(members)):
-                pair_key = (min(members[a], members[b]), max(members[a], members[b]))
-                if pair_key in pair_metadata:
-                    score, m_type, reasons = pair_metadata[pair_key]
-                    cluster_scores.append(score)
-                    cluster_types.append(m_type)
-                    cluster_reasons.append(reasons)
-
-        group_score = max(cluster_scores) if cluster_scores else 85.0
-        if 100.0 in cluster_scores:
-            group_type = "EXACT"
-        elif any(t == "PROBABLE" for t in cluster_types) or group_score >= 80.0:
-            group_type = "PROBABLE"
-        else:
-            group_type = "SIMILAR"
-
-        primary_reason = cluster_reasons[0] if cluster_reasons else f"Composite duplicate cluster with similarity {group_score}%"
-
-        # Heuristic for default initial candidate golden record: record with most populated non-empty fields
-        def record_completeness(m_idx):
-            r = records[m_idx]
-            count = (1 if r["name"] else 0) + (1 if r["postal"] else 0) + len(r["taxes"]) + len(r["extras"])
-            return count
-
-        best_member = max(members, key=record_completeness)
-
-        for m_idx in members:
-            rec = records[m_idx]
-            is_initial_golden = 1 if m_idx == best_member else 0
-
-            # Build field diff / comparison context
-            field_summary = f"Name: {rec['name'] or 'BLANK'} | Postal: {rec['postal'] or 'BLANK'}"
-            if rec["taxes"]:
-                field_summary += " | Taxes: " + ", ".join(f"{k}={v}" for k, v in rec["taxes"].items())
-            if rec["extras"].get("ORT01"):
-                field_summary += f" | City: {rec['extras']['ORT01']}"
-
-            detail_items.append({
-                "row_index": rec["row_index"],
-                "key_field": key_col,
-                "key_value": rec["key"],
-                "issue_detail": f"[{group_type} {group_score}%] {primary_reason}. Details: {field_summary}",
-                "duplicate_group_id": group_id,
-                "similarity_score": group_score,
-                "match_type": group_type,
-                "match_reasons": primary_reason,
-                "is_golden_record": is_initial_golden,
-                "review_verdict": "PENDING",
-                "suggested_action": "RETAIN_AS_GOLDEN" if is_initial_golden else f"MERGE_INTO_GOLDEN (Target: {records[best_member]['key']})",
-            })
-
-    return detail_items
+        extra_cols = ["ORT01", "STRAS", "LAND1", "TELF1", "SMTP_ADDR"]
+    identifiers = [c for c in tax_cols + ["TELF1", "SMTP_ADDR"] if c in df.columns and (c in tax_cols or c in extra_cols)]
+    location = [c for c in [postal_col, "STRAS", "ORT01"] if c and c in df.columns and (c == postal_col or c in extra_cols)]
+    rules = {
+        "key": [key_col] if key_col in df.columns else [],
+        "name": name_col,
+        "identifiers": [[c] for c in dict.fromkeys(identifiers)],
+        "location": location,
+        "display": [c for c in [name_col, *location, *identifiers] if c in df.columns],
+        "label": "records",
+    }
+    rows, _ = find_duplicate_groups(df, rules)
+    allowed_groups = {f"DUP-{n:03d}" for n in range(1, max_clusters + 1)}
+    return [r for r in rows if r["duplicate_group_id"] in allowed_groups]
 
 
 def detect_distribution_outliers(

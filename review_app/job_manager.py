@@ -28,13 +28,14 @@ _LOG_TAIL_MAX_LINES = 1000
 class JobState:
     job_id: str
     cli_args: List[str]
-    status: str = "RUNNING"  # RUNNING | COMPLETED | FAILED
+    status: str = "RUNNING"  # RUNNING | COMPLETED | FAILED | STOPPED
     started_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     finished_at: Optional[str] = None
     return_code: Optional[int] = None
     log_lines: collections.deque = field(default_factory=lambda: collections.deque(maxlen=_LOG_TAIL_MAX_LINES))
     lock: threading.Lock = field(default_factory=threading.Lock)
     process: Optional[subprocess.Popen] = None
+    stop_requested: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         with self.lock:
@@ -63,7 +64,10 @@ def _stream_output(job: JobState) -> None:
     return_code = proc.wait()
     with job.lock:
         job.return_code = return_code
-        job.status = "COMPLETED" if return_code == 0 else "FAILED"
+        if job.stop_requested:
+            job.status = "STOPPED"
+        else:
+            job.status = "COMPLETED" if return_code == 0 else "FAILED"
         job.finished_at = datetime.now(timezone.utc).isoformat()
 
 
@@ -92,6 +96,34 @@ def start_job(cli_args: List[str]) -> str:
     thread = threading.Thread(target=_stream_output, args=(job,), daemon=True)
     thread.start()
     return job_id
+
+
+def stop_job(job_id: str) -> bool:
+    """Kill a running job's process tree. Returns False if the job isn't running.
+
+    The explorer spawns sandbox child processes, so on Windows the whole tree
+    is killed via taskkill /T; elsewhere terminate() is sent to the main process.
+    The final STOPPED status is recorded by _stream_output once the process exits.
+    """
+    job = _jobs.get(job_id)
+    if job is None:
+        raise KeyError(job_id)
+    with job.lock:
+        if job.status != "RUNNING" or job.process is None:
+            return False
+        job.stop_requested = True
+        proc = job.process
+
+    if sys.platform == "win32":
+        subprocess.run(
+            ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    else:
+        proc.terminate()
+    return True
 
 
 def get_job(job_id: str) -> Optional[Dict[str, Any]]:

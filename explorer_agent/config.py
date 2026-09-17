@@ -152,11 +152,14 @@ class Config:
     )
     LOCAL_LLM_N_CTX = _env_int("EXPLORER_LOCAL_LLM_N_CTX", _get("llm.local.n_ctx", 4096))
 
-    # Data settings
-    SAP_TABLE_FILES = _get("data.tables", {})
+    # Data settings. Tables are not configured here: every CSV in a run's data
+    # folder (except the dictionary) is a table - see data_loader.discover_table_files.
     DATA_DICTIONARY_FILE = _env_str(
         "EXPLORER_DICTIONARY_FILE", _get("data.dictionary_file", "Data_Dictionary.csv")
     )
+    # Per-client uploaded data (review app page 1) - see explorer_agent/client_workspace.py.
+    CLIENT_DATA_DIR = _resolve_path(_env_str("EXPLORER_CLIENT_DATA_DIR", _get("data.client_data_dir", "client_data")))
+    MAX_UPLOAD_MB = _env_int("EXPLORER_MAX_UPLOAD_MB", _get("data.max_upload_mb", 200))
     # One-line business meaning per table, for review_app's hover tooltips.
     SAP_TABLE_DESCRIPTIONS = _get("data.table_descriptions", {})
 
@@ -171,6 +174,19 @@ class Config:
     MAX_ITERATIONS_PER_COLUMN = _env_int(
         "EXPLORER_MAX_ITERATIONS_PER_COLUMN", _get("profiling.max_iterations_per_column", 5)
     )
+
+    # Deterministic duplicate detection (explorer_agent/duplicate_detector.py) -
+    # runs without any LLM call; per-table matching rules live in config.yaml.
+    DUPLICATES_ENABLED = _env_bool("EXPLORER_DUPLICATES_ENABLED", _get("duplicates.enabled", True))
+    DUPLICATE_TABLE_RULES = _get("duplicates.tables", {})
+    DUPLICATE_FUZZY_NAME_THRESHOLD = _env_float(
+        "EXPLORER_DUPLICATE_FUZZY_THRESHOLD", _get("duplicates.fuzzy_name_threshold", 85)
+    )
+    DUPLICATE_MAX_IDENTIFIER_SHARE = _env_int(
+        "EXPLORER_DUPLICATE_MAX_IDENTIFIER_SHARE", _get("duplicates.max_identifier_share", 5)
+    )
+    DUPLICATE_MAX_BLOCK_SIZE = _env_int("EXPLORER_DUPLICATE_MAX_BLOCK", _get("duplicates.max_block_size", 500))
+    DUPLICATE_MAX_GROUPS = _env_int("EXPLORER_DUPLICATE_MAX_GROUPS", _get("duplicates.max_groups", 500))
 
     # Sandbox settings
     SANDBOX_TIMEOUT_SECONDS = _env_int("EXPLORER_SANDBOX_TIMEOUT", _get("sandbox.timeout_seconds", 10))
@@ -190,6 +206,10 @@ class Config:
         "EXPLORER_CHROMA_COLLECTION", _get("memory.chroma_collection", "procedural_skills")
     )
     RETRIEVAL_TOP_K = _env_int("EXPLORER_RETRIEVAL_TOP_K", _get("memory.retrieval_top_k", 3))
+    # Per-client knowledge (explorer_agent/client_knowledge.py), e.g. remembered duplicate decisions.
+    CLIENT_KNOWLEDGE_DIR = _resolve_path(
+        _env_str("EXPLORER_CLIENTS_DIR", _get("memory.clients_dir", "memory_store/clients"))
+    )
     DEDUP_DISTANCE_THRESHOLD = _env_float(
         "EXPLORER_DEDUP_THRESHOLD", _get("memory.dedup_distance_threshold", 0.25)
     )

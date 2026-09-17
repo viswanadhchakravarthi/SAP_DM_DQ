@@ -41,11 +41,8 @@ Structure checks across the FOUR MAJOR DATA PROFILING PILLARS:
    - Tag category="ACTIVENESS".
 
 2. DUPLICATE:
-   - Evaluate composite matching across dynamic fields: Name (NAME1), Postal Code (PSTLZ), Tax Numbers (STCD1, STCD2, STCD3, STCEG), City (ORT01), Street (STRAS).
-   - Use exact and fuzzy similarity matching (Exact 100%, Probable 80-99%, Similar 70-80%).
-   - In code: compute aggregate count of potential duplicate groups or records.
-   - In detail_code: You can use the built-in sandbox helper `cluster_duplicates(df, key_col='LIFNR', name_col='NAME1', postal_col='PSTLZ')` which automatically clusters duplicates and assigns duplicate_group_id, similarity_score, match_type, match_reasons, and initial golden record candidate!
-   - Tag category="DUPLICATE".
+   - Do NOT propose any DUPLICATE checks. Duplicate records are detected separately by a built-in,
+     deterministic matching engine; any DUPLICATE check you propose is discarded.
 
 3. COMPLETENESS:
    - Identify missing or blank mandatory fields (e.g. Payment Method ZWELS, Reconciliation Account AKONT, Tax Number STCD1, Company Code BUKRS).
@@ -79,8 +76,6 @@ For EACH check, provide TWO code fields:
    - key_field (str): name of natural key column (e.g. 'LIFNR')
    - key_value: value of key field for this row
    - issue_detail (str): specific description of the issue for THIS row
-   For DUPLICATE checks: ensure dicts also include duplicate_group_id, similarity_score, match_type, match_reasons.
-   (Calling `cluster_duplicates(df, key_col='LIFNR')` returns this format automatically).
 
 CROSS-TABLE ENRICHMENT (make issue_detail actionable, not just an identifier): your `detail_code` has access to
 `tables['<OTHER_TABLE>']` for EVERY other registered table (a dict of full DataFrames, keyed by table name), not
@@ -104,12 +99,14 @@ Inside code use ONLY single quotes (') for string literals - never double quotes
 """
 
 REFLECTOR_SYSTEM_PROMPT = """You are reviewing outcomes of MULTIPLE data quality checks that \
-just ran, in one batch across Activeness, Duplicate, Completeness, and Correctness pillars. \
+just ran, in one batch across Activeness, Completeness, and Correctness pillars. \
 For EACH result (identified by check_index), decide if it's a genuine issue, its severity/confidence, \
-a one-line summary, category, rule_scope, fix_type, auto_fix_value, is_anomaly, and whether it would \
+a one-line summary, rule_scope, fix_type, auto_fix_value, is_anomaly, and whether it would \
 generalize to other similar datasets/clients (reusable). For CORRECTNESS results, also confirm or set \
 sub_type: VALUE_ERROR for a single wrong field value, RELATIONSHIP_INTEGRITY for a cross-table/referential \
-mismatch (no single corrected value applies to those)."""
+mismatch (no single corrected value applies to those).
+Each check's category is fixed by the check itself - echo it, never reclassify it. Base each summary ONLY on \
+that check_index's own column, hypothesis and result value; never mention numbers or fields from another check."""
 
 
 class TableExplorerState(TypedDict):
@@ -135,7 +132,13 @@ def build_explorer_graph(planner_structured, reflector_structured):
         ])
         metrics.planner_llm_calls += 1
 
-        checks = plan.checks[:Config.MAX_TOTAL_CHECKS_PER_TABLE]
+        # Duplicates come from duplicate_detector.py (deterministic, no LLM) -
+        # drop any DUPLICATE check the planner proposed anyway.
+        checks = [c for c in plan.checks if c.category != "DUPLICATE"]
+        if len(checks) < len(plan.checks):
+            logger.info("Discarded %d planner DUPLICATE check(s) for table %s (handled by duplicate_detector)",
+                        len(plan.checks) - len(checks), state["table_name"])
+        checks = checks[:Config.MAX_TOTAL_CHECKS_PER_TABLE]
 
         logger.info("Planner proposed %d check(s) for table %s", len(checks), state["table_name"])
         return {"proposed_checks": checks}
@@ -152,8 +155,10 @@ def build_explorer_graph(planner_structured, reflector_structured):
             logger.warning("No successful checks to reflect on for table %s", state["table_name"])
             return {"findings": []}
 
+        proposed = state["proposed_checks"]
         summary_lines = [
-            f"[{r['check_index']}] column={r['column']} hypothesis=\"{r['hypothesis']}\" result={r['result']}"
+            f"[{r['check_index']}] category={proposed[r['check_index']].category} column={r['column']} "
+            f"hypothesis=\"{r['hypothesis']}\" result={r['result']}"
             for r in successful
         ]
         prompt = "Evaluate EACH check result below. Return a judgment per check_index.\n\n" + "\n".join(summary_lines)
@@ -174,8 +179,13 @@ def build_explorer_graph(planner_structured, reflector_structured):
             if r is None or not j.is_issue:
                 continue
 
-            # Inherit or override category and rule metadata
-            category = j.category or (check.category if check else "CORRECTNESS")
+            # The category belongs to the check the planner designed (its code tests
+            # that pillar). FindingJudgment.category defaults to CORRECTNESS, so
+            # letting the reflector win silently relabeled checks - e.g. a KOINH
+            # completeness check stored as a DUPLICATE finding.
+            category = check.category if check else (j.category or "CORRECTNESS")
+            if category == "DUPLICATE":
+                continue
             rule_scope = j.rule_scope or (check.rule_scope if check else "UNIVERSAL")
             industry = j.industry or (check.industry if check else None)
             fix_type = j.fix_type or (check.fix_type if check else None)

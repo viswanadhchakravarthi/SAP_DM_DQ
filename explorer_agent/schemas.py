@@ -46,8 +46,7 @@ class ProposedCheck(BaseModel):
         "OPTIONAL pandas code that sets `result` to a list of dicts, one per offending "
         "row, each with keys: row_index (int), key_field (str, name of a natural key column "
         "like LIFNR), key_value (that row's key value), issue_detail (str, what's wrong with "
-        "THIS row). For DUPLICATE checks, also include: duplicate_group_id (str), similarity_score (float 0-100), "
-        "match_type (EXACT/PROBABLE/SIMILAR), match_reasons (str). This is for LOCAL HUMAN REVIEW ONLY - it is NEVER sent back to the LLM. "
+        "THIS row). This is for LOCAL HUMAN REVIEW ONLY - it is NEVER sent back to the LLM. "
         "Keep detail_rows to a reasonable number of rows (e.g. cap at ~50) if many rows match.")
     compare_table: Optional[str] = Field(default=None,
         description="Optional; another registered table name if this is a cross-table check")

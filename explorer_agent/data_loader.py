@@ -3,13 +3,43 @@ Loads tabular data locally. Deliberately dumb/simple - no LLM involvement here.
 Extend with DB connectors (SAP HANA/Oracle/etc.) later without touching Explorer.
 """
 
-"""
-Loads tabular data locally. Deliberately dumb/simple - no LLM involvement here.
-"""
-
+import re
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 import pandas as pd
+
+# Required headers of a data dictionary CSV (Data_Type / Notes are optional).
+DICTIONARY_REQUIRED_COLUMNS = ("Table", "Field", "Description")
+_TABLE_NAME_MAX_LEN = 30
+
+
+def table_name_from_filename(filename: str) -> str:
+    """Table name for an uploaded/discovered file: 'lfa1.csv' -> 'LFA1', 'Vendor Master.csv' -> 'VENDOR_MASTER'."""
+    stem = Path(filename).stem
+    name = re.sub(r"[^A-Z0-9_]+", "_", stem.upper()).strip("_")
+    if not name or not name[0].isalpha():
+        raise ValueError(f"Can't derive a table name from '{filename}' - the file name must start with a letter")
+    if len(name) > _TABLE_NAME_MAX_LEN:
+        raise ValueError(f"Table name '{name}' is longer than {_TABLE_NAME_MAX_LEN} characters")
+    return name
+
+
+def discover_table_files(data_dir: str, dictionary_file: Optional[str] = None) -> Dict[str, str]:
+    """Every CSV in ``data_dir`` except the data dictionary: {"LFA1": "LFA1.csv", ...}.
+
+    Tables are no longer a fixed list in config.yaml - whatever table files a
+    client provides are profiled.
+    """
+    skip = (dictionary_file or "").lower()
+    tables: Dict[str, str] = {}
+    for path in sorted(Path(data_dir).glob("*.csv")):
+        if path.name.lower() == skip:
+            continue
+        name = table_name_from_filename(path.name)
+        if name in tables:
+            raise ValueError(f"Files '{tables[name]}' and '{path.name}' both map to table {name}")
+        tables[name] = path.name
+    return tables
 
 
 def load_table(path: str, sheet_name=None) -> pd.DataFrame:

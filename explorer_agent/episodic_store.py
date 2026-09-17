@@ -13,7 +13,7 @@ import uuid
 import json
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 from contextlib import contextmanager
 
 from .config import Config
@@ -123,6 +123,23 @@ def _migrate_finding_items(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE finding_items ADD COLUMN review_verdict TEXT DEFAULT 'PENDING'")
     if "suggested_action" not in existing_item_cols:
         conn.execute("ALTER TABLE finding_items ADD COLUMN suggested_action TEXT")
+    if "record_data" not in existing_item_cols:
+        # JSON object of the record's display fields (duplicate side-by-side comparison)
+        conn.execute("ALTER TABLE finding_items ADD COLUMN record_data TEXT")
+    if "decision_source" not in existing_item_cols:
+        # 'REMEMBERED' when review_verdict was pre-filled from client knowledge,
+        # 'HUMAN' once a reviewer sets it in this run.
+        conn.execute("ALTER TABLE finding_items ADD COLUMN decision_source TEXT")
+
+
+def _migrate_runs(conn: sqlite3.Connection) -> None:
+    existing_cols = [row["name"] for row in conn.execute("PRAGMA table_info(runs)").fetchall()]
+    if "client_id" not in existing_cols:
+        # Client (company) the data belongs to - see explorer_agent/client_knowledge.py.
+        conn.execute("ALTER TABLE runs ADD COLUMN client_id TEXT")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_runs_client ON runs(client_id)")
+    if "client_name" not in existing_cols:
+        conn.execute("ALTER TABLE runs ADD COLUMN client_name TEXT")
 
 
 def init_db():
@@ -130,6 +147,7 @@ def init_db():
         conn.executescript(SCHEMA)
         _migrate(conn)
         _migrate_finding_items(conn)
+        _migrate_runs(conn)
 
 
 # --- Per-pillar review-verdict vocabulary -----------------------------------
@@ -171,14 +189,33 @@ def _effective_sub_type(row: Dict[str, Any]) -> Optional[str]:
     return "RELATIONSHIP_INTEGRITY" if any(k in text for k in _RELATIONSHIP_KEYWORDS) else "VALUE_ERROR"
 
 
-def create_run(model: str, table_names: List[str], notes: str = "") -> str:
+def create_run(model: str, table_names: List[str], notes: str = "",
+               client_id: Optional[str] = None, client_name: Optional[str] = None) -> str:
     run_id = str(uuid.uuid4())
     with get_connection() as conn:
         conn.execute(
-            "INSERT INTO runs (run_id, started_at, model, table_names, notes) VALUES (?, ?, ?, ?, ?)",
-            (run_id, datetime.now(timezone.utc).isoformat(), model, json.dumps(table_names), notes),
+            """INSERT INTO runs (run_id, started_at, model, table_names, notes, client_id, client_name)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (run_id, datetime.now(timezone.utc).isoformat(), model, json.dumps(table_names), notes,
+             client_id, client_name),
         )
     return run_id
+
+
+def get_run(run_id: str) -> Optional[Dict[str, Any]]:
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM runs WHERE run_id = ?", (run_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def set_run_client(run_id: str, client_id: str, client_name: str) -> bool:
+    """Assign a client to a run created before clients existed (never re-assigns)."""
+    with get_connection() as conn:
+        cur = conn.execute(
+            "UPDATE runs SET client_id = ?, client_name = ? WHERE run_id = ? AND client_id IS NULL",
+            (client_id, client_name, run_id),
+        )
+        return cur.rowcount > 0
 
 
 def save_finding(run_id: str, table: str, column: str, hypothesis: str, check_code: str,
@@ -205,30 +242,33 @@ def save_finding(run_id: str, table: str, column: str, hypothesis: str, check_co
     return finding_id
 
 
+def _finding_filters(run_id: Optional[str] = None, status: Optional[str] = None,
+                     category: Optional[str] = None, rule_scope: Optional[str] = None,
+                     industry: Optional[str] = None, is_anomaly: Optional[bool] = None,
+                     client_id: Optional[str] = None) -> Tuple[str, List[Any]]:
+    """WHERE-clause fragment (starting with ' AND', or empty) + params shared by the findings queries."""
+    clauses: List[str] = []
+    params: List[Any] = []
+    for column, value in (("run_id", run_id), ("status", status), ("category", category),
+                          ("rule_scope", rule_scope), ("industry", industry)):
+        if value:
+            clauses.append(f"{column} = ?")
+            params.append(value)
+    if is_anomaly is not None:
+        clauses.append("is_anomaly = ?")
+        params.append(1 if is_anomaly else 0)
+    if client_id:
+        clauses.append("run_id IN (SELECT run_id FROM runs WHERE client_id = ?)")
+        params.append(client_id)
+    return "".join(f" AND {c}" for c in clauses), params
+
+
 def get_findings(run_id: Optional[str] = None, status: Optional[str] = None,
                  category: Optional[str] = None, rule_scope: Optional[str] = None,
-                 industry: Optional[str] = None, is_anomaly: Optional[bool] = None) -> List[Dict[str, Any]]:
-    query = "SELECT * FROM findings WHERE 1=1"
-    params: List[Any] = []
-    if run_id:
-        query += " AND run_id = ?"
-        params.append(run_id)
-    if status:
-        query += " AND status = ?"
-        params.append(status)
-    if category:
-        query += " AND category = ?"
-        params.append(category)
-    if rule_scope:
-        query += " AND rule_scope = ?"
-        params.append(rule_scope)
-    if industry:
-        query += " AND industry = ?"
-        params.append(industry)
-    if is_anomaly is not None:
-        query += " AND is_anomaly = ?"
-        params.append(1 if is_anomaly else 0)
-    query += " ORDER BY created_at DESC"
+                 industry: Optional[str] = None, is_anomaly: Optional[bool] = None,
+                 client_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    where, params = _finding_filters(run_id, status, category, rule_scope, industry, is_anomaly, client_id)
+    query = f"SELECT * FROM findings WHERE 1=1{where} ORDER BY created_at DESC"
 
     with get_connection() as conn:
         rows = conn.execute(query, params).fetchall()
@@ -244,35 +284,23 @@ def get_findings(run_id: Optional[str] = None, status: Optional[str] = None,
 _LIGHT_COLUMNS = (
     "id, run_id, table_name, column_name, hypothesis, result_summary, severity, "
     "confidence, reusable, created_at, status, reviewed_at, reviewer_comment, promoted_at, "
-    "category, sub_type, rule_scope, industry, fix_type, auto_fix_value, is_anomaly"
+    "category, sub_type, rule_scope, industry, fix_type, auto_fix_value, is_anomaly, "
+    # Row-level review progress, shown on the finding cards.
+    "(SELECT COUNT(*) FROM finding_items fi WHERE fi.finding_id = findings.id) AS item_count, "
+    "(SELECT COUNT(*) FROM finding_items fi WHERE fi.finding_id = findings.id "
+    " AND COALESCE(fi.review_verdict, 'PENDING') != 'PENDING') AS reviewed_count, "
+    "(SELECT COUNT(DISTINCT fi.duplicate_group_id) FROM finding_items fi "
+    " WHERE fi.finding_id = findings.id) AS group_count"
 )
 
 
 def get_findings_light(run_id: Optional[str] = None, status: Optional[str] = None,
                        category: Optional[str] = None, rule_scope: Optional[str] = None,
-                       industry: Optional[str] = None, is_anomaly: Optional[bool] = None) -> List[Dict[str, Any]]:
+                       industry: Optional[str] = None, is_anomaly: Optional[bool] = None,
+                       client_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """Same filters as get_findings(), without the heavy check_code/raw_result columns."""
-    query = f"SELECT {_LIGHT_COLUMNS} FROM findings WHERE 1=1"
-    params: List[Any] = []
-    if run_id:
-        query += " AND run_id = ?"
-        params.append(run_id)
-    if status:
-        query += " AND status = ?"
-        params.append(status)
-    if category:
-        query += " AND category = ?"
-        params.append(category)
-    if rule_scope:
-        query += " AND rule_scope = ?"
-        params.append(rule_scope)
-    if industry:
-        query += " AND industry = ?"
-        params.append(industry)
-    if is_anomaly is not None:
-        query += " AND is_anomaly = ?"
-        params.append(1 if is_anomaly else 0)
-    query += " ORDER BY created_at DESC"
+    where, params = _finding_filters(run_id, status, category, rule_scope, industry, is_anomaly, client_id)
+    query = f"SELECT {_LIGHT_COLUMNS} FROM findings WHERE 1=1{where} ORDER BY created_at DESC"
 
     with get_connection() as conn:
         rows = conn.execute(query, params).fetchall()
@@ -303,9 +331,13 @@ def update_decision(finding_id: str, status: str, comment: str = "") -> bool:
         return cur.rowcount > 0
 
 
-def get_runs() -> List[Dict[str, Any]]:
+def get_runs(client_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    query, params = "SELECT * FROM runs", []
+    if client_id:
+        query += " WHERE client_id = ?"
+        params.append(client_id)
     with get_connection() as conn:
-        rows = conn.execute("SELECT * FROM runs ORDER BY started_at DESC").fetchall()
+        rows = conn.execute(query + " ORDER BY started_at DESC", params).fetchall()
         return [dict(r) for r in rows]
 
 
@@ -386,26 +418,39 @@ def save_finding_items(finding_id: str, items: List[Dict[str, Any]]) -> List[str
     with get_connection() as conn:
         for item in items:
             item_id = str(uuid.uuid4())
+            verdict = item.get("review_verdict") or "PENDING"
             conn.execute(
                 """INSERT INTO finding_items
                 (id, finding_id, row_index, key_field, key_value, issue_detail,
-                 corrected_data, status, created_at,
+                 corrected_data, status, created_at, reviewed_at, reviewer_comment,
                  duplicate_group_id, similarity_score, match_type, match_reasons,
-                 is_golden_record, review_verdict, suggested_action)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, ?, ?, ?, ?, ?)""",
+                 is_golden_record, review_verdict, suggested_action, record_data, decision_source)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (item_id, finding_id, item.get("row_index"), item.get("key_field"),
                  str(item.get("key_value")), item.get("issue_detail"), item.get("corrected_data", ""),
+                 # A pre-filled (remembered) verdict resolves the row like a human one would.
+                 "PENDING" if verdict in _OPEN_VERDICTS else "APPROVED",
                  datetime.now(timezone.utc).isoformat(),
+                 item.get("reviewed_at"),
+                 item.get("reviewer_comment"),
                  item.get("duplicate_group_id"),
                  item.get("similarity_score"),
                  item.get("match_type"),
                  item.get("match_reasons"),
                  1 if item.get("is_golden_record") else 0,
-                 item.get("review_verdict", "PENDING"),
-                 item.get("suggested_action", "")),
+                 verdict,
+                 item.get("suggested_action", ""),
+                 json.dumps(item["record_data"], default=str) if item.get("record_data") else None,
+                 item.get("decision_source")),
             )
             ids.append(item_id)
     return ids
+
+
+def get_finding_item(item_id: str) -> Optional[Dict[str, Any]]:
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM finding_items WHERE id = ?", (item_id,)).fetchone()
+        return dict(row) if row else None
 
 
 def get_finding_items(finding_id: str) -> List[Dict[str, Any]]:
@@ -439,7 +484,7 @@ def update_item_verdict(item_id: str, verdict: str, comment: str = "", corrected
         cur = conn.execute(
             """UPDATE finding_items SET review_verdict = ?, status = ?,
                corrected_data = CASE WHEN ? != '' THEN ? ELSE corrected_data END,
-               reviewed_at = ?, reviewer_comment = ? WHERE id = ?""",
+               reviewed_at = ?, reviewer_comment = ?, decision_source = 'HUMAN' WHERE id = ?""",
             (verdict, status, corrected_data, corrected_data,
              datetime.now(timezone.utc).isoformat(), comment, item_id),
         )
@@ -455,7 +500,7 @@ def set_cluster_verdict(finding_id: str, group_id: str, verdict: str, comment: s
     with get_connection() as conn:
         cur = conn.execute(
             """UPDATE finding_items SET review_verdict = ?, status = ?,
-               reviewed_at = ?, reviewer_comment = ?
+               reviewed_at = ?, reviewer_comment = ?, decision_source = 'HUMAN'
                WHERE finding_id = ? AND duplicate_group_id = ?""",
             (verdict, status, datetime.now(timezone.utc).isoformat(), comment, finding_id, group_id),
         )
@@ -507,23 +552,33 @@ def set_golden_record(finding_id: str, group_id: str, golden_item_id: str) -> bo
         return True
 
 
+_MATCH_TYPE_RANK = {"EXACT": 3, "PROBABLE": 2, "SIMILAR": 1}
+
+
 def get_duplicate_groups(finding_id: str) -> List[Dict[str, Any]]:
     """Returns clustered duplicate groups with their members, similarity scores, and golden record."""
     items = get_finding_items(finding_id)
     grouped: Dict[str, List[Dict[str, Any]]] = {}
 
     for item in items:
+        try:
+            item["record"] = json.loads(item["record_data"]) if item.get("record_data") else {}
+        except (TypeError, ValueError):
+            item["record"] = {}
         gid = item.get("duplicate_group_id") or "UNGROUPED"
         grouped.setdefault(gid, []).append(item)
 
     clusters = []
     for gid, members in grouped.items():
-        if gid == "UNGROUPED" and len(members) == 0:
-            continue
         max_score = max((m.get("similarity_score") or 0.0) for m in members)
         match_types = [m.get("match_type") for m in members if m.get("match_type")]
-        primary_type = match_types[0] if match_types else ("EXACT" if max_score == 100.0 else "PROBABLE")
+        primary_type = (max(match_types, key=lambda t: _MATCH_TYPE_RANK.get(t, 0)) if match_types
+                        else ("EXACT" if max_score == 100.0 else "PROBABLE"))
         golden = next((m for m in members if m.get("is_golden_record") == 1), None)
+        verdicts: Dict[str, int] = {}
+        for m in members:
+            verdict = m.get("review_verdict") or "PENDING"
+            verdicts[verdict] = verdicts.get(verdict, 0) + 1
 
         clusters.append({
             "duplicate_group_id": gid,
@@ -532,10 +587,11 @@ def get_duplicate_groups(finding_id: str) -> List[Dict[str, Any]]:
             "golden_record_id": golden["id"] if golden else None,
             "golden_record_key": golden["key_value"] if golden else None,
             "member_count": len(members),
+            "verdicts": verdicts,
             "members": members,
         })
 
-    clusters.sort(key=lambda c: c["similarity_score"], reverse=True)
+    clusters.sort(key=lambda c: (_MATCH_TYPE_RANK.get(c["match_type"], 0), c["similarity_score"]), reverse=True)
     return clusters
 
 

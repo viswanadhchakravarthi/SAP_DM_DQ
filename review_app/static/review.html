@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Findings Review · SAP DM Data Quality</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header>
+    <div class="header-top">
+      <div class="header-title">
+        <h1>Data Quality Findings & Governance</h1>
+        <!-- Client, dictionary and tables chosen on page 1 - fixed on this page -->
+        <div class="workspace-strip" id="workspaceStrip"></div>
+      </div>
+      <div class="header-actions">
+        <div class="run-control">
+          <button id="runExplorerBtn" class="btn-run-explorer">Run</button>
+          <span id="runStatus" class="run-status-dot hidden"></span>
+        </div>
+        <button id="refreshBtn" class="btn-icon" title="Refresh" aria-label="Refresh">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 12a8 8 0 1 1-2.34-5.66"/>
+            <polyline points="20 4 20 9 15 9"/>
+          </svg>
+        </button>
+        <button id="promoteBtn" class="btn-promote">Promote Approved Skills</button>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="control-group">
+        <label for="runSelect">Run:</label>
+        <select id="runSelect"></select>
+      </div>
+
+      <div class="control-group">
+        <label for="statusFilter">Status:</label>
+        <select id="statusFilter">
+          <option value="">All Statuses</option>
+          <option value="PENDING" selected>Pending</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="scopeFilter">Rule Scope:</label>
+        <select id="scopeFilter">
+          <option value="">All Scopes</option>
+          <option value="UNIVERSAL">Universal (Standard SAP)</option>
+          <option value="INDUSTRY_SPECIFIC">Industry-Specific</option>
+          <option value="CLIENT_SPECIFIC">Client-Specific</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="header-bottom">
+      <div class="category-tabs" id="categoryTabs">
+        <button class="tab-btn active" data-category="" data-tooltip="Shows findings across all four data-quality pillars.">All Findings <span class="tab-count"></span></button>
+        <button class="tab-btn" data-category="ACTIVENESS" data-tooltip="Checks whether records are still in active use, or dormant/obsolete and worth reviewing for deactivation.">🕒 Activeness <span class="tab-count"></span></button>
+        <button class="tab-btn" data-category="DUPLICATE" data-tooltip="Flags records that may represent the same real-world vendor entered more than once.">👥 Duplicates <span class="tab-count"></span></button>
+        <button class="tab-btn" data-category="COMPLETENESS" data-tooltip="Flags missing or blank information that is expected to be filled in.">📋 Completeness <span class="tab-count"></span></button>
+        <button class="tab-btn" data-category="CORRECTNESS" data-tooltip="Flags values or relationships that look wrong, inconsistent, or unusual compared to expectations.">✅ Correctness <span class="tab-count"></span></button>
+        <button class="tab-btn" data-category="ANOMALIES" data-tooltip="Flags unusual values that stand out statistically from the rest of the data and may need a closer look.">⚡ Anomalies <span class="tab-count"></span></button>
+      </div>
+
+      <div class="stats" id="statsBar"></div>
+    </div>
+  </header>
+
+  <main id="findingsContainer">
+    <p class="empty-state">Loading findings...</p>
+  </main>
+
+  <div id="detailModal" class="modal hidden">
+    <div class="modal-content">
+      <button id="closeModal" class="close-btn">&times;</button>
+      <h2>Finding Detail</h2>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <div id="runExplorerModal" class="modal hidden">
+    <div class="modal-content">
+      <button id="closeRunExplorerModal" class="close-btn">&times;</button>
+      <h2>Run Explorer Agent</h2>
+      <div id="runExplorerModalBody"></div>
+    </div>
+  </div>
+
+  <div id="sapTooltip" class="sap-tooltip hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

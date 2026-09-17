@@ -6,13 +6,15 @@ import argparse
 from pathlib import Path
 
 from .config import Config
-from .data_loader import load_all_tables, load_data_dictionary, get_field_description
+from .data_loader import discover_table_files, load_all_tables, load_data_dictionary, get_field_description
 # from .tools import TOOLS, register_dataframe
 from .graph import build_explorer_graph
 # from .schemas import Reflection
 from .schemas import Reflection, CheckPlan, ReflectionBatch
 from .table_profiler import profile_table
 from .cache_runner import run_cached_skills
+from .duplicate_detector import detect_table_duplicates
+from . import client_knowledge
 from .memory.retriever import SkillRetriever
 from . import episodic_store as store
 # from . import profiler_primitives as prim
@@ -105,6 +107,11 @@ def main():
 
     parser = argparse.ArgumentParser(description="Week 4: Batch table-level Explorer")
     parser.add_argument("--data-dir", required=True)
+    parser.add_argument(
+        "--client", required=True,
+        help="Client/company the data belongs to, e.g. \"Acme Retail\". Runs, findings and remembered "
+             "review decisions (memory_store/clients/<client>/) are linked to it.",
+    )
     parser.add_argument("--dictionary-file", default=Config.DATA_DICTIONARY_FILE)
     parser.add_argument("--model", default=None,
                         help="Model for the PRIMARY provider (default: its model in config.yaml).")
@@ -113,6 +120,10 @@ def main():
     parser.add_argument("--max-iterations", type=int, default=Config.MAX_ITERATIONS_PER_COLUMN)
     parser.add_argument("--tables", nargs="*", default=None)
     parser.add_argument("--no-cache", action="store_true")
+    parser.add_argument(
+        "--duplicates-only", action="store_true",
+        help="Only run the built-in deterministic duplicate detection - no LLM calls, no API keys needed.",
+    )
     parser.add_argument(
         "--llm-provider", default=Config.LLM_PROVIDER, choices=Config.SUPPORTED_LLM_PROVIDERS,
         help="Primary LLM backend (overrides config.yaml/EXPLORER_LLM_PROVIDER).",
@@ -130,36 +141,60 @@ def main():
     if args.fallback_providers is not None:
         Config.LLM_FALLBACK_PROVIDERS = args.fallback_providers
 
-    Config.validate()
+    if not args.duplicates_only:
+        Config.validate()
+    try:
+        client = client_knowledge.ensure_client(args.client)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     logger.info(
-        "Starting run | provider=%s fallbacks=%s tables=%s cache_enabled=%s",
-        Config.LLM_PROVIDER, Config.LLM_FALLBACK_PROVIDERS, args.tables, Config.ENABLE_CACHE_FAST_PATH,
+        "Starting run | client=%s provider=%s fallbacks=%s tables=%s cache_enabled=%s duplicates_only=%s",
+        client["name"], Config.LLM_PROVIDER, Config.LLM_FALLBACK_PROVIDERS, args.tables,
+        Config.ENABLE_CACHE_FAST_PATH, args.duplicates_only,
     )
 
     dictionary = load_data_dictionary(str(Path(args.data_dir) / args.dictionary_file))
-    table_files = {k: v for k, v in Config.SAP_TABLE_FILES.items() if not args.tables or k in args.tables}
+    discovered = discover_table_files(args.data_dir, args.dictionary_file)
+    wanted = {t.upper() for t in args.tables} if args.tables else None
+    table_files = {k: v for k, v in discovered.items() if wanted is None or k in wanted}
+    if not table_files:
+        parser.error(f"No table CSV files found in {args.data_dir}"
+                     + (f" matching --tables {' '.join(args.tables)}" if args.tables else ""))
     tables = load_all_tables(args.data_dir, table_files)
 
-    llms = build_llms(args.model, args.temperature)
-    graph = build_explorer_graph(llms.planner_structured, llms.reflector_structured)
-    reflector_single = llms.reflector_single
-    skill_retriever = SkillRetriever()
+    if args.duplicates_only:
+        llms = graph = reflector_single = skill_retriever = None
+        run_label = "duplicate-detector (no LLM)"
+    else:
+        llms = build_llms(args.model, args.temperature)
+        graph = build_explorer_graph(llms.planner_structured, llms.reflector_structured)
+        reflector_single = llms.reflector_single
+        skill_retriever = SkillRetriever()
+        run_label = llms.chain_label
 
-    run_id = store.create_run(model=llms.chain_label, table_names=list(tables.keys()))
+    run_id = store.create_run(model=run_label, table_names=list(tables.keys()),
+                              client_id=client["client_id"], client_name=client["name"])
     logger.info("Run ID: %s", run_id)
 
     total_findings = 0
     failed_tables = []
     for table_name, df in tables.items():
         table_start = time.perf_counter()
-        try:
-            findings = explore_table(graph, table_name, df, dictionary, tables, skill_retriever, reflector_single)
-        except LLMChainExhaustedError as exc:
-            # One table's LLM outage shouldn't discard the rest of the run.
-            logger.error("[%s] skipped - %s", table_name, exc)
-            failed_tables.append(table_name)
-            continue
+        # Deterministic duplicate detection first: zero LLM cost, and its
+        # findings are kept even if the LLM chain fails for this table.
+        findings = []
+        duplicate_finding = detect_table_duplicates(table_name, df, client_id=client["client_id"],
+                                                    dictionary=dictionary)
+        if duplicate_finding:
+            findings.append(duplicate_finding)
+        if not args.duplicates_only:
+            try:
+                findings += explore_table(graph, table_name, df, dictionary, tables, skill_retriever, reflector_single)
+            except LLMChainExhaustedError as exc:
+                # One table's LLM outage shouldn't discard the rest of the run.
+                logger.error("[%s] LLM exploration skipped - %s", table_name, exc)
+                failed_tables.append(table_name)
 
         for f in findings:
             finding_id = store.save_finding(
@@ -197,7 +232,8 @@ def main():
     print(f"\nReview at: http://localhost:8000")
 
     if failed_tables:
-        print(f"\nTables skipped because every LLM failed: {failed_tables} - re-run with --tables {' '.join(failed_tables)}")
+        print(f"\nTables whose LLM exploration was skipped because every LLM failed: {failed_tables} "
+              f"- re-run with --tables {' '.join(failed_tables)}")
         return 1
     return 0
 

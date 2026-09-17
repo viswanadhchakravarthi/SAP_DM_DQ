@@ -5,6 +5,9 @@ let activeCategory = "";
 let DICTIONARY = { tables: {}, columns: {} };
 let fullFindingCache = {};
 let jobPollInterval = null;
+let currentJobId = null; // set only while a job is RUNNING
+let stopRequested = false;
+let jobPollNow = null; // the active poll function, for an immediate re-check when back online
 
 async function fetchJSON(url, options) {
   const res = await fetch(url, options);
@@ -27,13 +30,33 @@ function escapeHtml(value) {
     .replace(/'/g, "&#039;");
 }
 
+const IST_PARTS_FORMATTER = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Asia/Kolkata",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hourCycle: "h23",
+});
+
+// Backend timestamps are UTC ISO strings; show them as "YYYY-MM-DD HH:mm:ss IST".
+function formatIST(isoString) {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return isoString;
+  const p = Object.fromEntries(IST_PARTS_FORMATTER.formatToParts(date).map((x) => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second} IST`;
+}
+
 // ---------------------------------------------------------------------------
 // CR1/CR2: hover tooltips for TABLE.COLUMN references and pillar tabs
 // ---------------------------------------------------------------------------
 
 async function loadDictionary() {
   try {
-    DICTIONARY = await fetchJSON(`${API_BASE}/dictionary`);
+    DICTIONARY = await fetchJSON(`${API_BASE}/dictionary?client_id=${encodeURIComponent(CLIENT_ID)}`);
   } catch (error) {
     console.error("Failed to load dictionary:", error);
   }
@@ -109,9 +132,37 @@ document.addEventListener("mouseout", (event) => {
 // Runs / stats / findings list
 // ---------------------------------------------------------------------------
 
+// Page 2 is fixed to the client (and its uploaded data) chosen on page 1 -
+// changing either means going back to page 1 (index.html).
+const CLIENT_ID = new URLSearchParams(window.location.search).get("client") || "";
+const CLIENT_STORAGE_KEY = "dq-review-client";
+let WORKSPACE = null; // {client, dictionary, tables, ready} from /api/clients/{id}/workspace
+let RUNS_BY_ID = {}; // this client's runs, for lookups in the detail modal
+
+function selectedClientId() {
+  return CLIENT_ID;
+}
+
+async function loadWorkspace() {
+  WORKSPACE = await fetchJSON(`${API_BASE}/clients/${encodeURIComponent(CLIENT_ID)}/workspace`);
+  try { localStorage.setItem(CLIENT_STORAGE_KEY, CLIENT_ID); } catch { /* per-viewer convenience only */ }
+  document.title = `${WORKSPACE.client.name} · Findings Review`;
+
+  const tables = WORKSPACE.tables.map((t) => t.table);
+  document.getElementById("workspaceStrip").innerHTML = `
+    <span class="ws-chip ws-client" title="Client">🏢 ${escapeHtml(WORKSPACE.client.name)}</span>
+    <span class="ws-chip" title="Data dictionary">📘 ${WORKSPACE.dictionary ? escapeHtml(WORKSPACE.dictionary.file) : "No dictionary"}</span>
+    <span class="ws-chip" title="${escapeHtml(tables.join(", "))}">🗂 ${tables.length} table${tables.length === 1 ? "" : "s"}${tables.length ? `: ${escapeHtml(tables.join(", "))}` : ""}</span>
+    <a class="ws-change" href="./?client=${encodeURIComponent(CLIENT_ID)}">Change client / data</a>
+  `;
+}
+
 async function loadRuns() {
-  const runs = await fetchJSON(`${API_BASE}/runs`);
+  const clientId = selectedClientId();
+  const runs = clientId ? await fetchJSON(`${API_BASE}/runs?client_id=${encodeURIComponent(clientId)}`) : [];
+  RUNS_BY_ID = Object.fromEntries(runs.map((r) => [r.run_id, r]));
   const select = document.getElementById("runSelect");
+  const previous = select.value;
 
   select.innerHTML =
     '<option value="">All runs</option>' +
@@ -124,28 +175,49 @@ async function loadRuns() {
           tableNames = run.table_names || "";
         }
 
-        const startedAt = run.started_at ? run.started_at.slice(0, 19) : "Unknown time";
+        const startedAt = run.started_at ? formatIST(run.started_at) : "Unknown time";
         return `<option value="${escapeHtml(run.run_id)}">${escapeHtml(startedAt)} - ${escapeHtml(tableNames)}</option>`;
       })
       .join("");
+  if ([...select.options].some((o) => o.value === previous)) select.value = previous;
 }
 
-async function loadStats(runId) {
-  const params = runId ? `?run_id=${encodeURIComponent(runId)}` : "";
-  const stats = await fetchJSON(`${API_BASE}/stats${params}`);
+let countsRequestSeq = 0;
 
-  const cats = stats.categories || {};
-  document.getElementById("statsBar").innerHTML = `
-    <span>Total: <span class="count">${stats.TOTAL ?? 0}</span></span>
-    <span>Pending: <span class="count">${stats.PENDING ?? 0}</span></span>
-    <span>Approved: <span class="count">${stats.APPROVED ?? 0}</span></span>
-    <span>Rejected: <span class="count">${stats.REJECTED ?? 0}</span></span>
-    <span style="border-left: 1px solid #2d3142; padding-left: 14px;">Activeness: <span class="count">${cats.ACTIVENESS ?? 0}</span></span>
-    <span>Duplicates: <span class="count">${cats.DUPLICATE ?? 0}</span></span>
-    <span>Completeness: <span class="count">${cats.COMPLETENESS ?? 0}</span></span>
-    <span>Correctness: <span class="count">${cats.CORRECTNESS ?? 0}</span></span>
-    ${stats.anomalies ? `<span>Anomalies: <span class="count">${stats.anomalies}</span></span>` : ""}
-  `;
+// Counts are computed client-side from the light findings list so they follow
+// the Run and Rule Scope filters (/api/stats only filters by run):
+// - status chips (Pending/Approved/Rejected): Run + Rule Scope
+// - per-tab counts: Run + Rule Scope + Status
+async function loadCounts(runId, status, scope) {
+  const seq = ++countsRequestSeq;
+  const params = new URLSearchParams();
+  if (runId) params.append("run_id", runId);
+  params.append("client_id", selectedClientId());
+  if (scope) params.append("rule_scope", scope);
+  const findings = await fetchJSON(`${API_BASE}/findings?${params.toString()}`);
+  if (seq !== countsRequestSeq) return; // a newer filter change already won
+
+  const byStatus = { PENDING: 0, APPROVED: 0, REJECTED: 0 };
+  const byTab = { "": 0, ACTIVENESS: 0, DUPLICATE: 0, COMPLETENESS: 0, CORRECTNESS: 0, ANOMALIES: 0 };
+  for (const f of findings) {
+    if (f.status in byStatus) byStatus[f.status] += 1;
+    if (status && f.status !== status) continue;
+    byTab[""] += 1;
+    if (f.category in byTab) byTab[f.category] += 1;
+    if (f.is_anomaly) byTab.ANOMALIES += 1;
+  }
+
+  document.querySelectorAll("#categoryTabs .tab-btn").forEach((tab) => {
+    tab.querySelector(".tab-count").textContent = byTab[tab.dataset.category] ?? 0;
+  });
+
+  const chip = (tone, label, count) =>
+    `<span class="stat-chip"><span class="stat-dot stat-dot-${tone}"></span>${label} <span class="count">${count}</span></span>`;
+  document.getElementById("statsBar").innerHTML = [
+    chip("pending", "Pending", byStatus.PENDING),
+    chip("approved", "Approved", byStatus.APPROVED),
+    chip("rejected", "Rejected", byStatus.REJECTED),
+  ].join("");
 }
 
 async function loadFindings() {
@@ -153,8 +225,10 @@ async function loadFindings() {
   const status = document.getElementById("statusFilter").value;
   const scope = document.getElementById("scopeFilter").value;
   const params = new URLSearchParams();
+  const container = document.getElementById("findingsContainer");
 
   if (runId) params.append("run_id", runId);
+  params.append("client_id", selectedClientId());
   if (status) params.append("status", status);
   if (scope) params.append("rule_scope", scope);
 
@@ -164,23 +238,23 @@ async function loadFindings() {
     params.append("category", activeCategory);
   }
 
-  const container = document.getElementById("findingsContainer");
   container.innerHTML = '<p class="empty-state">Loading findings...</p>';
 
   try {
     // Light payload only (no check_code/raw_result) - see CR3 lazy loading.
-    const findings = await fetchJSON(`${API_BASE}/findings?${params.toString()}`);
+    const [findings] = await Promise.all([
+      fetchJSON(`${API_BASE}/findings?${params.toString()}`),
+      loadCounts(runId, status, scope),
+    ]);
     currentFindings = findings;
 
     if (findings.length === 0) {
       container.innerHTML = '<p class="empty-state">No findings match this filter.</p>';
-      await loadStats(runId);
       return;
     }
 
     container.innerHTML = findings.map(renderCard).join("");
     attachCardHandlers();
-    await loadStats(runId);
   } catch (error) {
     container.innerHTML = `<p class="empty-state">Unable to load findings: ${escapeHtml(error.message)}</p>`;
   }
@@ -188,9 +262,7 @@ async function loadFindings() {
 
 function renderCard(finding) {
   const decided = finding.status !== "PENDING";
-  const reviewedAt = finding.reviewed_at
-    ? new Date(finding.reviewed_at).toLocaleString()
-    : "";
+  const reviewedAt = formatIST(finding.reviewed_at);
   const comment = finding.reviewer_comment
     ? ` - ${escapeHtml(finding.reviewer_comment)}`
     : "";
@@ -211,7 +283,7 @@ function renderCard(finding) {
     : (finding.rule_scope === "CLIENT_SPECIFIC" ? "badge-scope-CLIENT" : "badge-scope-UNIVERSAL");
 
   return `
-    <div class="finding-card" data-id="${escapeHtml(finding.id)}">
+    <div class="finding-card sev-${escapeHtml(finding.severity)}" data-id="${escapeHtml(finding.id)}">
       <div class="top-row">
         <div class="table-col">${wrapTableColumnRef(finding.table_name, finding.column_name, finding.hypothesis || "")}</div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -228,16 +300,28 @@ function renderCard(finding) {
         <span>Confidence: ${escapeHtml(finding.confidence)}</span>
         <span>Scope: ${escapeHtml(finding.rule_scope)}</span>
         <span>Reusable Skill: ${finding.reusable ? "Yes" : "No"}</span>
-        <span>${finding.created_at ? new Date(finding.created_at).toLocaleString() : ""}</span>
+        <span>${escapeHtml(formatIST(finding.created_at))}</span>
       </div>
+      ${finding.item_count ? renderReviewProgress(finding) : ""}
       <div class="action-row">
         <button class="btn-detail" data-action="detail">
-          ${finding.category === 'DUPLICATE' ? '👥 Review Duplicate Clusters' : 'View Details'}
+          ${finding.category === 'DUPLICATE' ? '👥 Review Duplicates' : 'View Details'}
         </button>
         ${decided ? `<span class="decided-note">Reviewed ${reviewedAt}${comment}</span>` : ""}
       </div>
     </div>
   `;
+}
+
+function renderReviewProgress(finding) {
+  const pct = Math.round((finding.reviewed_count / finding.item_count) * 100);
+  const scope = finding.category === "DUPLICATE" && finding.group_count
+    ? ` in ${finding.group_count} group${finding.group_count === 1 ? "" : "s"}` : "";
+  return `
+    <div class="card-progress">
+      <div class="card-progress-bar"><span style="width:${pct}%"></span></div>
+      <span>${finding.reviewed_count} / ${finding.item_count} records reviewed${scope}</span>
+    </div>`;
 }
 
 function attachCardHandlers() {
@@ -291,7 +375,9 @@ async function openDetail(id) {
   }[finding.category] || finding.category;
 
   const isDuplicate = finding.category === "DUPLICATE";
+  const codeLabel = isDuplicate ? "View Matching Rules" : "View Local Pandas Check Code";
 
+  document.querySelector("#detailModal .modal-content").classList.toggle("modal-wide", isDuplicate);
   document.getElementById("modalBody").innerHTML = `
     <div class="detail-row detail-top-meta">
       <span class="table-col">${wrapTableColumnRef(finding.table_name, finding.column_name, finding.hypothesis || "")}</span>
@@ -303,51 +389,45 @@ async function openDetail(id) {
       <div class="detail-label">Hypothesis &amp; Rule Context</div>
       <pre>${linkifyTableColumnRefs(escapeHtml(finding.hypothesis || "(not captured)"))}</pre>
     </div>
-    <div class="detail-row lazy-section" id="lazySectionMetrics">
-      <button class="btn-lazy-load" data-lazy="metrics">View Aggregate Metrics / Profile Results</button>
-    </div>
     <div class="detail-row lazy-section" id="lazySectionCode">
-      <button class="btn-lazy-load" data-lazy="code">View Local Pandas Check Code</button>
+      <button class="btn-lazy-load" data-lazy="code">${codeLabel}</button>
     </div>
-    <div class="detail-row lazy-section" id="lazySectionRecords">
-      <button class="btn-lazy-load" data-lazy="records">${isDuplicate ? '👥 Review Duplicate Clusters' : 'View Individual Records'}</button>
-    </div>
-    ${isDuplicate ? "" : renderFindingDecisionRow(finding)}
+    ${isDuplicate
+      ? `<div class="detail-row" id="duplicateReview"><p class="hint-text">Loading duplicate groups...</p></div>`
+      : `<div class="detail-row lazy-section" id="lazySectionRecords">
+           <button class="btn-lazy-load" data-lazy="records">View Individual Records</button>
+         </div>
+         ${renderFindingDecisionRow(finding)}`}
   `;
 
-  attachLazyLoadHandlers(id, finding);
+  attachLazyLoadHandlers(id, finding, codeLabel);
   if (!isDuplicate) {
     attachFindingDecisionHandlers(id);
   }
   document.getElementById("detailModal").classList.remove("hidden");
+  if (isDuplicate) {
+    await loadDuplicateReview(id);
+  }
 }
 
-function attachLazyLoadHandlers(id, finding) {
-  const metricsBtn = document.querySelector('#lazySectionMetrics [data-lazy="metrics"]');
-  if (metricsBtn) {
-    metricsBtn.addEventListener("click", async () => {
-      const full = await fetchFullFinding(id);
-      let rawResultPretty = full.raw_result || "";
-      try {
-        rawResultPretty = JSON.stringify(JSON.parse(rawResultPretty), null, 2);
-      } catch {
-        // Non-JSON string
-      }
-      document.getElementById("lazySectionMetrics").innerHTML = `
-        <div class="detail-label">Aggregate Metric / Profile Result</div>
-        <pre>${escapeHtml(rawResultPretty)}</pre>
-      `;
-    });
-  }
-
+function attachLazyLoadHandlers(id, finding, codeLabel) {
+  // Toggle: first click loads and shows the code/rules, next click hides them.
   const codeBtn = document.querySelector('#lazySectionCode [data-lazy="code"]');
   if (codeBtn) {
     codeBtn.addEventListener("click", async () => {
-      const full = await fetchFullFinding(id);
-      document.getElementById("lazySectionCode").innerHTML = `
-        <div class="detail-label">Local Pandas Check Code</div>
-        <pre>${escapeHtml(full.check_code || "(not captured)")}</pre>
-      `;
+      const section = document.getElementById("lazySectionCode");
+      let pre = section.querySelector("pre");
+      if (!pre) {
+        const full = await fetchFullFinding(id);
+        pre = document.createElement("pre");
+        pre.className = "hidden";
+        pre.textContent = full.check_code || "(not captured)";
+        section.appendChild(pre);
+      }
+      const show = pre.classList.contains("hidden");
+      pre.classList.toggle("hidden", !show);
+      codeBtn.textContent = show ? codeLabel.replace(/^View /, "Hide ") : codeLabel;
+      codeBtn.setAttribute("aria-expanded", String(show));
     });
   }
 
@@ -355,11 +435,7 @@ function attachLazyLoadHandlers(id, finding) {
   if (recordsBtn) {
     recordsBtn.addEventListener("click", async () => {
       document.getElementById("lazySectionRecords").innerHTML = '<p class="hint-text">Loading...</p>';
-      if (finding.category === "DUPLICATE") {
-        await reopenDuplicateClusters(id, finding);
-      } else {
-        await reopenRecordsSection(id, finding);
-      }
+      await reopenRecordsSection(id, finding);
     });
   }
 }
@@ -372,12 +448,6 @@ async function reopenRecordsSection(findingId, finding) {
   document.getElementById("lazySectionRecords").innerHTML =
     renderWorkflowItemsTable(finding, effectiveItems, usingSyntheticRow, workflowKey);
   attachPillarWorkflowHandlers(findingId, finding, usingSyntheticRow);
-}
-
-async function reopenDuplicateClusters(findingId, finding) {
-  const groups = await fetchJSON(`${API_BASE}/findings/${encodeURIComponent(findingId)}/duplicate-groups`);
-  document.getElementById("lazySectionRecords").innerHTML = renderDuplicateClustersView(finding, groups);
-  attachDuplicateClusterHandlers(findingId, finding);
 }
 
 // ---------------------------------------------------------------------------
@@ -629,117 +699,268 @@ function attachPillarWorkflowHandlers(findingId, finding, isSynthetic) {
 }
 
 // ---------------------------------------------------------------------------
-// Duplicates: per-record + cluster-level verdicts (golden record removed)
+// Duplicates: groups shown immediately, one Duplicate / Unique / To Be
+// Confirmed decision per record (plus whole-group shortcuts)
 // ---------------------------------------------------------------------------
 
-function renderDuplicateClustersView(finding, groups) {
-  if (!groups || groups.length === 0) {
-    return `<p class="hint-text">No duplicate clusters identified in this run.</p>`;
+const DUP_VERDICTS = [
+  { verdict: "DUPLICATE", label: "Duplicate", tone: "negative" },
+  { verdict: "UNIQUE", label: "Unique", tone: "positive" },
+  { verdict: "TO_BE_CONFIRMED", label: "To Confirm", tone: "warning" },
+];
+
+const DUP_FILTERS = [
+  { key: "all", label: "All groups", test: () => true },
+  { key: "open", label: "Needs review", test: (g) => g.members.some((m) => isOpenVerdict(m.review_verdict)) },
+  { key: "EXACT", label: "Exact", test: (g) => g.match_type === "EXACT" },
+  { key: "PROBABLE", label: "Probable", test: (g) => g.match_type === "PROBABLE" },
+  { key: "SIMILAR", label: "Similar", test: (g) => g.match_type === "SIMILAR" },
+];
+
+let dupReview = null; // { findingId, groups, filter }
+let findingsDirty = false; // reload the card list when the modal closes
+
+function isOpenVerdict(verdict) {
+  return !verdict || verdict === "PENDING" || verdict === "TO_BE_CONFIRMED";
+}
+
+async function loadDuplicateReview(findingId) {
+  const container = document.getElementById("duplicateReview");
+  try {
+    const groups = await fetchJSON(`${API_BASE}/findings/${encodeURIComponent(findingId)}/duplicate-groups`);
+    dupReview = { findingId, groups, filter: dupReview?.findingId === findingId ? dupReview.filter : "all" };
+    renderDuplicateReview();
+  } catch (error) {
+    container.innerHTML = `<p class="empty-state">Unable to load duplicate groups: ${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function renderDuplicateReview() {
+  const container = document.getElementById("duplicateReview");
+  if (!container || !dupReview) return;
+  const { groups } = dupReview;
+
+  if (groups.length === 0) {
+    container.innerHTML = `
+      <div class="dup-empty">
+        <strong>No duplicate records were captured for this finding.</strong>
+        <p class="hint-text">This finding was produced by an older, LLM-generated check that did not save row-level
+        matches. Re-run the explorer (or use <em>Duplicates only</em> in Run) to get reviewable duplicate groups.</p>
+      </div>`;
+    return;
   }
 
-  return `
-    <div class="detail-row">
-      <div class="detail-label">Duplicate Clusters (${groups.length} Groups)</div>
-      <p class="hint-text" style="margin-bottom: 12px;">
-        Mark individual records as <strong>Duplicate</strong>, <strong>Unique</strong>, or <strong>To Be Confirmed</strong>,
-        or flag the entire cluster as needing business review.
-      </p>
-      <div class="duplicate-clusters-container">
-        ${groups.map((group) => {
-          const simScore = group.similarity_score ?? 100;
-          let simClass = "sim-similar";
-          if (simScore >= 99) simClass = "sim-exact";
-          else if (simScore >= 80) simClass = "sim-probable";
+  const members = groups.flatMap((g) => g.members);
+  const counts = { DUPLICATE: 0, UNIQUE: 0, TO_BE_CONFIRMED: 0, PENDING: 0 };
+  members.forEach((m) => { counts[m.review_verdict in counts ? m.review_verdict : "PENDING"] += 1; });
+  const decided = counts.DUPLICATE + counts.UNIQUE;
+  const pct = (n) => (members.length ? (n / members.length) * 100 : 0);
 
-          return `
-            <div class="duplicate-group-card" data-group-id="${escapeHtml(group.duplicate_group_id)}">
-              <div class="duplicate-group-header">
-                <div class="group-title-area">
-                  <span class="group-id-title">${escapeHtml(group.duplicate_group_id)}</span>
-                  <span class="similarity-badge ${simClass}">${simScore}% ${escapeHtml(group.match_type)}</span>
-                  <span style="font-size: 12px; color: #94a3b8;">(${group.member_count} candidates)</span>
-                </div>
-                <button class="btn-action btn-tone-warning" data-cluster-verdict="TO_BE_CONFIRMED" data-group-id="${escapeHtml(group.duplicate_group_id)}">
-                  🟡 Mark Entire Cluster as To Be Confirmed
-                </button>
-              </div>
+  const filter = DUP_FILTERS.find((f) => f.key === dupReview.filter) || DUP_FILTERS[0];
+  const visible = groups.filter(filter.test);
 
-              ${group.members[0]?.match_reasons ? `
-                <div class="group-reasons-note">
-                  <strong>Matching Criteria:</strong> ${escapeHtml(group.members[0].match_reasons)}
-                </div>
-              ` : ''}
-
-              <div class="candidates-list">
-                ${group.members.map((member) => {
-                  const wasGolden = member.is_golden_record === 1;
-                  const verdict = member.review_verdict || "PENDING";
-                  return `
-                    <div class="candidate-card ${wasGolden ? 'is-golden' : ''}" data-item-id="${escapeHtml(member.id)}">
-                      <div class="candidate-info">
-                        <div class="candidate-key-row">
-                          <span class="candidate-key">${escapeHtml(member.key_field)}: ${escapeHtml(member.key_value)}</span>
-                          ${wasGolden ? '<span class="golden-tag">Previously Marked Golden (legacy)</span>' : ''}
-                          <span class="verdict-badge verdict-tone-${VERDICT_TONE[verdict] || 'warning'}">${escapeHtml(verdict)}</span>
-                        </div>
-                        <div class="candidate-details">${linkifyTableColumnRefs(escapeHtml(member.issue_detail || ""))}</div>
-                      </div>
-
-                      <div class="candidate-action-bar">
-                        <button class="btn-action btn-tone-negative" data-verdict="DUPLICATE" data-item-id="${escapeHtml(member.id)}">🔴 Duplicate</button>
-                        <button class="btn-action btn-tone-positive" data-verdict="UNIQUE" data-item-id="${escapeHtml(member.id)}">🟢 Unique</button>
-                        <button class="btn-action btn-tone-warning" data-verdict="TO_BE_CONFIRMED" data-item-id="${escapeHtml(member.id)}">🟡 To Be Confirmed</button>
-                      </div>
-                    </div>
-                  `;
-                }).join("")}
-              </div>
-            </div>
-          `;
+  container.innerHTML = `
+    <div class="dup-summary">
+      <div class="dup-summary-top">
+        <div class="dup-summary-title">
+          <strong>${groups.length}</strong> duplicate group${groups.length === 1 ? "" : "s"} ·
+          <strong>${members.length}</strong> records ·
+          <strong>${decided}</strong> decided
+        </div>
+        <div class="dup-legend">
+          <span><i class="legend-dot tone-negative"></i>Duplicate ${counts.DUPLICATE}</span>
+          <span><i class="legend-dot tone-positive"></i>Unique ${counts.UNIQUE}</span>
+          <span><i class="legend-dot tone-warning"></i>To confirm ${counts.TO_BE_CONFIRMED}</span>
+          <span><i class="legend-dot tone-pending"></i>Pending ${counts.PENDING}</span>
+        </div>
+      </div>
+      <div class="dup-progress" role="img" aria-label="${decided} of ${members.length} records decided">
+        <span class="tone-negative" style="width:${pct(counts.DUPLICATE)}%"></span>
+        <span class="tone-positive" style="width:${pct(counts.UNIQUE)}%"></span>
+        <span class="tone-warning" style="width:${pct(counts.TO_BE_CONFIRMED)}%"></span>
+      </div>
+      <div class="dup-filters">
+        ${DUP_FILTERS.map((f) => {
+          const n = groups.filter(f.test).length;
+          return `<button class="dup-filter ${f.key === filter.key ? "active" : ""}" data-dup-filter="${f.key}" ${n === 0 && f.key !== "all" ? "disabled" : ""}>
+            ${escapeHtml(f.label)} <span>${n}</span></button>`;
         }).join("")}
       </div>
     </div>
+    ${renderClientMemoryNote()}
+    <p class="hint-text dup-hint">Highlighted cells are the values these records share. Decide each record, or use the group buttons.
+      Click a selected decision again to clear it.</p>
+    <div class="dup-groups">
+      ${visible.length ? visible.map(renderDuplicateGroup).join("") : `<p class="empty-state">No groups match this filter.</p>`}
+    </div>
+  `;
+  attachDuplicateReviewHandlers();
+}
+
+function renderDuplicateGroup(group) {
+  const keyField = group.members[0]?.key_field || "Key";
+  const columns = [];
+  group.members.forEach((m) => Object.keys(m.record || {}).forEach((c) => { if (!columns.includes(c)) columns.push(c); }));
+  const legacy = columns.length === 0; // rows saved before record_data existed
+
+  // A value is highlighted when another record in the same group has it too.
+  const valueCounts = {};
+  columns.forEach((c) => {
+    valueCounts[c] = {};
+    group.members.forEach((m) => {
+      const v = String(m.record?.[c] ?? "").trim().toLowerCase();
+      if (v) valueCounts[c][v] = (valueCounts[c][v] || 0) + 1;
+    });
+  });
+  // match_reasons is "vs <KEY> <value>: <reason>; vs ..." per record - the same
+  // pair shows up once from each side, so strip the "vs ..." prefix and dedupe.
+  const reasons = [...new Set(group.members.flatMap((m) =>
+    (m.match_reasons || "").split(/(?:^|;\s)vs [^:]+:\s/).map((r) => r.trim()).filter(Boolean)))];
+  const typeClass = { EXACT: "sim-exact", PROBABLE: "sim-probable", SIMILAR: "sim-similar" }[group.match_type] || "sim-similar";
+  const open = group.members.filter((m) => isOpenVerdict(m.review_verdict)).length;
+
+  return `
+    <section class="dup-group ${open === 0 ? "is-done" : ""}" data-group-id="${escapeHtml(group.duplicate_group_id)}">
+      <div class="dup-group-header">
+        <div class="dup-group-title">
+          <span class="group-id-title">${escapeHtml(group.duplicate_group_id)}</span>
+          <span class="similarity-badge ${typeClass}">${escapeHtml(group.match_type)} · ${Number(group.similarity_score ?? 0)}%</span>
+          <span class="dup-group-count">${group.member_count} records${open === 0 ? " · ✓ reviewed" : ` · ${open} open`}</span>
+        </div>
+        <div class="dup-group-actions">
+          <span class="hint-text">Whole group:</span>
+          ${DUP_VERDICTS.map((d) => `
+            <button class="btn-action btn-tone-${d.tone}" data-group-verdict="${d.verdict}">${d.label}</button>`).join("")}
+        </div>
+      </div>
+      ${reasons.length ? `<div class="group-reasons-note"><strong>Why matched:</strong> ${reasons.map((r) => escapeHtml(r)).join("<br>")}</div>` : ""}
+      <div class="dup-table-wrap">
+        <table class="dup-table">
+          <thead>
+            <tr>
+              <th>${escapeHtml(keyField)}</th>
+              ${legacy ? "<th>Details</th>" : columns.map((c) => `
+                <th><span class="sap-ref" data-table="${escapeHtml(currentDupTable())}" data-column="${escapeHtml(c)}" data-context="">${escapeHtml(c)}</span></th>`).join("")}
+              <th class="dup-decision-col">Decision</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${group.members.map((m) => {
+              const verdict = m.review_verdict || "PENDING";
+              return `
+                <tr class="dup-row verdict-${escapeHtml(verdict)}" data-item-id="${escapeHtml(m.id)}">
+                  <td class="dup-key">${escapeHtml(m.key_value)}${m.decision_source === "REMEMBERED" && verdict !== "PENDING"
+                    ? `<span class="remembered-tag" aria-label="Remembered decision" data-tooltip="${escapeHtml(m.reviewer_comment || "Remembered from an earlier review")}">↺</span>`
+                    : ""}</td>
+                  ${legacy
+                    ? `<td>${escapeHtml(m.issue_detail || "")}</td>`
+                    : columns.map((c) => {
+                        const raw = String(m.record?.[c] ?? "");
+                        const shared = raw.trim() && valueCounts[c][raw.trim().toLowerCase()] > 1;
+                        return `<td class="${shared ? "match-cell" : ""}">${raw ? escapeHtml(raw) : '<span class="blank-cell">—</span>'}</td>`;
+                      }).join("")}
+                  <td class="dup-decision-col">
+                    <div class="verdict-seg" role="group" aria-label="Decision for ${escapeHtml(m.key_value)}">
+                      ${DUP_VERDICTS.map((d) => `
+                        <button class="seg-btn tone-${d.tone} ${verdict === d.verdict ? "active" : ""}"
+                          data-verdict="${d.verdict}" aria-pressed="${verdict === d.verdict}">${d.label}</button>`).join("")}
+                    </div>
+                  </td>
+                </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    </section>
   `;
 }
 
-function attachDuplicateClusterHandlers(findingId, finding) {
-  const section = document.getElementById("lazySectionRecords");
+function currentDupRun() {
+  const finding = currentFindings.find((f) => f.id === dupReview?.findingId);
+  return finding ? RUNS_BY_ID[finding.run_id] : null;
+}
 
-  section.querySelectorAll("[data-cluster-verdict]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const groupId = btn.dataset.groupId;
-      const verdict = btn.dataset.clusterVerdict;
-      try {
-        await fetchJSON(`${API_BASE}/findings/${encodeURIComponent(findingId)}/duplicate-groups/${encodeURIComponent(groupId)}/verdict`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ verdict }),
-        });
-        await reopenDuplicateClusters(findingId, finding);
-        await loadFindings();
-      } catch (err) {
-        alert(`Failed to update cluster: ${err.message}`);
-      }
+// Tells the reviewer that their decisions become this client's knowledge.
+function renderClientMemoryNote() {
+  const run = currentDupRun();
+  if (!run?.client_name) return "";
+  return `
+    <div class="client-memory-note">
+      🧠 Decisions are remembered for <strong>${escapeHtml(run.client_name)}</strong>: records that are all marked
+      <em>Unique</em> won't be grouped again; every other decision (e.g. <em>Duplicate</em> + <em>Unique</em> for
+      the duplicate and its original) is pre-filled in future runs while the records stay unchanged.
+    </div>`;
+}
+
+function currentDupTable() {
+  return currentFindings.find((f) => f.id === dupReview?.findingId)?.table_name || "";
+}
+
+function attachDuplicateReviewHandlers() {
+  const container = document.getElementById("duplicateReview");
+
+  container.querySelectorAll("[data-dup-filter]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      dupReview.filter = btn.dataset.dupFilter;
+      renderDuplicateReview();
     });
   });
 
-  section.querySelectorAll("[data-verdict]").forEach((btn) => {
+  container.querySelectorAll(".dup-row .seg-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
-      const itemId = btn.dataset.itemId;
-      const verdict = btn.dataset.verdict;
-      try {
-        await fetchJSON(`${API_BASE}/finding-items/${encodeURIComponent(itemId)}/verdict`, {
+      const row = btn.closest(".dup-row");
+      const itemId = row.dataset.itemId;
+      // Clicking the selected decision again clears it back to PENDING.
+      const verdict = btn.classList.contains("active") ? "PENDING" : btn.dataset.verdict;
+      await saveDuplicateVerdicts(
+        () => fetchJSON(`${API_BASE}/finding-items/${encodeURIComponent(itemId)}/verdict`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ verdict }),
-        });
-        await reopenDuplicateClusters(findingId, finding);
-        await loadFindings();
-      } catch (err) {
-        alert(`Failed to set verdict: ${err.message}`);
-      }
+        }),
+        (m) => m.id === itemId,
+        verdict,
+      );
     });
   });
+
+  container.querySelectorAll("[data-group-verdict]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const groupId = btn.closest(".dup-group").dataset.groupId;
+      const verdict = btn.dataset.groupVerdict;
+      await saveDuplicateVerdicts(
+        () => fetchJSON(
+          `${API_BASE}/findings/${encodeURIComponent(dupReview.findingId)}/duplicate-groups/${encodeURIComponent(groupId)}/verdict`,
+          { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ verdict }) },
+        ),
+        (m) => m.duplicate_group_id === groupId,
+        verdict,
+      );
+    });
+  });
+}
+
+// Saves, then updates local state and re-renders in place (keeping the
+// modal's scroll position) instead of re-fetching every group.
+async function saveDuplicateVerdicts(request, matchesMember, verdict) {
+  const scroller = document.querySelector("#detailModal .modal-content");
+  const scrollTop = scroller.scrollTop;
+  try {
+    await request();
+  } catch (error) {
+    alert(`Failed to save decision: ${error.message}`);
+    await loadDuplicateReview(dupReview.findingId);
+    return;
+  }
+  dupReview.groups.forEach((g) => g.members.forEach((m) => {
+    if (matchesMember(m)) {
+      m.review_verdict = verdict;
+      m.decision_source = "HUMAN";
+    }
+  }));
+  findingsDirty = true;
+  renderDuplicateReview();
+  scroller.scrollTop = scrollTop;
 }
 
 // ---------------------------------------------------------------------------
@@ -748,9 +969,7 @@ function attachDuplicateClusterHandlers(findingId, finding) {
 
 function renderFindingDecisionRow(finding) {
   const decided = finding.status !== "PENDING";
-  const reviewedAt = finding.reviewed_at
-    ? new Date(finding.reviewed_at).toLocaleString()
-    : "";
+  const reviewedAt = formatIST(finding.reviewed_at);
   const comment = finding.reviewer_comment
     ? ` - ${escapeHtml(finding.reviewer_comment)}`
     : "";
@@ -803,18 +1022,24 @@ async function openRunExplorerModal() {
     return;
   }
 
+  await loadWorkspace(); // pick up any change made on page 1 in another tab
+  const changeLink = `<a href="./?client=${encodeURIComponent(CLIENT_ID)}">Change client / data</a>`;
+  if (!WORKSPACE.ready) {
+    modalBody.innerHTML = `
+      <p class="empty-state">${escapeHtml(WORKSPACE.client.name)} needs a data dictionary and at least one table
+        before a run can start. ${changeLink}</p>`;
+    document.getElementById("runExplorerModal").classList.remove("hidden");
+    return;
+  }
+
   modalBody.innerHTML = `
-    <div class="form-row">
-      <label for="reDataDir">Data Directory</label>
-      <input type="text" id="reDataDir" value="${escapeHtml(options.default_data_dir)}">
-    </div>
-    <div class="form-row">
-      <label>Tables (leave all unchecked to profile every table)</label>
-      <div class="checkbox-group">
-        ${options.tables.map((t) => `
-          <label class="checkbox-inline"><input type="checkbox" class="re-table-check" value="${escapeHtml(t)}"> ${escapeHtml(t)}</label>
-        `).join("")}
+    <div class="run-workspace-summary">
+      <div><span class="rws-label">Client</span><strong>${escapeHtml(WORKSPACE.client.name)}</strong></div>
+      <div><span class="rws-label">Data dictionary</span>${escapeHtml(WORKSPACE.dictionary.file)}</div>
+      <div><span class="rws-label">Tables</span>
+        ${WORKSPACE.tables.map((t) => `<span class="rws-table" title="${t.rows} rows · ${t.columns} columns">${escapeHtml(t.table)}</span>`).join("")}
       </div>
+      <p class="hint-text">These come from page 1 and can't be changed here. ${changeLink}</p>
     </div>
     <div class="form-row">
       <label for="reProvider">LLM Provider</label>
@@ -831,6 +1056,9 @@ async function openRunExplorerModal() {
       </div>
     </div>
     <div class="form-row checkbox-row">
+      <label class="checkbox-inline" data-tooltip="Only run the built-in duplicate detection. No LLM calls, so no API cost.">
+        <input type="checkbox" id="reDuplicatesOnly"> Duplicates only (no LLM)
+      </label>
       <label class="checkbox-inline" data-tooltip="Run the profiling process from fresh data instead of reusing previously generated cached results">
         <input type="checkbox" id="reNoCache"> No Cache
       </label>
@@ -844,10 +1072,6 @@ async function openRunExplorerModal() {
       <div class="form-row">
         <label for="reTemperature">Temperature (optional)</label>
         <input type="number" step="0.1" id="reTemperature">
-      </div>
-      <div class="form-row">
-        <label for="reDictionaryFile">Dictionary File</label>
-        <input type="text" id="reDictionaryFile" value="${escapeHtml(options.default_dictionary_file)}">
       </div>
       <div class="form-row">
         <label for="reMaxIterations">Max Iterations</label>
@@ -865,8 +1089,6 @@ async function openRunExplorerModal() {
 }
 
 async function submitRunExplorer() {
-  const dataDir = document.getElementById("reDataDir").value.trim();
-  const tables = Array.from(document.querySelectorAll(".re-table-check:checked")).map((el) => el.value);
   const fallbackChecks = Array.from(document.querySelectorAll(".re-fallback-check"));
   const anyFallbackChecked = fallbackChecks.some((el) => el.checked);
   const fallbackProviders = anyFallbackChecked
@@ -874,19 +1096,17 @@ async function submitRunExplorer() {
     : null; // null = don't override config.yaml default
   const modelVal = document.getElementById("reModel").value.trim();
   const tempVal = document.getElementById("reTemperature").value;
-  const dictVal = document.getElementById("reDictionaryFile").value.trim();
   const maxIterVal = document.getElementById("reMaxIterations").value;
 
   const body = {
-    data_dir: dataDir,
+    client_id: CLIENT_ID, // the server resolves data folder, dictionary and tables from this client's workspace
     llm_provider: document.getElementById("reProvider").value,
     no_cache: document.getElementById("reNoCache").checked,
+    duplicates_only: document.getElementById("reDuplicatesOnly").checked,
   };
-  if (tables.length > 0) body.tables = tables;
   if (fallbackProviders !== null) body.fallback_providers = fallbackProviders;
   if (modelVal) body.model = modelVal;
   if (tempVal !== "") body.temperature = parseFloat(tempVal);
-  if (dictVal) body.dictionary_file = dictVal;
   if (maxIterVal !== "") body.max_iterations = parseInt(maxIterVal, 10);
 
   const errorEl = document.getElementById("runExplorerError");
@@ -904,46 +1124,111 @@ async function submitRunExplorer() {
   }
 }
 
-function renderJobBanner(job) {
-  const banner = document.getElementById("jobBanner");
-  if (!job) {
-    banner.classList.add("hidden");
+const RUN_BUTTON_STATES = {
+  idle: { html: "Run", title: "Run the Explorer Agent" },
+  // "Running" (with spinner) flips to "Stop" on hover and to "Offline" when
+  // status polling can't reach the server - see .btn-stop-explorer in style.css.
+  running: {
+    html: `<span class="lbl-running"><span class="spinner"></span>Running</span>`
+      + `<span class="lbl-offline">Offline</span><span class="lbl-stop">Stop</span>`,
+    title: "Stop the Explorer Agent run",
+  },
+  stopping: { html: `<span class="lbl-running"><span class="spinner"></span>Stopping</span>`, title: "Stopping..." },
+};
+
+// Only rebuilds the button when the state changes, so the spinner animation
+// isn't restarted by every 2-second status poll.
+function setRunButtonState(state) {
+  const runBtn = document.getElementById("runExplorerBtn");
+  runBtn.disabled = state === "stopping";
+  runBtn.classList.toggle("btn-run-explorer", state === "idle");
+  runBtn.classList.toggle("btn-stop-explorer", state !== "idle");
+  if (runBtn.dataset.state === state) return;
+  runBtn.dataset.state = state;
+  runBtn.innerHTML = RUN_BUTTON_STATES[state].html;
+  runBtn.title = RUN_BUTTON_STATES[state].title;
+}
+
+function setJobOffline(offline) {
+  const runBtn = document.getElementById("runExplorerBtn");
+  runBtn.classList.toggle("is-offline", offline && !!currentJobId);
+  if (currentJobId) {
+    runBtn.title = offline ? "Connection lost - retrying..." : RUN_BUTTON_STATES[runBtn.dataset.state].title;
+  }
+}
+
+// Swaps the header Run button into a Stop button while a job runs, and shows
+// a grey/green/red dot on its corner once the job has finished.
+function renderJobStatus(job) {
+  const runBtn = document.getElementById("runExplorerBtn");
+  const statusEl = document.getElementById("runStatus");
+  const running = job?.status === "RUNNING";
+
+  currentJobId = running ? job.job_id : null;
+  if (!running) stopRequested = false;
+  setRunButtonState(running ? "running" : "idle");
+  setJobOffline(false);
+
+  if (!job || running) {
+    statusEl.className = "run-status-dot hidden";
+    delete statusEl.dataset.tooltip;
     return;
   }
-  banner.classList.remove("hidden");
-  const statusLabel = { RUNNING: "Running...", COMPLETED: "Completed", FAILED: "Failed" }[job.status] || job.status;
-  const tone = job.status === "RUNNING" ? "warning" : (job.status === "COMPLETED" ? "positive" : "negative");
-  const lastLines = (job.log_tail || []).slice(-8).join("\n");
-  banner.innerHTML = `
-    <div class="job-banner-header">
-      <span class="verdict-badge verdict-tone-${tone}">Explorer Agent: ${escapeHtml(statusLabel)}</span>
-      <button id="jobBannerToggle" class="btn-lazy-load">Log</button>
-    </div>
-    <pre id="jobLogTail" class="job-log-pre hidden">${escapeHtml(lastLines)}</pre>
-  `;
-  document.getElementById("jobBannerToggle").addEventListener("click", () => {
-    document.getElementById("jobLogTail").classList.toggle("hidden");
-  });
+
+  const outcome = {
+    COMPLETED: { tone: "success", label: "Last run succeeded" },
+    FAILED: { tone: "failure", label: "Last run failed" },
+    STOPPED: { tone: "stopped", label: "Last run stopped" },
+  }[job.status] || { tone: "stopped", label: `Last run: ${job.status}` };
+
+  statusEl.className = `run-status-dot status-dot-${outcome.tone}`;
+  statusEl.dataset.tooltip = outcome.label;
+}
+
+async function stopRunningJob() {
+  if (!currentJobId) return;
+  if (!confirm("Stop the running Explorer Agent?")) return;
+  stopRequested = true;
+  setRunButtonState("stopping");
+  try {
+    await fetchJSON(`${API_BASE}/jobs/${encodeURIComponent(currentJobId)}/stop`, { method: "POST" });
+  } catch (error) {
+    // 409 means the job finished on its own in the meantime; polling picks that up.
+    console.error("Failed to stop job:", error);
+    stopRequested = false;
+    setRunButtonState("running");
+  }
 }
 
 function startJobPolling(jobId) {
   if (jobPollInterval) clearInterval(jobPollInterval);
   const poll = async () => {
+    let job;
     try {
-      const job = await fetchJSON(`${API_BASE}/jobs/${encodeURIComponent(jobId)}`);
-      renderJobBanner(job);
-      if (job.status !== "RUNNING") {
+      job = await fetchJSON(`${API_BASE}/jobs/${encodeURIComponent(jobId)}`);
+    } catch (error) {
+      if (String(error.message).includes("(404)")) {
+        // Server restarted and no longer knows this job - nothing left to track.
         clearInterval(jobPollInterval);
         jobPollInterval = null;
-        await loadRuns();
-        await loadFindings();
+        renderJobStatus(null);
+      } else {
+        // Network/server hiccup: show "Offline" and keep retrying until it's back.
+        setJobOffline(true);
       }
-    } catch (error) {
-      console.error("Job polling failed:", error);
+      return;
+    }
+    setJobOffline(false);
+    // Keep the "Stopping" button state until the process actually exits.
+    if (!(job.status === "RUNNING" && stopRequested)) renderJobStatus(job);
+    if (job.status !== "RUNNING") {
       clearInterval(jobPollInterval);
       jobPollInterval = null;
+      await loadRuns();
+      await loadFindings();
     }
   };
+  jobPollNow = poll;
   poll();
   jobPollInterval = setInterval(poll, 2000);
 }
@@ -954,7 +1239,7 @@ async function resumeJobIfRunning() {
     if (job.status === "RUNNING") {
       startJobPolling(job.job_id);
     } else {
-      renderJobBanner(job);
+      renderJobStatus(job);
     }
   } catch (error) {
     // No job has ever been run in this process - nothing to resume.
@@ -967,6 +1252,11 @@ async function resumeJobIfRunning() {
 
 document.getElementById("closeModal").addEventListener("click", () => {
   document.getElementById("detailModal").classList.add("hidden");
+  dupReview = null;
+  if (findingsDirty) {
+    findingsDirty = false;
+    loadFindings(); // refresh the cards' review progress
+  }
 });
 
 document.getElementById("runSelect").addEventListener("change", loadFindings);
@@ -993,12 +1283,37 @@ document.getElementById("promoteBtn").addEventListener("click", async () => {
   }
 });
 
-document.getElementById("runExplorerBtn").addEventListener("click", openRunExplorerModal);
+document.getElementById("runExplorerBtn").addEventListener("click", (event) => {
+  if (event.currentTarget.classList.contains("is-offline")) return; // can't reach the server to stop
+  if (currentJobId) {
+    stopRunningJob();
+  } else {
+    openRunExplorerModal();
+  }
+});
+
+// React to the browser's own connectivity signal right away instead of
+// waiting for the next poll to fail/succeed.
+window.addEventListener("offline", () => setJobOffline(true));
+window.addEventListener("online", () => {
+  if (jobPollInterval && jobPollNow) jobPollNow();
+});
 document.getElementById("closeRunExplorerModal").addEventListener("click", () => {
   document.getElementById("runExplorerModal").classList.add("hidden");
 });
 
 (async function init() {
+  // Page 2 only makes sense for a chosen, existing client - otherwise back to page 1.
+  if (!CLIENT_ID) {
+    window.location.replace("./");
+    return;
+  }
+  try {
+    await loadWorkspace();
+  } catch (error) {
+    window.location.replace("./");
+    return;
+  }
   try {
     await loadDictionary();
     await loadRuns();

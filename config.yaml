@@ -75,21 +75,55 @@ llm:
     n_ctx: 4096
 
 data:
-  # SAP table name -> source filename, resolved under --data-dir.
-  tables:
-    LFA1: LFA1.csv
-    LFB1: LFB1.csv
-    LFBK: LFBK.csv
-    LFM1: LFM1.csv
+  # Tables are NOT listed here: every CSV in a run's data folder except the
+  # data dictionary is a table, named after its file (LFA1.csv -> LFA1).
+  # Default dictionary file name for CLI runs (--dictionary-file). EXPLORER_DICTIONARY_FILE
   dictionary_file: Data_Dictionary.csv
 
+  # Files uploaded on the review app's first page, one folder per client:
+  # client_data/<client_id>/ (the tables, the dictionary and workspace.json).
+  # Raw client data - gitignored. EXPLORER_CLIENT_DATA_DIR
+  client_data_dir: client_data
+  max_upload_mb: 200 # per file; EXPLORER_MAX_UPLOAD_MB
+
   # One-line business meaning per SAP table, shown in the review app's
-  # hover tooltips (the dictionary CSV above only covers columns).
+  # hover tooltips (the dictionary CSV covers columns). Tables not listed here
+  # simply get no table-level description.
   table_descriptions:
     LFA1: "Vendor Master (General Data) - one row per vendor, client-independent (name, address, tax numbers)."
     LFB1: "Vendor Master (Company Code Data) - a vendor's financial settings within one company code (payment terms, reconciliation account, blocks)."
     LFBK: "Vendor Master (Bank Details) - one or more bank accounts registered for a vendor."
     LFM1: "Vendor Master (Purchasing Organization Data) - a vendor's purchasing terms within one purchasing organization."
+
+duplicates:
+  # Built-in, deterministic duplicate detection (explorer_agent/duplicate_detector.py).
+  # Runs locally with ZERO LLM calls; the planner no longer proposes DUPLICATE checks.
+  # EXPLORER_DUPLICATES_ENABLED
+  enabled: true
+  # Minimum fuzzy name similarity (0-100) for a name-based match. Fuzzy name
+  # matches always also need a matching location field, and names whose
+  # numbers differ ("Plant 1" vs "Plant 2") never fuzzy-match.
+  fuzzy_name_threshold: 85 # EXPLORER_DUPLICATE_FUZZY_THRESHOLD
+  # An identifier value shared by more records than this is treated as a
+  # placeholder/default (e.g. a dummy tax ID), not as proof of duplication.
+  max_identifier_share: 5 # EXPLORER_DUPLICATE_MAX_IDENTIFIER_SHARE
+  # Fuzzy comparisons run inside location blocks (same city/postal code);
+  # blocks larger than this are skipped to bound runtime on big tables.
+  max_block_size: 500 # EXPLORER_DUPLICATE_MAX_BLOCK
+  max_groups: 500 # EXPLORER_DUPLICATE_MAX_GROUPS
+
+  # Matching rules are INFERRED for every table from its data dictionary, column
+  # names and values (explorer_agent/duplicate_rules.py) - no per-table setup.
+  # Only add a table here to override inference, e.g.:
+  #   tables:
+  #     LFBK:
+  #       key: LIFNR            # business key column(s)
+  #       key_unique: false     # true = a repeated key is itself a duplicate
+  #       name: KOINH           # name column (used only together with location)
+  #       identifiers: [IBAN, [BANKS, BANKL, BANKN]]   # nested list = composite identifier
+  #       location: []          # corroborating fields for name matches
+  #       display: [KOINH, BANKS, BANKL, BANKN, IBAN]  # columns shown in the review app
+  tables: {}
 
 profiling:
   top_n_frequent: 10
@@ -109,6 +143,9 @@ memory:
   chroma_collection: procedural_skills
   retrieval_top_k: 3
   dedup_distance_threshold: 0.25
+  # Client-specific knowledge, one folder per client (company): human decisions
+  # that must survive across runs, e.g. duplicate review verdicts.
+  clients_dir: memory_store/clients # EXPLORER_CLIENTS_DIR
 
   # Semantic-memory embeddings: all-MiniLM-L6-v2 as ONNX, run locally on CPU
   # via onnxruntime - free, no API calls, and never contacts Hugging Face.
