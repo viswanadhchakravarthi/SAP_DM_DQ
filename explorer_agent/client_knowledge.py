@@ -1,4 +1,4 @@
-"""Client-specific knowledge - human decisions that outlive a single run.
+﻿"""Client-specific knowledge - human decisions that outlive a single run.
 
 Episodic memory (``episodic_store``) keeps each run's findings and review
 state, but a new run creates new findings, so decisions made there would be
@@ -7,6 +7,8 @@ human-readable JSON, alongside procedural memory:
 
     <memory.clients_dir>/<client_id>/client.json               display name
     <memory.clients_dir>/<client_id>/duplicate_decisions.json  duplicate review decisions
+    <memory.clients_dir>/<client_id>/duplicate_rules.json      LLM-drafted matching rules,
+                                                               written by memory.duplicate_rule_store
 
 Duplicate decisions are stored per record, keyed by ``record_id`` =
 ``<business key>|<fingerprint of the record's display fields>``, with the
@@ -64,14 +66,15 @@ def _client_dir(client_id: str) -> Path:
     return Path(Config.CLIENT_KNOWLEDGE_DIR) / client_id
 
 
-def _read_json(path: Path, default: Any) -> Any:
+def read_json(path: Path, default: Any) -> Any:
+    """Shared with memory.duplicate_rule_store - same human-readable JSON files."""
     if not path.exists():
         return default
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
-def _write_json_atomic(path: Path, data: Any) -> None:
+def write_json_atomic(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.stem}-", suffix=".tmp")
     try:
@@ -89,14 +92,14 @@ def ensure_client(name: str) -> Dict[str, str]:
     client_id = client_id_for(name)
     path = _client_dir(client_id) / "client.json"
     with _write_lock:
-        info = _read_json(path, None)
+        info = read_json(path, None)
         if info is None:
             info = {
                 "client_id": client_id,
                 "name": name.strip(),
                 "created_at": datetime.now(timezone.utc).isoformat(),
             }
-            _write_json_atomic(path, info)
+            write_json_atomic(path, info)
     return {"client_id": info["client_id"], "name": info["name"]}
 
 
@@ -107,7 +110,7 @@ def get_client(client_id: str) -> Optional[Dict[str, str]]:
             return None
     except ValueError:
         return None
-    info = _read_json(_client_dir(client_id) / "client.json", None)
+    info = read_json(_client_dir(client_id) / "client.json", None)
     return {"client_id": info["client_id"], "name": info["name"]} if info else None
 
 
@@ -116,10 +119,10 @@ def list_clients() -> List[Dict[str, Any]]:
     clients = []
     if root.exists():
         for folder in sorted(p for p in root.iterdir() if p.is_dir()):
-            info = _read_json(folder / "client.json", None)
+            info = read_json(folder / "client.json", None)
             if not info:
                 continue
-            tables = _read_json(folder / "duplicate_decisions.json", {}).get("tables", {})
+            tables = read_json(folder / "duplicate_decisions.json", {}).get("tables", {})
             clients.append({
                 "client_id": info["client_id"],
                 "name": info["name"],
@@ -148,7 +151,7 @@ def _decisions_path(client_id: str) -> Path:
 def load_duplicate_decisions(client_id: Optional[str], table: str) -> Dict[str, Dict[str, Any]]:
     if not client_id:
         return {}
-    return _read_json(_decisions_path(client_id), {}).get("tables", {}).get(table, {})
+    return read_json(_decisions_path(client_id), {}).get("tables", {}).get(table, {})
 
 
 def is_known_not_duplicate(decisions: Dict[str, Dict[str, Any]], id_a: str, id_b: str) -> bool:
@@ -192,7 +195,7 @@ def sync_duplicate_group(client_id: str, table: str, members: List[Dict[str, Any
 
     with _write_lock:
         path = _decisions_path(client_id)
-        data = _read_json(path, {"version": 1, "tables": {}})
+        data = read_json(path, {"version": 1, "tables": {}})
         decisions = data.setdefault("tables", {}).setdefault(table, {})
 
         for m in usable:
@@ -218,5 +221,6 @@ def sync_duplicate_group(client_id: str, table: str, members: List[Dict[str, Any
             }
             written += 1
 
-        _write_json_atomic(path, data)
+        write_json_atomic(path, data)
     return written
+

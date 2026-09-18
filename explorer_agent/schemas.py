@@ -136,3 +136,83 @@ class FindingJudgment(BaseModel):
 
 class ReflectionBatch(BaseModel):
     judgments: List[FindingJudgment]
+
+
+# ---------------------------------------------------------------------------
+# Duplicate matching rules (see duplicate_rule_planner.py)
+# ---------------------------------------------------------------------------
+# The LLM plays the analyst ONCE per client+schema: it reads the client's data
+# dictionary and privacy-sanitized column statistics and assigns a role to each
+# column. The deterministic engine (duplicate_detector.py) then executes that
+# spec on every later run with no LLM call at all. Roles are business concepts,
+# not SAP field names, so the same schema works for any uploaded table.
+DuplicateRole = Literal["KEY", "IDENTIFIER", "NAME", "LOCATION", "CONTEXT", "IGNORE"]
+
+
+class ColumnRule(BaseModel):
+    column: str = Field(description="Column name exactly as given in the table metadata")
+    role: DuplicateRole = Field(description=(
+        "KEY: the column(s) identifying the business object this table is about (rows sharing it are "
+        "the same object and are never compared with each other). "
+        "IDENTIFIER: a value that identifies a real-world entity on its own (tax/registration number, "
+        "e-mail, phone, IBAN, ...) - two records sharing one are the same entity. "
+        "NAME: the entity's name/description used for exact and fuzzy name matching. "
+        "LOCATION: a place-like field (street, city, postal code, ...) that corroborates a name match. "
+        "CONTEXT: not matched on, but worth showing to the human reviewer. "
+        "IGNORE: irrelevant for duplicate detection."))
+    identifier_group: Optional[str] = Field(default=None, description=(
+        "IDENTIFIER columns only. Give the SAME group name to columns that are only meaningful "
+        "together (e.g. a bank country + bank key + account number are one identifier). "
+        "Leave empty when the column identifies the entity on its own."))
+    show_in_review: bool = Field(default=True, description=(
+        "Show this column in the reviewer's side-by-side record comparison."))
+    reason: str = Field(description=(
+        "One sentence, for a human auditor, on why this column got this role - cite the data "
+        "dictionary description or the statistics you based it on."))
+
+    @field_validator("identifier_group")
+    @classmethod
+    def normalize_none_string(cls, v):
+        return None if v in (None, "None", "null", "") else v
+
+    @field_validator("role", mode="before")
+    @classmethod
+    def normalize_role(cls, v):
+        role = str(v or "").strip().upper()
+        return role if role in ("KEY", "IDENTIFIER", "NAME", "LOCATION", "CONTEXT", "IGNORE") else "IGNORE"
+
+
+class DuplicateRulePlan(BaseModel):
+    """How duplicates should be matched in ONE table."""
+    label: str = Field(default="records", description=(
+        "Plural business noun for one row, used in reviewer text, e.g. 'vendors', 'bank accounts', "
+        "'customers', 'materials'."))
+    key_unique: bool = Field(default=False, description=(
+        "True when the KEY must be unique in this table, so a repeated key value is ITSELF a "
+        "duplicate (a master table keyed by its own id). False when one key legitimately owns many "
+        "rows (e.g. several bank accounts per vendor)."))
+    rule_scope: RuleScope = Field(default="CLIENT_SPECIFIC", description=(
+        "UNIVERSAL if these role assignments hold for any company using this standard table layout; "
+        "INDUSTRY_SPECIFIC if they depend on the industry; CLIENT_SPECIFIC if any column is custom "
+        "or repurposed for this client."))
+    industry: Optional[str] = Field(default=None, description="Industry name if rule_scope is INDUSTRY_SPECIFIC")
+    notes: Optional[str] = Field(default=None, description=(
+        "Optional caveat for the human reviewer, e.g. a column you were unsure about."))
+    columns: List[ColumnRule] = Field(description="One entry per column of the table")
+
+    @field_validator("label", mode="before")
+    @classmethod
+    def normalize_label(cls, v):
+        return str(v).strip() if v and str(v).strip() else "records"
+
+    @field_validator("industry", "notes")
+    @classmethod
+    def normalize_none_string(cls, v):
+        return None if v in (None, "None", "null", "") else v
+
+    @field_validator("rule_scope", mode="before")
+    @classmethod
+    def normalize_rule_scope(cls, v):
+        if not v or v not in ("UNIVERSAL", "INDUSTRY_SPECIFIC", "CLIENT_SPECIFIC"):
+            return "CLIENT_SPECIFIC"
+        return v

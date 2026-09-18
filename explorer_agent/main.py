@@ -14,6 +14,7 @@ from .schemas import Reflection, CheckPlan, ReflectionBatch
 from .table_profiler import profile_table
 from .cache_runner import run_cached_skills
 from .duplicate_detector import detect_table_duplicates
+from .duplicate_rule_planner import RulePlanner
 from . import client_knowledge
 from .memory.retriever import SkillRetriever
 from . import episodic_store as store
@@ -100,6 +101,15 @@ Propose roughly 1-2 checks per notable column (skip clean-looking columns). Do n
     return cached_findings + fresh_findings
 
 
+def _rule_chain_factory(model, temperature):
+    """Builds the rule-drafting chain on demand (see RulePlanner) - nothing is
+    constructed, and no local model loaded, until a table needs new rules."""
+    def build():
+        bundle = build_llms(model, temperature)
+        return bundle.duplicate_rules_structured, bundle.chain_label
+    return build
+
+
 def main():
     store.init_db()
     metrics.reset()
@@ -122,7 +132,9 @@ def main():
     parser.add_argument("--no-cache", action="store_true")
     parser.add_argument(
         "--duplicates-only", action="store_true",
-        help="Only run the built-in deterministic duplicate detection - no LLM calls, no API keys needed.",
+        help="Only run deterministic duplicate matching. Free for tables whose rules are already "
+             "saved for this client; a table/schema never seen before costs one call to draft them "
+             "(and is limited to identical rows if no LLM is configured).",
     )
     parser.add_argument(
         "--llm-provider", default=Config.LLM_PROVIDER, choices=Config.SUPPORTED_LLM_PROVIDERS,
@@ -166,12 +178,25 @@ def main():
     if args.duplicates_only:
         llms = graph = reflector_single = skill_retriever = None
         run_label = "duplicate-detector (no LLM)"
+        # Matching rules already saved for this client are reused as they are, so a
+        # duplicates-only run normally stays free. A table whose schema has never
+        # been seen for this client still needs one call to draft its rules, so the
+        # chain is built lazily - only if such a table actually turns up, and only
+        # when the primary provider is configured.
+        rule_planner = None
+        if not Config.provider_missing_settings(Config.LLM_PROVIDER):
+            rule_planner = RulePlanner(_rule_chain_factory(args.model, args.temperature))
+        else:
+            logger.warning("No LLM credentials configured: tables without saved duplicate rules "
+                           "will only be checked for identical rows.")
     else:
         llms = build_llms(args.model, args.temperature)
         graph = build_explorer_graph(llms.planner_structured, llms.reflector_structured)
         reflector_single = llms.reflector_single
         skill_retriever = SkillRetriever()
         run_label = llms.chain_label
+        rule_planner = RulePlanner(lambda: (llms.duplicate_rules_structured, llms.chain_label),
+                                   label=llms.chain_label)
 
     run_id = store.create_run(model=run_label, table_names=list(tables.keys()),
                               client_id=client["client_id"], client_name=client["name"])
@@ -185,7 +210,8 @@ def main():
         # findings are kept even if the LLM chain fails for this table.
         findings = []
         duplicate_finding = detect_table_duplicates(table_name, df, client_id=client["client_id"],
-                                                    dictionary=dictionary)
+                                                    dictionary=dictionary, client_name=client["name"],
+                                                    rule_planner=rule_planner)
         if duplicate_finding:
             findings.append(duplicate_finding)
         if not args.duplicates_only:
@@ -225,7 +251,10 @@ def main():
     print(f"\nRun {run_id} complete.")
     print(f"Total findings: {total_findings}")
     print(f"Total execution time: {elapsed:.2f}s ({elapsed/60:.2f} min)")
-    print(f"LLM calls - Planner: {metrics.planner_llm_calls} | Reflector: {metrics.reflector_llm_calls}")
+    print(f"LLM calls - Planner: {metrics.planner_llm_calls} | Reflector: {metrics.reflector_llm_calls} | "
+          f"Duplicate rules: {metrics.duplicate_rule_llm_calls}")
+    print(f"Duplicate rules - Reused from memory: {metrics.duplicate_rule_hits} | "
+          f"Drafted for a new schema: {metrics.duplicate_rule_misses}")
     print(f"Cache - Hits: {metrics.cache_hits} | Misses: {metrics.cache_misses}")
     print(f"LLM fallbacks - Failed attempts: {metrics.llm_call_failures} | "
           f"Served by fallback: {metrics.llm_fallback_calls}")

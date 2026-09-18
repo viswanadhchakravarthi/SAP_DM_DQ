@@ -96,8 +96,10 @@ data:
     LFM1: "Vendor Master (Purchasing Organization Data) - a vendor's purchasing terms within one purchasing organization."
 
 duplicates:
-  # Built-in, deterministic duplicate detection (explorer_agent/duplicate_detector.py).
-  # Runs locally with ZERO LLM calls; the planner no longer proposes DUPLICATE checks.
+  # Deterministic duplicate MATCHING (explorer_agent/duplicate_detector.py): runs
+  # locally with zero LLM calls, and the planner no longer proposes DUPLICATE checks.
+  # WHICH columns it matches on is drafted by the LLM once per client+schema
+  # (explorer_agent/duplicate_rule_planner.py) and then reused from memory.
   # EXPLORER_DUPLICATES_ENABLED
   enabled: true
   # Minimum fuzzy name similarity (0-100) for a name-based match. Fuzzy name
@@ -112,9 +114,32 @@ duplicates:
   max_block_size: 500 # EXPLORER_DUPLICATE_MAX_BLOCK
   max_groups: 500 # EXPLORER_DUPLICATE_MAX_GROUPS
 
-  # Matching rules are INFERRED for every table from its data dictionary, column
-  # names and values (explorer_agent/duplicate_rules.py) - no per-table setup.
-  # Only add a table here to override inference, e.g.:
+  rules:
+    # How the matching rules for a table are produced (explorer_agent/duplicate_rules.py):
+    # the LLM drafts them once from the client's data dictionary and sanitized column
+    # statistics, they are saved under memory_store/clients/<client_id>/duplicate_rules.json,
+    # and every later run for that client reuses them with no LLM call. A table whose
+    # column set changed is re-drafted on its own; the others stay free.
+
+    # Masked example values per column included in the drafting prompt (0 = none).
+    # Only the last two characters of a value are visible - see profiler_primitives.mask_value.
+    sample_values: 3 # EXPLORER_DUPLICATE_RULE_SAMPLES
+
+    # Safety net on the drafted rules: a column the LLM called an identifier on its
+    # own is rejected when fewer than this share of its filled values are distinct.
+    # One value then covers many records, so it cannot identify one - this catches a
+    # composite identifier (bank country + key + account) whose parts were not put in
+    # a shared identifier_group. Purely statistical; it never invents a rule.
+    min_identifier_distinct: 0.5 # EXPLORER_DUPLICATE_RULE_MIN_DISTINCT
+
+    # Reuse rules the LLM marked UNIVERSAL / INDUSTRY_SPECIFIC at OTHER clients
+    # (exact same column set only). Off by default: the same (table, column) pair
+    # can mean different things at different companies, because standard fields get
+    # repurposed and custom fields mean whatever their owner decided.
+    reuse_across_clients: false # EXPLORER_DUPLICATE_RULES_SHARE
+
+  # Rules are drafted per table as described above - no per-table setup needed.
+  # Only add a table here to pin its rules by hand and skip both the LLM and memory, e.g.:
   #   tables:
   #     LFBK:
   #       key: LIFNR            # business key column(s)

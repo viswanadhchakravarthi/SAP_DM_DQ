@@ -175,10 +175,30 @@ class Config:
         "EXPLORER_MAX_ITERATIONS_PER_COLUMN", _get("profiling.max_iterations_per_column", 5)
     )
 
-    # Deterministic duplicate detection (explorer_agent/duplicate_detector.py) -
-    # runs without any LLM call; per-table matching rules live in config.yaml.
+    # Deterministic duplicate matching (explorer_agent/duplicate_detector.py).
+    # The matching itself never calls an LLM; the rules it executes are drafted
+    # by the LLM once per client+schema and then reused from memory
+    # (duplicate_rule_planner / memory.duplicate_rule_store). duplicates.tables
+    # pins a table's rules by hand and skips both.
     DUPLICATES_ENABLED = _env_bool("EXPLORER_DUPLICATES_ENABLED", _get("duplicates.enabled", True))
     DUPLICATE_TABLE_RULES = _get("duplicates.tables", {})
+    # Masked example values per column sent with the rule-drafting prompt
+    # (0 = none). mask_value() keeps only the last two characters.
+    DUPLICATE_RULE_SAMPLE_VALUES = _env_int(
+        "EXPLORER_DUPLICATE_RULE_SAMPLES", _get("duplicates.rules.sample_values", 3)
+    )
+    # A single column the LLM called an IDENTIFIER is rejected when fewer than
+    # this share of its filled values are distinct - such a value covers many
+    # records, so it cannot identify one (see duplicate_rule_planner).
+    DUPLICATE_RULE_MIN_IDENTIFIER_DISTINCT = _env_float(
+        "EXPLORER_DUPLICATE_RULE_MIN_DISTINCT", _get("duplicates.rules.min_identifier_distinct", 0.5)
+    )
+    # Reuse rules the LLM scoped UNIVERSAL/INDUSTRY_SPECIFIC at OTHER clients.
+    # Off by default: the same (table, column) pair can mean different things at
+    # different companies (repurposed and custom fields).
+    DUPLICATE_RULES_REUSE_ACROSS_CLIENTS = _env_bool(
+        "EXPLORER_DUPLICATE_RULES_SHARE", _get("duplicates.rules.reuse_across_clients", False)
+    )
     DUPLICATE_FUZZY_NAME_THRESHOLD = _env_float(
         "EXPLORER_DUPLICATE_FUZZY_THRESHOLD", _get("duplicates.fuzzy_name_threshold", 85)
     )

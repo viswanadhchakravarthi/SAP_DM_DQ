@@ -1,12 +1,18 @@
-"""Deterministic duplicate detection - pure Python, zero LLM calls.
+"""Deterministic duplicate detection - the matching engine, not the rule author.
 
 Duplicate matching used to depend on the planner LLM remembering to call a
 clustering helper from generated ``detail_code``; in practice it rarely did,
 so DUPLICATE findings arrived with no rows to review while still costing
 planner/reflector tokens. Duplicates are now detected here for every table,
-with matching rules inferred from the table's data dictionary, column names and
-values (``duplicate_rules``; ``config.yaml`` ``duplicates.tables`` can override),
-and the planner is told not to propose DUPLICATE checks at all.
+by the deterministic engine below, and the planner is told not to propose
+DUPLICATE checks at all.
+
+WHICH columns the engine may use is a separate question with a separate answer:
+the LLM drafts that rule spec once per client and schema from the data
+dictionary and sanitized statistics (``duplicate_rule_planner``), it is saved
+(``memory.duplicate_rule_store``), and ``duplicate_rules.resolve_rules`` hands
+it to this module on every later run without any LLM call. Nothing in this file
+decides what a column means.
 
 Every table is checked for identical rows, and for repeated values of a key the
 dictionary marks as a primary key (both EXACT). Beyond that, matching is
@@ -382,36 +388,45 @@ def _classify_pair(a: Dict[str, Any], b: Dict[str, Any], ev: Dict[str, Any],
 # Finding assembly (same dict shape graph.py produces for LLM findings)
 # ---------------------------------------------------------------------------
 
+_UNDISPLAYED_RULE_KEYS = ("why", "checks", "source", "source_detail", "notes")
+
+
 def describe_rules(table_name: str, rules: Dict[str, Any]) -> str:
     """The 'View Matching Rules' text: what is checked, and why each column was used."""
     lines = [
-        "# Built-in deterministic duplicate detection (no LLM).",
-        f"# Rules for {table_name}: "
-        + ("inferred from the data dictionary, column names and values."
-           if rules["source"] == "inferred" else f"from {rules['source']} (duplicates.tables.{table_name})."),
+        "# Deterministic duplicate matching - the rules below are applied in plain Python.",
+        f"# Rules for {table_name}: {rules['source_detail']}.",
         "",
         "Checks:",
         *(f"  - {c}" for c in rules["checks"]),
     ]
+    if rules.get("notes"):
+        lines += ["", f"Note: {rules['notes']}"]
     if rules.get("why"):
         lines += ["", "Columns used:", *(f"  - {col}: {reason}" for col, reason in rules["why"].items())]
-    lines += ["", "Rules:", json.dumps({k: v for k, v in rules.items() if k not in ("why", "checks")}, indent=2)]
+    lines += ["", "Rules:",
+              json.dumps({k: v for k, v in rules.items() if k not in _UNDISPLAYED_RULE_KEYS}, indent=2)]
     return "\n".join(lines)
 
 
 def detect_table_duplicates(table_name: str, df: pd.DataFrame, client_id: Optional[str] = None,
-                            dictionary: Optional[Dict[Tuple[str, str], str]] = None) -> Optional[Dict[str, Any]]:
+                            dictionary: Optional[Dict[Tuple[str, str], str]] = None,
+                            client_name: Optional[str] = None,
+                            rule_planner=None) -> Optional[Dict[str, Any]]:
     """Build one DUPLICATE finding (with all group rows) for any table, or None.
 
-    Rules come from config.yaml when a table has an override, otherwise they are
-    inferred from ``dictionary`` (data_loader.load_data_dictionary) and the data
-    itself - see duplicate_rules. With a ``client_id``, that client's remembered
-    decisions are applied (see client_knowledge): known-unique pairs are skipped
-    and earlier verdicts pre-filled.
+    Rules are resolved by ``duplicate_rules.resolve_rules``: a config.yaml
+    override, this client's saved rules, or - for a table/schema never seen for
+    this client - one LLM call through ``rule_planner`` using ``dictionary``
+    (data_loader.load_data_dictionary), after which they are saved. With a
+    ``client_id``, that client's remembered decisions are applied as well (see
+    client_knowledge): known-unique pairs are skipped and earlier verdicts
+    pre-filled.
     """
     if not Config.DUPLICATES_ENABLED or df.empty:
         return None
-    rules = duplicate_rules.resolve_rules(table_name, df, dictionary)
+    rules = duplicate_rules.resolve_rules(table_name, df, dictionary, client_id=client_id,
+                                          client_name=client_name, rule_planner=rule_planner)
     logger.info("[%s] duplicate rules (%s): %s", table_name, rules["source"], "; ".join(rules["checks"]))
 
     decisions = client_knowledge.load_duplicate_decisions(client_id, table_name)
