@@ -1,0 +1,901 @@
+KUNNR,KTOKD,NAME1,NAME2,SORTL,STRAS,ORT01,PSTLZ,LAND1,SPRAS,TELF1,SMTP_ADDR,STCD1,STCD2,STCD3,STCEG,LOEVM,SPERM,ERDAT
+0002000001,KUNA,Bellevue Distribution S.A.,,,155 Rue de l'Industrie,Marseille,13032,FR,FR,,contact@bellevue-distribution.fr,,,,FR11435589117,,,2014-09-16
+0002000002,KUNA,Bhagwati Leathers & Partner Ltd,,BHAGWATILE,"171/A Andheri East, Marol",Mumbai,400030,IN,EN,+91 11 9220 6341,billing@bhagwati-leathers.in,,,27TCCRC9828F1ZI,,,,2018-06-03
+0002000003,KUNA,DUMMY,,DUMMY,201 Station Road,Birmingham,B7 8BY,GB,EN,+44 115 236 9994,orders@blackwell-print.co.uk,GB125072897,,,,,,2013-06-21
+0002000004,KUNA,Jansen Voeding & Partner B.V.,,JANSEN VOE,Ondernemersweg 78,Rotterdam,3082 ON,NL,EN,+31 40 591 4915,purchasing@jansen-voeding.nl,NL821917060B20,,,NL821917060B20,,,2021-06-09
+0002000005,KUNA,Bergmann Logistik AG,,BERGMANN L,Industriestraße 44,Frankfurt am Main,60357,DE,DE,+49 89 3270 8405,export@bergmann-logistik.de,DE838640691,,,DE838640691,,,2026-02-27
+0002000006,KUNA,Eichbreg Ladenbau AG,,EICHBERG L,Robert-Bosch-Straße 51,Graz,8015,AT,DE,,vertrieb@eichberg-ladenbau.at,,,,,,,2026-04-26
+0002000007,KUNA,Mazur Technologie Sp. z o.o.,,MAZURTECHN,al. Jerozolimskie 119,Kraków,30-962,PL,EN,+48 42 242 0358,purchasing@mazur-technologie.pl,PL1591387531,,,,,,2022-10-22
+0002000008,KUNA,"Shanghai Lixin-Longxin Packaging Industrial Co., Ltd.",,SHANGHAILI,"Block 230, Longgang District",Shanghai,,CN,ZH,+86 532 940 8188,info@shanghai-lixin.com.cn,91481861EZ6N0QFSK3,,,,,,2018-01-24
+0002000009,KUNA,Terlouw Voeding N.V.,,TERLOUWVOE,Distributiestraat 17,Amsterdam,1073 JN,NL,EN,+31 40 265 1170,sales@terlouw-voeding.nl,NL852191073B15,,,NL852191073B15,,,2025-03-19
+0002000010,KUNA,Duvivier Impression SASU,,DUVIVIER I,,Nantes,293175,FR,FR,,,FR60626123767,,,FR60626123767,,,2025-09-20
+0002000011,KUNA,HOLLINGWOOD-ASHFORD FACILITIES PLC,,HOLLINGWOO,"UNIT 16, RIVERSIDE INDUSTRIAL ESTATE",Bristol,BS1 9QS,GB,EN,+44 113 951 5155,billing@hollingwood-ashford.co.uk,GB514752254,,,,,,2016-02-12
+0002000012,KUNA,Vermeer Techniek N.V.,,VERMEER TE,Distributiestraat 71,Rotterdam,3058 GO,NL,EN,+31 30 351 8563,sales@vermeer-techniek.nl,NL275235675B81,,,NL275235675B81,,,2015-09-09
+0002000013,KUNA,Clara Stanmore Co.,,CLARASTANM,86 Commerce Drive,Columbus,43236,US,EN,+1 404 555 4391,orders@clara-stanmore.com,,79-1506121,,,,,2016-07-02
+0002000014,KUNA,"Dietrich, Daniela",,DIETRICH D,Hauptstraße 13,Dresden,X1143,DE,DE,+49 221 793 5445,dietrich-daniela@acme-retail.de,,,,DE084148951,,,2022-02-02
+0002000015,KUNA,Wróblewski & Piotrowski Sp. z o.o.,,WROBLEWSKI,ul. Fabryczna 45,Łódź,90-751,PL,EN,+48 71 586 7137,,PL2203786694,,,,,,2022-08-19
+0002000016,KUNA,Dunmore Textiles Co.,,DUNMORETEX,122 Industrial Parkway,Chicago,60657,US,EN,+1 614 555 1830,purchasing@dunmore-textiles.com,11-9859985,,,,,,2021-12-02
+0002000017,KUNA,Clara Crestwood Ltd,,CLARACREST,169 Station Road,Leeds,LS1 7JH,GB,EN,+44 115 535 8202,ap@clara-crestwood.co.uk,GB762001330,,,,,,2018-10-04
+0002000018,KUNA,"Albrecht, Jana",,ALBRECHT J,Industriestraße 218,München,80353,XX,DE,+49 69 5996 3715,albrecht-jana@acme-retail.de,,,,,,,2014-12-22
+0002000019,KUNA,Vermeer & Van Dijken (Stockholm Branch,,VERMEER VA,Havenstraat 38,Utrecht,3566 NT,NL,EN,+31 30 524 3740,orders@vermeer-van.nl,,,,NL723300489B50,,,2026-09-05
+0002000020,KUNA,Nowicki-Ostrowski Technologie S.A.,,NOWICKIOST,ul. Handlowa 151,Łódź,90-4,PL,EN,+48 12 959 9119,,PL7076915003,,,,,,2017-12-11
+0002000021,KUNA,Rochefort Alimentaire SARL,,ROCHEFORTA,"ZI Nord, Lot 174",Lyon,69001,FR,FR,+33 3 4464 4478,,,,,FR16471022374,,,2018-06-02
+0002000022,KUNA,Seibert Getränke & Partner GmbH,,SEIBERTGET,,Köln,,DE,DE,,office@seibert-getranke.de,,,,DE659981127,,,2025-07-22
+0002000023,KUNA,HERRERA & GUZMAN S.L.,,HERRERA GU,AVENIDA DE LA CONSTITUCION 161,Barcelona,08013,ES,ES,+34 96 873 1942,admin@herrera-guzman.es,,,,ESH4644718S,,,2021-11-04
+0002000024,KUNA,Maibach Getränke GmbH,,MAIBACH GE,Carl-Benz-Straße 72,Nürnberg,90404,DE,XX,+49 69 6213 9719,info@maibach-getranke.de,DE452269796,,,DE452269796,,,2013-09-27
+0002000025,KUNA,Haustein Handels GmbH,,HAUSTEINHA,Gewerbepark 44,Hannover,30214,DE,DE,+49 30 6296 7485,,de887603983,,,DE933863720,,,2015-01-09
+0002000026,KUNA,Elbtal Druck GmbH,,ELBTAL DRU,Hafenstraße 161,Essen,45132,DE,DE,+49 40 7298 9171,verwaltung@elbtal-druck.de,DE250255459,,,DE250255459,,,2015-08-03
+0002000027,KUNA,Rupali Accessories & Partner Ltd. - Werk 1,,RUPALI ACC,"House 139, Road 7, Banani",Dhaka,1214,BD,EN,+880 31 636 3564,billing@rupali-accessories.com.bd,745546684-8951,,,,,,2013-11-04
+0002000028,KUNA,Harlow Systems Ltd,,HARLOW SYS,173 Queens Road,Nottingham,NG1 0PT,GB,EN,+44 115 684 0888,ap@harlow-systems.co.uk,GB507702548,,,,,,2019-11-15
+0002000029,KUNA,Bragança Lda.,,BRAGANCA L,"Zona Industrial, Lote 131",Lisboa,1000-849,PT,EN,+351 21 619 2260,info@braganca.pt,PT176104779,,,,,,2019-03-21
+0002000030,KUNA,Toros Deri Ltd. Şti.,,TOROS DERI,Atatürk Bulvarı No:164,Denizli,20038,TR,EN,+90 258 392 9338,ap@toros-deri.com.tr,8383880918,,,,,,2014-06-12
+0002000031,KUNA,Schönfeld Lebensmittel SA,,SCHONFELDL,Werkstrasse 147,Zürich,8007,CH,DE,+41 31 521 0229,rechnung@schonfeld-lebensmittel.ch,CHE-322.027.585 MWST,,,,,,2013-11-13
+0002000032,KUNA,Duarte Servicios & ^ Holdings,,DUARTESERV,"Polígono Industrial Sur, Nave 84",Valencia,46037,ES,ES,+34 96 246 3323,contact@duarte-servicios.es,,,,ESP6172004Z,,,2026-09-28
+0002000033,KUNA,ESPINOSA & IBANEZ S.L.,,ESPINOSA I,CALLE MAYOR 37, BARCELONA ,08040,ES,ES,+34 96 447 5540,,ESV1158267H,,,ESV1158267H,,,2020-08-27
+0002000034,KUNA,MARMARA ENDUSTRI A.S.,,MARMARA EN,ORGANIZE SANAYI BOLGESI 42. CADDE,Ankara,06020,TR,EN,+90 212 558 2500,billing@marmara-endustri.com.tr,0364271436,,,,,,2022-09-15
+0002000035,KUNA,"Xiamen Lixin-Meilin Furniture Industrial Co., Ltd.",,XIAMEN LIX,No. 16 Jinshan Road,Xiamen,361084,UAE,ZH,+86 755 284 8367,export@xiamen-lixin.com.cn,91858029TV5LWCO6V4,,,,,,2019-04-14
+0002000036,KUNA,Pratesi S.p.A.,,PRATESI SP,Via Giuseppe Verdi 227,Prato,59130,IT,IT,+39 06 4081 62594,orders@pratesi-s.it,,,,IT15824268883,,,2021-05-09
+0002000037,KUNA,Kuipers Voeding N.V.,,KUIPERSVOE,Industrieweg 41,Venlo,5970 EZ,NL,EN,+31 10 529 1492,finance@kuipers-voeding.nl,,,,NL094317056B81,,,2013-06-15
+0002000038,KUNA,"Qingdao Jiade & Zhenxing Co., Ltd.",,QINGDAO JI,"Block 129, Longgang District",Qingdao,266056,CN,ZH,,finance@qingdao-jiade.com.cn,917107110LVT5OOP18,,,,,,2024-01-25
+0002000039,KUNA,Foxton-Deverill Facilities Limited,,FOXTONDEVE,102 High Street,London,3699,GB,EN,+44 117 905 1521,info@foxton-deverill.co.uk,,,,,,,2013-04-02
+0002000040,KUNA,Sancarre SAS,,SANCARRESA,39 Avenue de la République,Bordeaux,33027,FR,FR,+33 2 6923 8941,achats@sancerre.fr,,,,FROF626815610,,,2015-02-18
+0002000041,KUNA,Donautal-Eichberg Elektronik e.K.,,DONAUTALEI,Otto-Hahn-Straße 23,Frankfurt am Main,60307,DE,DE,+49 711 945 0373,,,,,DE948925651,,,2024-06-27
+0002000042,KUNA,Westphal Getränke GmbH,,WESTPHAL G,Otto-Hahn-Straße 47,München,80409,DE,DE,+49 341 490 9831,vertrieb@westphal-getranke.de,,,,DE053694661,,,2016-07-25
+0002000043,KUNA,Barcelo & Jiménez S.L.,,BARCELOJIM,Calle Industria 106,Madrid,28031,ES,ES,+34 93 272 9684,info@barcelo-jimenez.es,ESV2024003U,,,ESV2024003U,,,2016-10-17
+0002000044,KUNA,Clara Lorenz GmbH,,CLARALOREN,Robert-Bosch-Straße 129,Salzburg,5021,XX,DE,+43 316 485905,info@clara-lorenz.at,,,,,,,2025-01-13
+0002000045,KUNA,KESSLER-ACKERMANN TECHNIK GMBH,,KESSLERACK,ROBERT-BOSCH-STRASSE 127,Düsseldorf,40217,DE,DE,+49 421 339 4201,vertrieb@kessler-ackermann.de,,,,DE168334150,,,2017-04-11
+0002000046,KUNA,Hanse AG,,HANSE AG,Am Handelshof 10,München,80387,DE,DE,+49 69 3171 3677,vertrieb@hanse.de,,,,DE816707283,,,2014-07-26
+0002000047,KUNA,Aubry-Montclair Cosmétiques SASU,,AUBRYMONTC,142 Rue du Commerce,Lille,59037,FR,FR,+33 2 8153 8353,comptabilite@aubry-montclair.fr,,,,FR24075936694,,,2024-11-10
+0002000048,KUNA,Ackermann Elektronik GmbH,,ACKERMANN,Gewerbepark 127,Köln,50715,DE,DE,+49 211 620 9710,office@ackermann-elektronik.de,DE903397817,,,DE903397817,,,2019-03-05
+0002000049,KUNA,Yardley Furniture & Partner Ltd,,YARDLEY FU,16 Station Road,Bristol,BS1 5XL,GB,EN,+44 121 857 7298,orders@yardley-furniture.co.uk,GB623794018,,,,,,2021-08-10
+0002000050,KUNA,Andreas Vogel e.K.,,ANDREAS VO,Industriestraße 95,Dortmund,44211,DE,DE,+49 341 525 3041,rechnung@andreas-vogel.de,,,,DE787399280,,,2025-09-24
+0002000051,KUNA,One time vendor   services,,ONETIME,,Nürnberg,37002,GB,EN,,,,,,,,,2025-05-18
+0002000052,KUNA,Clifton-Brambleton Furniture Inc.,,CLIFTONBRA,172 Airport Road,Chicago,60649,US,EN,+1 973 555 3956,office@clifton-brambleton.com,40-7037618,,,,,,2020-12-17
+0002000053,KUNA,Ashulia Accessories & Partner Ltd.,,ASHULIAACC,201 Tejgaon Industrial Area,Narayanganj,1411,BD,EN,+880 2 9738 6662,,195761736-7502,,,,,,2020-08-09
+0002000054,KUNA,Schwarzwlad Textil GmbH,,SCHWARZWAL,Bahnhofstraße 50,Dortmund,44140,DE,DE,,verwaltung@schwarzwald-textil.de,,,,,,,2015-09-15
+0002000055,KUNA,Kornblum Frischdienst AG,,KORNBLUM F,Otto-Hahn-Straße 38,Frankfurt am Main,,DE,DE,+49 69 8444 8336,einkauf@kornblum-frischdienst.de,,,,DE604264141,,,2023-02-14
+0002000056,KUNA,Adler Handels & Partner GmbH & Co. KG,,ADLER HAND,Gewerbepark 147,Köln,50681,DE,DE,+49 89 3440 5575,einkauf@adler-handels.de,,,,,,,2015-06-10
+0002000057,KUNA,Jabłoński Serwis & Partner S.A.,,JABŁONSKIS,ul. Kolejowa 96,Gdańsk,80-623,PL,EN,+48 42 640 0632,finance@jabłonski-serwis.pl,PL3856043585,,,,,X,2024-06-07
+0002000058,KUNA,Peter  Vogel AG ^ Holdings,,PETER VOGE,Otto-Hahn-Straße 234,Köln,50684,DE,DE,+49 511 244 0112,export@peter-vogel.de,DE408086410,,,DE408086410,,,2021-04-22
+0002000059,KUNA,Sonnenfeld AG,,SONNENFELD,Zur Mühle 163,Linz,4020,AT,DE,+43 732 830056,export@sonnenfeld.at,ATU93987994,,,,,,2021-05-20
+0002000060,KUNA,Eichberg Systeme GmbH,,EICHBERG S,Am Handelshof 146,Bremen,28234,DE,DE,+49 211 904 7821,vertrieb@eichberg-systeme.de,DE548314004,,,DE548314004,,,2025-07-22
+0002000061,KUNA,ZAWADZKI-CIESLAK TECHNOLOGIE SP. Z O.O.,,ZAWADZKICI,ul. Kolejowa 32,Wrocław,50-089,PL,EN,+48 61 220 6488,purchasing@zawadzki-cieslak.pl,PL9115669252,,,,,,2020-06-22
+0002000062,KUNA,Vogel Handels e.K.,,VOGELHANDE,Hauptstraße 66,Dresden,01126,DE,DE,+49 511 996 6859,verwaltung@vogel-handels.de,DE283864347,,,DE283864347,,,2022-10-26
+0002000063,KUNA,Hanse Logistik GmbH,,HANSELOGIS,Otto-Hahn-Straße 146,Graz,8015,AT,DE,+43 732 969222,,ATU50585525,,,,,,2021-09-09
+0002000064,KUNA,Valmy Alimentaire SAS,,VALMY ALIM,212 Rue de l'Industrie,Lyon,69016,FR,FR,+33 1 4646 7743,commercial@valmy-alimentaire.fr,,,,FR29886658910,X,,2026-05-12
+0002000065,KUNA,"Ningbo Baolong-Kaiyuan Import & Export Industrial Co., Ltd.",,NINGBO BAO,No. 168 Zhenhai Industrial Zone,Ningbo,315124,CN,ZH,+86 21 9007 8067,ap@ningbo-baolong.com.cn,91601482EZB9BY7BU6,,,,,,2024-07-09
+0002000066,KUNA,Sancerre Boissons S.A.,,SANCERRE B,"ZI Nord, Lot 75",Paris,75010,FR,FR,+33 5 7945 8456,,,,,FR63796481151,,,2023-05-12
+0002000067,KUNA,Cieślak Tekstylia Sp. z o.o.,,CIESLAK TE,ul. Przemysłowa 24,Kraków,30-085,PL,EN,+48 12 630 6908,billing@cieslak-tekstylia.pl,PL2852357800,,,,,,2017-09-25
+0002000068,KUNA,Elbtal Sicherheit AG,,ELBTALSICH,Bahnhofstraße 135,München,80378,DE,DE,+49 421 603 9042,office@elbtal-sicherheit.de,DE772245683,,,DE772245683,,,2021-09-06
+0002000069,KUNA,Yıldız Deri AS,,YILDIZ DER,"227. Sokak, Merter",İstanbul,34052,TR,EN,+90 312 761 0316,contact@yıldız-deri.com.tr,8339084703,,,,,,2020-03-17
+0002000070,KUNA,Sikora Sp. z o.o.,,SIKORASPZO,ul. Przemysłowa 20,Gdańsk,80-6,PL,EN,+48 42 365 2991,contact@sikora.pl,PL9060698699,,,,,,2024-04-13
+0002000071,KUNA,Testlieferant,,TESTLIEFER,"128. Sokak, Merter",Denizli,20056,TR,EN,+90 232 656 3999,admin@sakarya-halı.com.tr,3516324728,,,,,,2025-01-15
+0002000072,KUNA,Marion Kornblum AG,,MARION KOR,Hafenstraße 158,Bremen,28215,DE,DE,+49 421 325 2385,rechnung@marion-kornblum.de,,,,DE555067462,,,2016-03-18
+0002000073,KUNA,Montclair Propreté SARL,,MONTCLAIR,195 Boulevard Gambetta,Toulouse,31022,FR,FR,+33 3 5255 6630,contact@montclair-proprete.fr,,,,,,,2016-09-13
+0002000074,KUNA,Eichberg e.K.,,EICHBERG E,Carl-Benz-Straße 38,Leipzig,04128,DE,DE,+49 40 7828 9950,kontakt@eichberg-e.de,DE291828860,,,DE291828860,,,2024-05-07
+0002000075,KUNA,Schouten & Terlouw BV,,SCHOUTEN T,Handelskade 136,Eindhoven,5668 XN,NL,EN,,export@schouten-terlouw.nl,,,,,,,2017-08-04
+0002000076,KUNA,Meulenbelt BV,,MEULENBELT,Distributiestraat 137,Utrecht,3537 DJ,NL,EN,+31 30 646 2282,export@meulenbelt-b.nl,NL280198342B83,,,NL280198342B83,,X,2025-07-01
+0002000077,KUNA,Aubry Services SAS,,AUBRY SERV,8 Boulevard Gambetta,Paris,75040,FR,FR,+33 3 4759 3033,achats@aubry-services.fr,FR78644883551,,,FR78644883551,,,2020-07-19
+0002000078,KUNA,Lindner-Hanse Sicherheit GmbH,,LINDNERHAN,Bahnhofstraße 25,Berlin,10120,DE,DE,+49 711 788 4401,office@lindner-hanse.de,,,,DE999059034,,,2026-04-10
+0002000079,KUNA,Ravenscroft Shopfitting Ltd,,RAVENSCROF,"Unit 138, Trafford Park",Bristol,BS1 6ZF,GB,EN,+44 121 714 7375,admin@ravenscroft-shopfitting.co.uk,GB421855896,,,,,,2017-06-08
+0002000080,KUNA,Oakridge & Stanmore Co.,,OAKRIDGE S,11 Main Street,Los Angeles,7140X,US,EN,+1 206 555 3865,purchasing@oakridge-stanmore.com,,,,,,,2018-04-01
+0002000081,KUNA,HARLOW LOGISTICS CORP.,,HARLOW LOG,235 DISTRIBUTION WAY,Seattle,98104,US,EN,+1 206 555 5123,accounts@harlow-logistics.com,,88-9333504,,,,,2025-11-23
+0002000082,KUNA,Hollingwood Foods Ltd,,HOLLINGWOO,"Unit 159, Kingsway Business Park",Birmingham,B7 1DS,GB,EN,+44 141 937 0796,export@hollingwood-foods.co.uk,GB207506775,,,,,,2014-08-12
+0002000083,KUNA,BUHLER SICHERHEIT & PARTNER E.K.,,BUHLERSICH,ROBERT-BOSCH-STRASSE 100,FRANKFURT AM MAIN,60331,DE,DE,+49 30 6653 6364,vertrieb@buhler-sicherheit.de,,,,DE059118245,,,2025-04-06
+0002000084,KUNA,Martin Westpahl GmbH,,MARTINWEST,Fabrikweg 107,Münster,48143,DE,DE,,buchhaltung@martin-westphal.de,,,,,,,2013-09-06
+0002000085,KUNA,Piotrowski Sp. z o.o.,,PIOTROWSKI,ul. Kolejowa 221,Warszawa,00-202,PL,EN,tbd,finance@piotrowski.pl,PL6914022041,,,,,,2017-01-25
+0002000086,KUNA,Fontaine Technologies SARL,,FONTAINE T,42 Avenue de la République,Marseille,13034,FR,FR,+33 5 7553 5551,contact@fontaine-technologies.fr,FR93835428815,,,FR93835428815,,,2017-08-11
+0002000087,KUNA,Ellsworth Distribution Ltd,,ELLSWORTHD,"Unit 210, Trafford Park",Birmingham,B7 5QB,GB,EN,+44 121 939 9653,sales@ellsworth-distribution.co.uk,GB497785534,,,,,,2013-12-05
+0002000088,KUNA,Vantage Ltd,,VANTAGE LT,"Unit 94, Kingsway Business Park",Leeds,LS11 9SG,GB,EN,+44 20 2078 7498,export@vantage.co.uk,GB212471771,,,,,,2020-11-08
+0002000089,KUNA,Westphal Möbel GmbH,,WESTPHAL M,Zur Mühle 16,Dortmund,44159,DE,DE,+49 30 3243 2141,rechnung@westphal-mobel.de,DE537929815,,,DE537929815,,,2016-08-07
+0002000090,KUNA,Westbrook Textiles Ltd,,WESTBROOK,"Unit 120, Riverside Industrial Estate",Birmingham,B1 3LJ,GB,EN,+44 161 219 1964,orders@westbrook-textiles.co.uk,GB663117790,,,,,,2024-11-28
+0002000091,KUNA,Aubry Boissons S.A.,,,202 Boulevard Gambetta,Toulouse,31000,FR,FR,+33 1 2684 2087,contact@aubry-boissons.fr,,,,FR12071652844,,,2018-04-13
+0002000092,KUNA,Haustein-Osterbach Reinigung GmbH,,HAUSTEINOS,Fabrikweg 130,Essen,45132,DE,AR,+49 211 296 6682,vertrieb@haustein-osterbach.de,,,,DE173549031,,,2020-08-08
+0002000093,DEBI,Böhm Vertriebs KG,,BÖHMVERTRI,Feldweg 119,Bochum,44787,DE,DE,+41 94 2534 4483,buchhaltung@böhmvertriebskg.de,,,,DE037452316,,,2021-10-18
+0002000094,KUNA,Metzgerei Amann,,METZGEREIA,Talstraße 87,Mannheim,68159,DE,DE,+33 70 5869 200,info@metzgereiamann.de,,,,DE457930216,,,2012-12-12
+0002000095,KUNA,Wendt Partnermarkt Rotterdam,,WENDTPARTN,Feldweg 168,Rotterdam,3011 AA,NL,EN,+49 51 1137 5778,bestellung@wendtpartnermarktr.nl,,,,NL574736446,,,2018-07-07
+0002000096,KUNA,Kaufmann Handels GmbH & Co. KG,,KAUFMANNHA,Brückenstraße 195,Hannover,30159,DE,DE,+33 94 3880 4102,buchhaltung@kaufmannhandelsgmb.de,DE686219674,,,DE243276417,,,2026-11-12
+0002000097,KUNA,Metzgerei Rohde,,METZGEREIR,Hauptstraße 140,Bochum,44787,DE,DE,+31 56 3024 226,buchhaltung@metzgereirohde.de,DE242590155,,,DE881914523,,,2016-05-22
+0002000098,ZCUS,Kiosk Dittrich Hannover,,KIOSKDITTR,Schulstraße 187,Hannover,30159,DE,DE,+49 57 2939 6458,buchhaltung@kioskdittrichhanno.de,,,,DE246760601,,,2011-03-08
+0002000099,KUNA,Bäckerei Brandes,,BÄCKEREIBR,Bahnhofstraße 73,Bochum,44787,DE,DE,+48 61 3463 5891,buchhaltung@bäckereibrandes.de,DE652475765,,,DE527557574,,,2019-02-11
+0002000100,KUNA,Bäckerei Böhm,Zentrale,BÄCKEREIBÖ,Industriering 123,Hannover,30159,DE,DE,+49 64 5212 2521,buchhaltung@bäckereiböhm.de,DE340726268,,,DE156109338,,,2023-04-25
+0002000101,KUNA,Bäckerei Stein,Zentrale,BÄCKEREIST,Marktplatz 127,Hamburg,20095,DE,DE,+33 27 5191 147,einkauf@bäckereistein.de,DE079357013,,,DE557686677,,,2023-11-08
+0002000102,KUNA,Rohde Partnermarkt Dortmund,Zentrale,ROHDEPARTN,Gewerbepark 189,Dortmund,44135,DE,DE,+48 54 4429 5963,info@rohdepartnermarktd.de,DE999937152,,,DE203516751,,,2021-05-04
+0002000103,KUNA,Betriebskantine Sommer AG,,BETRIEBSKA,Gewerbepark 101,Köln,50667,DE,DE,+48 56 9266 6413,einkauf@betriebskantinesom.de,DE394563093,,,DE235556587,,,2023-10-06
+0002000104,KUNA,Frank Partnermarkt Münster,,FRANKPARTN,Feldweg 95,Münster,48143,DE,DE,,info@frankpartnermarktm.de,,,,DE448684750,,,2018-10-15
+0002000105,KUNA,Bäckerei Bergmann,,BÄCKEREIBE,Bahnhofstraße 230,Münster,48143,DE,DE,+41 40 9828 1341,einkauf@bäckereibergmann.de,DE002963280,,,DE157125195,,,2011-12-07
+0002000106,ZCUS,Kiosk Rohde Münster,,KIOSKROHDE,Talstraße 90,Münster,48143,DE,DE,+31 36 5727 6913,info@kioskrohdemünster.de,DE559945839,,,DE576970276,,,2013-08-27
+0002000107,KUNA,Bäckerei Gruber,,BÄCKEREIGR,Schulstraße 122,Duisburg,47051,DE,DE,+49 40 8271 6025,einkauf@bäckereigruber.de,DE267734184,,,DE223492395,,,2021-10-08
+0002000108,KUNA,Ullrich Partnermarkt Augsburg,,ULLRICHPAR,Bahnhofstraße 162,Augsburg,86150,DE,DE,+33 58 9605 9414,,DE087867753,,,DE197564381,,,2019-11-22
+0002000109,ZCUS,Kiosk Thiel Hannover,,KIOSKTHIEL,Talstraße 108,Hannover,30159,DE,DE,+49 67 9156 6825,bestellung@kioskthielhannover.de,,,,DE397098226,,,2010-09-10
+0002000110,KUNA,Bäckerei Vetter,,BÄCKEREIVE,Industriering 4,Rotterdam,3011 AA,NL,EN,+49 85 4107 1513,buchhaltung@bäckereivetter.nl,,,,,,,2013-12-12
+0002000111,KUNA,Lehmann Partnermarkt Frankfurt am Main,,LEHMANNPAR,Schulstraße 16,Frankfurt am Main,60311,DE,DE,+49 58 4188 7191,einkauf@lehmannpartnermark.de,,,,DE447248246,,,2020-01-02
+0002000112,KUNA,Amann Gastronomie GmbH,,AMANNGASTR,Am Hafen 188,Kiel,24103,DE,DE,+31 62 6889 1528,buchhaltung@amanngastronomiegm.de,,,,DE383756461,,,2015-10-07
+0002000113,KUNA,Hotel Dittrich München,,HOTELDITTR,Talstraße 33,München,80331,DE,DE,+33 65 4302 9387,info@hoteldittrichmünch.de,,,,DE645685756,,,2025-02-27
+0002000114,KUNA,Bergmann Partnermarkt Köln,,BERGMANNPA,Brückenstraße 34,Köln,50667,DE,DE,+48 27 5007 553,info@bergmannpartnermar.de,DE896002594,,,DE848736201,,,2011-03-18
+0002000115,KUNA,Bäckerei Brandes 7,,BÄCKEREIBR,Feldweg 211,Duisburg,47051,DE,DE,+48 87 8320 104,einkauf@bäckereibrandes7.de,DE003209373,,,DE457592515,,,2010-06-26
+0002000116,KUNA,Bäckerei Frank,,BÄCKEREIFR,Feldweg 112,Hannover,30159,DE,DE,+43 55 1932 2286,info@bäckereifrank.de,,,,DE249480149,,,2023-06-19
+0002000117,DEBI,Ziegler Vertriebs KG,,ZIEGLERVER,Bahnhofstraße 218,Hannover,30159,DE,DE,+48 28 4818 7544,einkauf@zieglervertriebskg.de,DE155011603,,,DE005141951,,,2018-05-12
+0002000118,KUNA,Metzgerei Rohde 19,,METZGEREIR,Am Hafen 240,Köln,50667,DE,DE,+33 33 3144 5502,bestellung@metzgereirohde19.de,DE623097169,,,DE981233507,,,2014-01-17
+0002000119,DEBI,Gruber Großhandel GmbH,,GRUBERGROS,Feldweg 171,Rotterdam,3011 AA,NL,EN,+31 39 1502 1171,einkauf@grubergroßhandelgm.nl,,,,NL311231085,,,2023-04-27
+0002000120,KUNA,Rohde Handels GmbH & Co. KG,,ROHDEHANDE,Hauptstraße 49,Kiel,24103,DE,DE,+48 57 3334 1307,bestellung@rohdehandelsgmbhco.de,DE773573238,,,DE047841653,,,2011-10-27
+0002000121,KUNA,Metzgerei Sievers,,METZGEREIS,Marktplatz 226,Bochum,44787,DE,DE,+33 25 1272 7810,buchhaltung@metzgereisievers.de,,,,DE884980300,,,2020-04-17
+0002000122,KUNA,Stein Gastronomie GmbH,Zentrale,STEINGASTR,Marktplatz 219,Mannheim,68159,DE,DE,+31 55 3983 508,info@steingastronomiegm.de,,,,DE757452857,,,2018-09-26
+0002000123,ZCUS,Kiosk Thiel Karlsruhe,,KIOSKTHIEL,Industriering 193,Karlsruhe,76133,DE,DE,+33 25 4984 8018,info@kioskthielkarlsruh.de,DE462130883,,,DE817752755,,,2017-01-05
+0002000124,KUNA,Böhm Gastronomie GmbH,Zentrale,BÖHMGASTRO,Feldweg 101,Dresden,01067,DE,DE,+33 39 3513 7752,einkauf@böhmgastronomiegmb.de,,,,DE208798073,,,2012-11-21
+0002000125,KUNA,Metzgerei Vetter,,METZGEREIV,Brückenstraße 12,Freiburg,79098,DE,DE,+49 54 2935 8206,buchhaltung@metzgereivetter.de,DE983792030,,,DE892079841,,,2011-08-04
+0002000126,KUNA,Betriebskantine Clemens AG,,BETRIEBSKA,Lindenweg 117,Bonn,53111,DE,DE,+49 30 8354 2170,info@betriebskantinecle.de,DE296618290,,,DE142605145,,,2023-03-10
+0002000127,ZCUS,Kiosk Vetter Augsburg,,KIOSKVETTE,Schulstraße 29,Augsburg,86150,DE,DE,+48 84 3787 582,bestellung@kioskvetteraugsbur.de,,,,DE954312451,,,2025-02-20
+0002000128,ZCUS,Kiosk Brandes Karlsruhe,,KIOSKBRAND,Gewerbepark 203,Karlsruhe,1981,DE,DE,+33 94 7569 2520,buchhaltung@kioskbrandeskarlsr.de,,,,DE782952520,,,2010-03-18
+0002000129,KUNA,Betriebskantine Wendt AG,,BETRIEBSKA,Talstraße 138,Bremen,28195,DE,DE,+33 77 7052 3976,buchhaltung@betriebskantinewen.de,DE122061660,,,DE132279093,,,2023-07-28
+0002000130,ZCUS,Kiosk Amann Essen,,KIOSKAMANN,Industriering 114,Essen,45127,DE,DE,+31 36 1927 5428,einkauf@kioskamannessen.de,,,,DE906382434,,,2019-05-10
+0002000131,ZCUS,Kiosk Brandes Düsseldorf,,KIOSKBRAND,Feldweg 96,Düsseldorf,40213,DE,DE,+41 77 1295 2852,buchhaltung@kioskbrandesdüssel.de,DE893514009,,,DE983989956,,,2011-05-21
+0002000132,ZCUS,Kiosk Clemens Münster,Zentrale,KIOSKCLEME,Brückenstraße 48,Münster,48143,DE,DE,+33 66 1005 8610,einkauf@kioskclemensmünste.de,,,,,,,2021-07-23
+0002000133,DEBI,Winkler Großhandel GmbH,,WINKLERGRO,Ringstraße 138,Dortmund,44135,DE,DE,+33 40 2110 3282,buchhaltung@winklergroßhandelg.de,,,,DE172316234,,,2015-09-25
+0002000134,KUNA,Ziegler Gastronomie GmbH,,ZIEGLERGAS,Ringstraße 73,Mannheim,68159,DE,DE,+31 62 6716 8942,bestellung@zieglergastronomie.de,DE592245476,,,DE311946899,,,2011-04-14
+0002000135,ZCUS,Kiosk Ziegler Augsburg,,KIOSKZIEGL,Gewerbepark 174,Augsburg,86150,DE,DE,+49 90 6720 8889,einkauf@kioskziegleraugsbu.de,DE387457453,,,DE317332242,,,2012-08-28
+0002000136,KUNA,Hartmann Gastronomie GmbH,,HARTMANNGA,Brückenstraße 25,Zürich,8001,CH,DE,+31 95 1078 5663,einkauf@hartmanngastronomi.ch,,,,,,,2018-02-18
+0002000137,DEBI,Gruber Großhandel GmbH 4,,GRUBERGROS,Schulstraße 32,Lyon,69001,FR,FR,+41 88 7115 2652,bestellung@grubergroßhandelgm.fr,,,,,,,2011-06-10
+0002000138,KUNA,Hotel Böhm Kraków,,HOTELBÖHMK,Feldweg 10,Kraków,30-001,PL,EN,+49 91 9879 5598,bestellung@hotelböhmkraków.pl,,,,PL536117534,,,2010-06-11
+0002000139,KUNA,Metzgerei Lehmann,,METZGEREIL,Bahnhofstraße 157,Hamburg,20095,DE,DE,+41 93 1837 2788,info@metzgereilehmann.de,,,,DE981001303,,,2026-07-05
+0002000140,DEBI,Hartmann Großhandel GmbH,,HARTMANNGR,Industriering 43,Wien,1010,AT,DE,+33 56 5749 1667,buchhaltung@hartmanngroßhandel.at,,,,AT203848667,,,2025-01-14
+0002000141,KUNA,Frank Gastronomie GmbH,,FRANKGASTR,Bahnhofstraße 208,Stuttgart,70173,DE,DE,+49 31 2173 7020,buchhaltung@frankgastronomiegm.de,,,,DE835532990,,,2022-05-03
+0002000142,KUNA,Engel Partnermarkt Bonn,,ENGELPARTN,Lindenweg 95,Bonn,53111,DE,DE,+31 32 8323 7261,info@engelpartnermarktb.de,,,,,,,2017-12-12
+0002000143,KUNA,Betriebskantine Brandes AG,,BETRIEBSKA,Bahnhofstraße 95,Frankfurt am Main,60311,DE,DE,+33 85 6064 3595,info@betriebskantinebra.de,,,,DE586892923,,,2018-06-24
+0002000144,KUNA,Hotel Sievers Wuppertal,Zentrale,HOTELSIEVE,Schulstraße 8,Wuppertal,42103,DE,DE,+43 73 3595 7566,buchhaltung@hotelsieverswupper.de,,,,DE981610205,,,2010-04-28
+0002000145,KUNA,Bäckerei Bergmann 15,,BÄCKEREIBE,Gewerbepark 67,Münster,48143,DE,DE,+49 68 4770 9323,buchhaltung@bäckereibergmann15.de,DE371560622,,,DE949107570,,,2023-04-16
+0002000146,ZCUS,Kiosk Rohde Münster 10,,KIOSKROHDE,Schulstraße 197,Münster,48143,DE,DE,+41 29 7220 406,info@kioskrohdemünster1.de,DE455279183,,,DE345051688,,,2022-03-01
+0002000147,KUNA,Bergmann Handels GmbH & Co. KG,,BERGMANNHA,Hauptstraße 215,München,80331,DE,DE,+43 53 5031 1136,bestellung@bergmannhandelsgmb.de,,,,DE627932338,,,2017-10-13
+0002000148,KUNA,Brandes Partnermarkt Augsburg,,BRANDESPAR,Ringstraße 237,Augsburg,86150,DE,DE,+31 36 1325 980,einkauf@brandespartnermark.de,,,,,,,2026-07-16
+0002000149,KUNA,Bäckerei Krause,,BÄCKEREIKR,Feldweg 135,Mannheim,68159,DE,DE,+31 86 1906 8382,bestellung@bäckereikrause.de,DE723130399,,,DE788869585,,,2014-02-02
+0002000150,KUNA,Amann Gastronomie GmbH 14,,AMANNGASTR,Bahnhofstraße 215,Nürnberg,90403,DE,DE,+48 23 5077 6095,einkauf@amanngastronomiegm.de,,,,DE693748086,,,2015-04-21
+0002000151,DEBI,Clemens Großhandel GmbH,,CLEMENSGRO,Marktplatz 219,Hamburg,20095,DE,DE,+31 46 2679 1526,info@clemensgroßhandelg.de,DE608017221,,,DE846463845,,,2011-03-11
+0002000152,KUNA,Sommer Gastronomie GmbH,,SOMMERGAST,Marktplatz 40,Graz,8010,AT,DE,+31 54 3157 9237,info@sommergastronomieg.at,,,,AT709848232,,,2015-02-03
+0002000153,DEBI,Kaufmann Vertriebs KG,,KAUFMANNVE,Bahnhofstraße 191,Wuppertal,42103,DE,DE,+49 44 1262 3052,bestellung@kaufmannvertriebsk.de,DE011068962,,,DE309610479,,,2012-10-20
+0002000154,DEBI,Clemens Großhandel GmbH 18,,CLEMENSGRO,Ringstraße 69,Wuppertal,42103,DE,DE,+49 26 6920 2406,,,,,DE798851018,,,2010-11-15
+0002000155,KUNA,Gruber Gastronomie GmbH,,GRUBERGAST,Hauptstraße 189,Mannheim,68159,DE,DE,+43 99 5356 6183,bestellung@grubergastronomieg.de,,,,DE830974050,,,2017-09-02
+0002000156,DEBI,Hartmann Vertriebs KG,,HARTMANNVE,Industriering 142,Duisburg,47051,DE,DE,+48 89 8391 5795,info@hartmannvertriebsk.de,DE658056747,,,DE902223123,,,2016-01-17
+0002000157,KUNA,Bäckerei Bergmann 16,,BÄCKEREIBE,Feldweg 62,Amsterdam,1012 AB,NL,EN,+49 39 9264 4620,bestellung@bäckereibergmann16.nl,,,,NL255801218,,,2019-10-15
+0002000158,KUNA,Metzgerei Wendt,,METZGEREIW,Ringstraße 212,Lille,59000,FR,FR,+31 20 2622 2777,info@metzgereiwendt.fr,,,,,,,2025-06-22
+0002000159,KUNA,Engel Partnermarkt Nürnberg,,ENGELPARTN,Lindenweg 21,Nürnberg,90403,DE,DE,+48 89 3922 6971,bestellung@engelpartnermarktn.de,DE755441371,,,DE196460209,,,2015-11-17
+0002000160,KUNA,Clemens Handels GmbH & Co. KG,,CLEMENSHAN,Marktplatz 36,Bonn,53111,DE,DE,+49 73 2567 3863,bestellungclemenshandelsgmbh.de,,,,DE537245647,,,2024-02-02
+0002000161,DEBI,Krause Großhandel GmbH,,KRAUSEGROS,Marktplatz 198,Münster,48143,DE,DE,+31 30 1873 2793,info@krausegroßhandelgm.de,,,,DE148651777,,,2022-11-25
+0002000162,KUNA,Hartmann Partnermarkt Düsseldorf,,HARTMANNPA,Bahnhofstraße 158,Düsseldorf,40213,DE,DE,,bestellung@hartmannpartnermar.de,DE669363734,,,DE925983832,,,2022-06-04
+0002000163,DEBI,Sommer Großhandel GmbH,,SOMMERGROS,Brückenstraße 205,Lyon,69001,FR,FR,+43 77 3519 7774,buchhaltung@sommergroßhandelgm.fr,,,,,,,2012-01-15
+0002000164,DEBI,Frank Großhandel GmbH,,FRANKGROSS,Ringstraße 190,Köln,50667,DE,DE,+49 68 4572 3582,einkauf@frankgroßhandelgmb.de,DE041614259,,,DE128846290,,,2025-03-26
+0002000165,KUNA,Betriebskantine Ziegler AG,,BETRIEBSKA,Bahnhofstraße 173,Stuttgart,70173,DE,DE,+31 31 6191 1388,bestellung@betriebskantinezie.de,,,,DE948458583,,,2016-12-06
+0002000166,KUNA,Bäckerei Gruber 7,,BÄCKEREIGR,Talstraße 165,Karlsruhe,76133,DE,DE,+33 88 9130 627,bestellung@bäckereigruber7.de,,,,DE371352835,,,2015-04-27
+0002000167,KUNA,Hotel Amann Dresden,Zentrale,HOTELAMANN,Schulstraße 232,Dresden,01067,DE,DE,+41 39 8512 2056,info@hotelamanndresden.de,,,,DE932972064,,,2013-02-13
+0002000168,KUNA,Lehmann Handels GmbH & Co. KG,,LEHMANNHAN,Bahnhofstraße 11,Rotterdam,3011 AA,NL,EN,+48 32 1825 4044,,,,,,,,2018-02-06
+0002000169,DEBI,Ullrich Großhandel GmbH,,ULLRICHGRO,Gewerbepark 25,Wien,1010,AT,DE,+33 93 7868 3369,bestellung@ullrichgroßhandelg.at,,,,,,,2022-09-26
+0002000170,KUNA,Frank Partnermarkt Dresden,,FRANKPARTN,Industriering 165,Dresden,01067,DE,DE,+48 93 1353 8696,info@frankpartnermarktd.de,DE620762872,,,DE067600957,,,2024-11-04
+0002000171,DEBI,Kaufmann Vertriebs KG 9,,KAUFMANNVE,Hauptstraße 133,Hannover,2833,DE,DE,+49 38 6487 3406,buchhaltung@kaufmannvertriebsk.de,,,,DE143625668,,,2011-08-20
+0002000172,DEBI,Vogel Großhandel GmbH,,VOGELGROSS,Marktplatz 230,Amsterdam,1012 AB,NL,EN,+43 36 7013 7210,einkauf@vogelgroßhandelgmb.nl,,,,,,,2019-06-22
+0002000173,KUNA,Metzgerei Stein,,METZGEREIS,Am Hafen 163,Hannover,30159,DE,DE,+43 23 8167 1741,einkauf@metzgereistein.de,DE979880325,,,DE774449261,,,2013-05-28
+0002000174,KUNA,Lehmann Handels GmbH & Co. KG 6,Zentrale,LEHMANNHAN,Schulstraße 227,Dresden,01067,DE,DE,+31 74 1825 5232,einkauf@lehmannhandelsgmbh.de,,,,DE034954755,,,2012-09-22
+0002000175,KUNA,Bäckerei Clemens,,BÄCKEREICL,Bahnhofstraße 142,Bielefeld,33602,DE,DE,+48 44 3884 385,info@bäckereiclemens.de,DE341155246,,,DE650422174,,,2023-11-18
+0002000176,ZCUS,Kiosk Vetter Basel,,KIOSKVETTE,Talstraße 46,Basel,4051,CH,DE,+48 21 9867 7120,bestellung@kioskvetterbasel.ch,,,,,,,2020-01-05
+0002000177,DEBI,Gruber Großhandel GmbH 2,,GRUBERGROS,Feldweg 81,Dresden,01067,DE,DE,+48 92 3202 1460,einkauf@grubergroßhandelgm.de,,,,DE701176154,,,2018-06-28
+0002000178,KUNA,Bäckerei Hartmann,,BÄCKEREIHA,Brückenstraße 172,Leipzig,04109,DE,DE,+43 21 5511 7520,buchhaltung@bäckereihartmann.de,,,,DE333412348,,,2016-08-06
+0002000179,DEBI,Engel Großhandel GmbH,,ENGELGROSS,Hauptstraße 92,Bielefeld,33602,DE,DE,+48 60 5136 9659,einkauf@engelgroßhandelgmb.de,DE718100539,,,DE676213629,,,2023-05-03
+0002000180,ZCUS,Kiosk Vetter Essen,,KIOSKVETTE,Lindenweg 70,Essen,45127,DE,DE,+31 50 1428 5734,info@kioskvetteressen.de,DE134520519,,,DE154188959,,,2025-06-15
+0002000181,DEBI,Vogel Vertriebs KG,,VOGELVERTR,Bahnhofstraße 178,Wien,1010,AT,DE,+48 68 8435 4499,bestellung@vogelvertriebskg.at,,,,AT436915522,,,2019-12-10
+0002000182,KUNA,Betriebskantine Kaufmann AG,,BETRIEBSKA,Ringstraße 81,Dresden,01067,DE,DE,+49 32 4885 8081,bestellung@betriebskantinekau.de,,,,DE888966173,,,2010-01-28
+0002000183,DEBI,Lehmann Großhandel GmbH,,LEHMANNGRO,Talstraße 220,Karlsruhe,76133,DE,DE,+41 49 3110 7848,info@lehmanngroßhandelg.de,,,,DE955597960,,,2026-08-22
+0002000184,KUNA,Metzgerei Radtke,,METZGEREIR,Ringstraße 224,Zürich,8001,CH,DE,+49 30 2367 8883,bestellung@metzgereiradtke.ch,,,,,,,2015-05-07
+0002000185,ZCUS,Kiosk Stein Amsterdam,,KIOSKSTEIN,Industriering 19,Amsterdam,1012 AB,NL,EN,+49 33 7878 3086,info@kiosksteinamsterda.nl,,,,NL270216026,,,2014-09-06
+0002000186,KUNA,Dittrich Partnermarkt Köln,,DITTRICHPA,Feldweg 190,Köln,50667,DE,DE,+49 75 9651 6107,einkauf@dittrichpartnermar.de,DE739853198,,,DE529838904,,,2010-08-06
+0002000187,KUNA,Clemens Partnermarkt Stuttgart,,CLEMENSPAR,Industriering 158,Stuttgart,70173,DE,DE,+33 90 9088 2904,buchhaltung@clemenspartnermark.de,DE369632896,,,DE140179337,,,2018-02-28
+0002000188,KUNA,Ziegler Partnermarkt Bochum,,ZIEGLERPAR,Am Hafen 152,Bochum,44787,DE,DE,+41 89 9968 3324,info@zieglerpartnermark.de,DE396381509,,,DE982991969,,,2014-01-08
+0002000189,ZCUS,Kiosk Hartmann Nürnberg,,KIOSKHARTM,Brückenstraße 188,Nürnberg,90403,DE,DE,+33 46 3443 4443,buchhaltung@kioskhartmannnürnb.de,,,,DE537317394,,,2016-06-12
+0002000190,KUNA,Brandes Gastronomie GmbH,Zentrale,BRANDESGAS,Lindenweg 5,Hannover,30159,DE,DE,+33 79 2211 4573,bestellung@brandesgastronomie.de,,,,DE322448519,,,2012-12-06
+0002000191,KUNA,Metzgerei Amann 2,,METZGEREIA,Ringstraße 204,Dortmund,44135,DE,DE,+33 40 9587 7542,einkauf@metzgereiamann2.de,,,,DE572951167,,,2012-12-06
+0002000192,KUNA,Vogel Handels GmbH & Co. KG,,VOGELHANDE,Marktplatz 213,Bonn,53111,DE,DE,+43 82 9460 2339,info@vogelhandelsgmbhco.de,DE964137782,,,DE723546598,,,2018-11-16
+0002000193,ZCUS,Kiosk Thiel Hamburg,,KIOSKTHIEL,Gewerbepark 137,Hamburg,20095,DE,DE,+41 91 7212 3912,einkauf@kioskthielhamburg.de,,,,DE518338096,,,2026-08-04
+0002000194,KUNA,Radtke Partnermarkt Hamburg,,RADTKEPART,Schulstraße 52,Hamburg,20095,DE,DE,+31 31 5142 6483,info@radtkepartnermarkt.de,,,,DE857771615,,,2014-09-27
+0002000195,DEBI,Vetter Großhandel GmbH,,VETTERGROS,Bahnhofstraße 178,Frankfurt am Main,60311,DE,DE,+48 53 8878 9132,einkauf@vettergroßhandelgm.de,,,,DE217910466,,,2013-03-22
+0002000196,KUNA,Bäckerei Winkler,,BÄCKEREIWI,Talstraße 117,Zürich,8001,CH,DE,+43 22 4539 1532,info@bäckereiwinkler.ch,,,,,,,2015-03-24
+0002000197,KUNA,Wendt Gastronomie GmbH,,WENDTGASTR,Ringstraße 42,Stuttgart,70173,DE,DE,+43 46 6629 9216,einkauf@wendtgastronomiegm.de,DE877079096,,,DE913075122,,,2016-10-08
+0002000198,KUNA,Böhm Handels GmbH & Co. KG,,BÖHMHANDEL,Lindenweg 96,Lille,59000,FR,FR,+33 43 6957 4740,bestellung@böhmhandelsgmbhcok.fr,,,,FR151230178,,,2018-03-11
+0002000199,KUNA,Dittrich Partnermarkt Essen,,DITTRICHPA,Ringstraße 86,Essen,45127,DE,DE,+49 78 2639 2679,,DE170019471,,,DE220930249,,,2025-03-24
+0002000200,KUNA,Clemens Handels GmbH & Co. KG 7,,CLEMENSHAN,Brückenstraße 59,Kraków,30-001,PL,EN,+43 37 5435 1459,buchhaltung@clemenshandelsgmbh.pl,,,,,,,2020-04-16
+0002000201,KUNA,Bäckerei Ullrich,Zentrale,BÄCKEREIUL,Ringstraße 5,Warszawa,00-001,PL,EN,,info@bäckereiullrich.pl,,,,PL484055516,,,2024-11-19
+0002000202,KUNA,Böhm Handels GmbH & Co. KG 11,,BÖHMHANDEL,Industriering 221,Köln,50667,DE,DE,+31 95 8640 9909,bestellung@böhmhandelsgmbhcok.de,,,,,,,2023-03-17
+0002000203,KUNA,Betriebskantine Vogel AG,,BETRIEBSKA,Ringstraße 57,Düsseldorf,40213,DE,DE,+33 50 7903 332,buchhaltung@betriebskantinevog.de,DE565921004,,,DE564468827,,,2025-02-13
+0002000204,KUNA,Krause Gastronomie GmbH,,KRAUSEGAST,Hauptstraße 65,Freiburg,79098,DE,DE,+33 98 5105 8109,bestellung@krausegastronomieg.de,DE408389865,,,DE877399725,,,2021-11-09
+0002000205,ZCUS,Kiosk Gruber Dresden,,KIOSKGRUBE,Industriering 5,Dresden,01067,DE,DE,+33 54 8979 4833,bestellung@kioskgruberdresden.de,DE278949653,,,DE226860592,,,2017-06-01
+0002000206,KUNA,Hartmann Handels GmbH & Co. KG,,HARTMANNHA,Schulstraße 79,Nürnberg,90403,DE,DE,+33 44 5062 5433,bestellung@hartmannhandelsgmb.de,,,,DE268358723,,,2010-05-05
+0002000207,KUNA,Bäckerei Vetter 10,,BÄCKEREIVE,Am Hafen 218,Düsseldorf,40213,DE,DE,+33 88 2894 3336,einkauf@bäckereivetter10.de,DE031262065,,,DE331036998,,,2019-03-21
+0002000208,KUNA,Betriebskantine Ullrich AG,,BETRIEBSKA,Marktplatz 165,Düsseldorf,40213,DE,DE,,buchhaltung@betriebskantineull.de,,,,DE779646166,,,2017-12-23
+0002000209,DEBI,Winkler Großhandel GmbH 12,,WINKLERGRO,Ringstraße 86,Köln,50667,DE,DE,+41 75 8040 6395,buchhaltung@winklergroßhandelg.de,DE112815006,,,DE179104004,,,2012-10-18
+0002000210,KUNA,Betriebskantine Stein AG,,BETRIEBSKA,Talstraße 203,Hannover,30159,DE,DE,+41 46 2431 1914,einkauf@betriebskantineste.de,,,,DE474470584,,,2024-12-28
+0002000211,KUNA,Bäckerei Ziegler,,BÄCKEREIZI,Bahnhofstraße 6,Dresden,01067,DE,DE,+33 72 8740 9159,buchhaltung@bäckereiziegler.de,,,,DE084101206,,,2024-05-01
+0002000212,ZCUS,Kiosk Bergmann Lyon,,KIOSKBERGM,Schulstraße 238,Lyon,69001,FR,FR,+33 49 8242 9231,info@kioskbergmannlyon.fr,,,,,,,2015-09-25
+0002000213,KUNA,Ziegler Gastronomie GmbH 11,,ZIEGLERGAS,Feldweg 183,Bonn,53111,DE,DE,+31 37 3736 5935,bestellung@zieglergastronomie.de,,,,DE958419499,,,2020-05-05
+0002000214,KUNA,Bäckerei Amann,,BÄCKEREIAM,Lindenweg 191,Rotterdam,3011 AA,NL,EN,+41 82 8308 2281,bestellung@bäckereiamann.nl,,,,NL544009937,,,2020-03-08
+0002000215,ZCUS,Kiosk Krause Kiel,,KIOSKKRAUS,Bahnhofstraße 13,Kiel,24103,DE,DE,+31 94 7974 7884,info@kioskkrausekiel.de,,,,DE951677347,,,2022-03-10
+0002000216,DEBI,Engel Vertriebs KG,,ENGELVERTR,Hauptstraße 228,Hamburg,20095,DE,DE,+48 30 4414 9786,bestellung@engelvertriebskg.de,,,,DE726669034,,,2024-01-11
+0002000217,KUNA,Betriebskantine Eckert AG,Zentrale,BETRIEBSKA,Brückenstraße 111,Rotterdam,3011 AA,NL,EN,+43 64 7281 983,bestellung@betriebskantineeck.nl,,,,NL124986040,,,2017-07-02
+0002000218,KUNA,Dittrich Handels GmbH & Co. KG,,DITTRICHHA,Brückenstraße 46,Kiel,24103,DE,DE,+31 52 5549 4445,bestellung@dittrichhandelsgmb.de,DE366287266,,,DE360512107,,,2010-03-21
+0002000219,KUNA,Brandes Handels GmbH & Co. KG,,BRANDESHAN,Bahnhofstraße 45,Essen,45127,DE,DE,+33 42 5831 8439,info@brandeshandelsgmbh.de,DE439183279,,,DE388487125,,,2026-04-08
+0002000220,KUNA,Hotel Vogel Mannheim,,HOTELVOGEL,Marktplatz 42,Mannheim,68159,DE,DE,+31 79 7620 2115,bestellung@hotelvogelmannheim.de,DE255856357,,,DE824189437,,,2022-03-08
+0002000221,ZCUS,Kiosk Gruber Dortmund,,KIOSKGRUBE,Ringstraße 188,Dortmund,44135,DE,DE,+43 94 7024 8375,einkauf@kioskgruberdortmun.de,,,,DE719958392,,,2010-10-10
+0002000222,DEBI,Krause Vertriebs KG,,KRAUSEVERT,Marktplatz 34,Warszawa,00-001,PL,EN,+49 30 4817 3950,bestellung@krausevertriebskg.pl,,,,,,,2020-08-17
+0002000223,KUNA,Krause Handels GmbH & Co. KG,,KRAUSEHAND,Gewerbepark 185,Dresden,01067,DE,DE,+49 30 2200 6340,einkauf@krausehandelsgmbhc.de,DE731988425,,,DE984545877,,,2020-03-24
+0002000224,DEBI,Rohde Großhandel GmbH,,ROHDEGROSS,Lindenweg 207,Münster,48143,DE,DE,+31 47 8708 5759,info@rohdegroßhandelgmb.de,DE346555513,,,DE556983193,,,2015-06-19
+0002000225,KUNA,Hotel Kaufmann Freiburg,,HOTELKAUFM,Bahnhofstraße 50,Freiburg,79098,DE,DE,+41 95 1279 4275,buchhaltung@hotelkaufmannfreib.de,,,,DE738532964,,,2013-12-25
+0002000226,KUNA,Bäckerei Clemens 6,,BÄCKEREICL,Ringstraße 41,Freiburg,79098,DE,DE,+48 48 8878 7619,buchhaltung@bäckereiclemens6.de,DE655135560,,,DE509688093,,,2014-04-25
+0002000227,KUNA,Gruber Handels GmbH & Co. KG,,GRUBERHAND,Hauptstraße 191,Zürich,8001,CH,DE,+33 29 6582 3960,bestellung@gruberhandelsgmbhc.ch,,,,,,,2023-05-25
+0002000228,DEBI,Gruber Vertriebs KG,,GRUBERVERT,Brückenstraße 178,Leipzig,04109,DE,DE,+43 26 9798 2735,buchhaltung@grubervertriebskg.de,DE440881329,,,DE221968428,,,2016-01-14
+0002000229,DEBI,Lehmann Großhandel GmbH 17,,LEHMANNGRO,Marktplatz 27,Wuppertal,42103,DE,DE,+41 91 8838 8343,einkauf@lehmanngroßhandelg.de,DE497219868,,,DE341503259,,,2020-05-22
+0002000230,DEBI,Böhm Großhandel GmbH,,BÖHMGROSSH,Schulstraße 119,Basel,4051,CH,DE,+41 82 1309 327,einkauf@böhmgroßhandelgmbh.ch,,,,,,,2019-05-26
+0002000231,KUNA,Bäckerei Sievers,,BÄCKEREISI,Gewerbepark 126,Dortmund,44135,DE,DE,+48 26 2844 6325,info@bäckereisievers.de,,,,DE952445288,,,2011-10-08
+0002000232,DEBI,Clemens Großhandel GmbH 10,Zentrale,CLEMENSGRO,Feldweg 219,Freiburg,79098,DE,DE,+31 41 1884 295,buchhaltung@clemensgroßhandelg.de,,,,DE212812702,,,2016-07-23
+0002000233,KUNA,Ziegler Handels GmbH & Co. KG,,ZIEGLERHAN,Marktplatz 39,Zürich,8001,CH,DE,+49 22 6299 9797,buchhaltung@zieglerhandelsgmbh.ch,,,,,,,2024-02-04
+0002000234,ZCUS,Kiosk Sommer Zürich,,KIOSKSOMME,Am Hafen 122,Zürich,8001,CH,DE,+31 39 1480 2476,einkauf@kiosksommerzürich.ch,,,,,,,2021-12-17
+0002000235,KUNA,Bäckerei Ullrich 5,,BÄCKEREIUL,Bahnhofstraße 83,Wien,1010,AT,DE,+41 81 4887 5158,einkauf@bäckereiullrich5.at,,,,,,,2010-09-26
+0002000236,DEBI,Bergmann Vertriebs KG,,BERGMANNVE,Am Hafen 119,Warszawa,00-001,PL,EN,+48 50 2941 2103,einkauf@bergmannvertriebsk.pl,,,,PL803482243,,,2011-08-15
+0002000237,KUNA,Gruber Partnermarkt Wuppertal,Zentrale,GRUBERPART,Ringstraße 231,Wuppertal,42103,DE,DE,+49 47 8259 3004,einkauf@gruberpartnermarkt.de,,,,DE664770019,,,2016-08-07
+0002000238,DEBI,Rohde Großhandel GmbH 17,,ROHDEGROSS,Schulstraße 6,Bremen,28195,DE,DE,+31 89 2229 3004,bestellung@rohdegroßhandelgmb.de,,,,DE757519385,,,2018-03-23
+0002000239,ZCUS,Kiosk Rohde Lille,,KIOSKROHDE,Am Hafen 179,Lille,59000,FR,FR,+43 28 7164 7856,einkauf@kioskrohdelille.fr,,,,,,,2021-07-22
+0002000240,KUNA,Amann Partnermarkt Freiburg,,AMANNPARTN,Schulstraße 98,Freiburg,79098,DE,DE,+43 52 2390 2339,buchhaltung@amannpartnermarktf.de,DE504989732,,,DE564464967,,,2024-02-25
+0002000241,KUNA,Frank Gastronomie GmbH 3,,FRANKGASTR,Hauptstraße 40,Karlsruhe,76133,DE,DE,+43 62 9539 7280,bestellung@frankgastronomiegm.de,DE573849844,,,DE519823481,,,2012-03-13
+0002000242,KUNA,Lehmann Partnermarkt Münster,,LEHMANNPAR,Talstraße 55,Münster,48143,DE,DE,+31 49 6319 4706,einkauf@lehmannpartnermark.de,DE335859441,,,DE595593662,,,2012-06-19
+0002000243,KUNA,Krause Partnermarkt Wien,Zentrale,KRAUSEPART,Marktplatz 181,Wien,1010,AT,DE,+48 59 5423 2846,bestellung@krausepartnermarkt.at,,,,AT344079960,,,2016-11-18
+0002000244,KUNA,Metzgerei Hartmann,Zentrale,METZGEREIH,Bahnhofstraße 58,Hannover,30159,DE,DE,+41 82 9362 7166,buchhaltung@metzgereihartmann.de,DE374175126,,,DE167105778,,,2012-12-24
+0002000245,KUNA,Betriebskantine Lehmann AG,,BETRIEBSKA,Hauptstraße 207,Kraków,30-001,PL,EN,+49 89 3708 270,info@betriebskantineleh.pl,,,,PL645752427,,,2022-06-22
+0002000246,KUNA,Hotel Brandes Rotterdam,,HOTELBRAND,Am Hafen 26,Rotterdam,3011 AA,NL,EN,+48 98 6529 3409,bestellung@hotelbrandesrotter.nl,,,,NL600610883,,,2014-04-27
+0002000247,DEBI,Clemens Vertriebs KG,,CLEMENSVER,Lindenweg 24,Warszawa,00-001,PL,EN,,buchhaltung@clemensvertriebskg.pl,,,,,,,2022-03-16
+0002000248,KUNA,Eckert Gastronomie GmbH,,ECKERTGAST,Industriering 78,Amsterdam,1012 AB,NL,EN,+43 92 1379 8165,info@eckertgastronomieg.nl,,,,NL351902974,,,2023-09-14
+0002000249,ZCUS,Kiosk Gruber Bochum,,KIOSKGRUBE,Lindenweg 9,Bochum,44787,DE,DE,+33 39 8986 6753,info@kioskgruberbochum.de,,,,DE200145014,,,2014-04-03
+0002000250,KUNA,Radtke Gastronomie GmbH,,RADTKEGAST,Industriering 137,Duisburg,47051,DE,DE,+31 95 1766 9002,bestellung@radtkegastronomieg.de,,,,DE121219064,,,2023-12-26
+0002000251,DEBI,Winkler Großhandel GmbH 6,,WINKLERGRO,Brückenstraße 121,Bielefeld,33602,DE,DE,+48 52 1716 7689,bestellung@winklergroßhandelg.de,,,,DE019167698,,,2024-11-17
+0002000252,KUNA,Bäckerei Lehmann,,BÄCKEREILE,Brückenstraße 234,Köln,50667,DE,DE,+43 51 9987 3361,info@bäckereilehmann.de,DE651278682,,,DE716832023,,,2014-01-03
+0002000253,KUNA,Bäckerei Wendt,,BÄCKEREIWE,Ringstraße 43,Essen,45127,DE,DE,+33 93 3829 3759,info@bäckereiwendt.de,,,,DE206141794,,,2025-07-13
+0002000254,KUNA,Ullrich Gastronomie GmbH,,ULLRICHGAS,Ringstraße 55,Bremen,28195,DE,DE,+43 59 4840 3500,buchhaltung@ullrichgastronomie.de,,,,DE523219511,,,2017-11-10
+0002000255,ZCUS,Kiosk Ullrich Bochum,,KIOSKULLRI,Feldweg 226,Bochum,44787,DE,DE,+31 77 5297 9052,buchhaltung@kioskullrichbochum.de,,,,DE858993064,,,2014-08-06
+0002000256,KUNA,Betriebskantine Wendt AG 13,,BETRIEBSKA,Marktplatz 90,Lille,59000,FR,FR,+49 54 1193 8585,bestellung@betriebskantinewen.fr,,,,,,,2015-07-12
+0002000257,DEBI,Clemens Vertriebs KG 5,Zentrale,CLEMENSVER,Feldweg 201,Stuttgart,70173,DE,DE,+41 50 7444 8273,info@clemensvertriebskg.de,,,,DE525925499,,,2021-12-22
+0002000258,KUNA,Dittrich Partnermarkt Dresden,,DITTRICHPA,Lindenweg 221,Dresden,01067,DE,DE,+43 92 9020 3695,buchhaltung@dittrichpartnermar.de,DE880177094,,,DE675037283,,,2021-03-01
+0002000259,KUNA,Bäckerei Clemens 16,,BÄCKEREICL,Feldweg 117,Hamburg,20095,DE,DE,+48 35 4468 1506,,DE374536115,,,DE327327046,,,2011-03-04
+0002000260,KUNA,Metzgerei Kaufmann,,METZGEREIK,Marktplatz 176,Hannover,30159,DE,DE,+41 91 3224 2288,einkauf@metzgereikaufmann.de,,,,DE481225415,,,2019-08-01
+0002000261,KUNA,Metzgerei Ziegler,,METZGEREIZ,Talstraße 173,Leipzig,04109,DE,DE,+49 96 6719 8458,buchhaltung@metzgereiziegler.de,DE634262048,,,DE947272553,,,2010-11-09
+0002000262,KUNA,Ullrich Gastronomie GmbH 18,,ULLRICHGAS,Am Hafen 74,Freiburg,79098,DE,DE,+43 30 9063 5072,einkauf@ullrichgastronomie.de,DE939912573,,,DE257438395,,,2012-01-23
+0002000263,DEBI,Kaufmann Vertriebs KG 3,,KAUFMANNVE,Schulstraße 206,Frankfurt am Main,60311,DE,DE,+31 50 2287 4672,einkauf@kaufmannvertriebsk.de,DE947392854,,,DE998286464,,,2025-10-19
+0002000264,KUNA,Hotel Brandes Wuppertal,,HOTELBRAND,Am Hafen 24,Wuppertal,42103,DE,DE,+31 54 6156 3734,info@hotelbrandeswupper.de,,,,,,,2023-10-14
+0002000265,KUNA,Wendt Partnermarkt Nürnberg,,WENDTPARTN,Ringstraße 24,Nürnberg,90403,DE,DE,+31 73 2959 3021,einkauf@wendtpartnermarktn.de,DE040329160,,,DE458074267,,,2019-03-24
+0002000266,KUNA,Stein Gastronomie GmbH 17,,STEINGASTR,Ringstraße 197,Augsburg,86150,DE,DE,+43 69 7878 553,bestellung@steingastronomiegm.de,DE882577349,,,DE987936926,,,2013-09-10
+0002000267,KUNA,Gruber Partnermarkt Bielefeld,,GRUBERPART,Gewerbepark 110,Bielefeld,33602,DE,DE,+31 60 4831 940,bestellung@gruberpartnermarkt.de,,,,DE803075346,,,2016-12-08
+0002000268,KUNA,Betriebskantine Thiel AG,,BETRIEBSKA,Gewerbepark 3,Leipzig,04109,DE,DE,+49 97 4136 1407,buchhaltung@betriebskantinethi.de,,,,DE014520333,,,2022-08-01
+0002000269,KUNA,Hotel Sommer Mannheim,,HOTELSOMME,Schulstraße 190,Mannheim,68159,DE,DE,+49 49 6983 8558,buchhaltung@hotelsommermannhei.de,,,,DE265375527,,,2023-11-07
+0002000270,DEBI,Rohde Vertriebs KG,,ROHDEVERTR,Lindenweg 226,Zürich,8001,CH,DE,+49 34 6577 9203,einkauf@rohdevertriebskg.ch,,,,,,,2014-01-28
+0002000271,KUNA,Metzgerei Gruber,,METZGEREIG,Schulstraße 48,Graz,8010,AT,DE,+48 88 3067 2767,buchhaltung@metzgereigruber.at,,,,AT324272022,,,2023-03-22
+0002000272,KUNA,Bäckerei Dittrich,,BÄCKEREIDI,Feldweg 141,Hannover,30159,DE,DE,+41 28 2129 1128,bestellung@bäckereidittrich.de,DE835639973,,,DE299211322,,,2011-07-04
+0002000273,DEBI,Sievers Vertriebs KG,,SIEVERSVER,Lindenweg 13,Graz,8010,AT,DE,+41 31 4404 8516,einkauf@sieversvertriebskg.at,,,,AT600832981,,,2025-01-12
+0002000274,KUNA,Frank Partnermarkt Duisburg,,FRANKPARTN,Bahnhofstraße 238,Duisburg,47051,DE,DE,+49 77 6833 1446,info@frankpartnermarktd.de,DE570499571,,,DE003093346,,,2018-08-18
+0002000275,KUNA,Betriebskantine Gruber AG,,BETRIEBSKA,Marktplatz 115,Duisburg,47051,DE,DE,+43 73 4002 8498,einkauf@betriebskantinegru.de,DE035971768,,,DE369361832,,X,2020-08-22
+0002000276,KUNA,Ziegler Gastronomie GmbH 11,,ZIEGLERGAS,Marktplatz 203,Essen,45127,DE,DE,+33 71 1367 2976,einkauf@zieglergastronomie.de,,,,DE460520335,,,2024-05-13
+0002000277,KUNA,Bäckerei Sievers 10,,BÄCKEREISI,Lindenweg 92,Warszawa,00-001,PL,EN,+49 39 1875 5807,bestellung@bäckereisievers10.pl,,,,,,,2011-12-15
+0002000278,KUNA,Bäckerei Radtke,,BÄCKEREIRA,Am Hafen 72,Augsburg,86150,DE,DE,+41 43 9590 5854,bestellung@bäckereiradtke.de,,,,DE202450677,,,2018-03-03
+0002000279,KUNA,Hotel Vogel Rotterdam,,HOTELVOGEL,Am Hafen 73,Rotterdam,3011 AA,NL,EN,+49 70 2886 867,bestellung@hotelvogelrotterda.nl,,,,NL154336971,,,2019-11-11
+0002000280,KUNA,Radtke Partnermarkt Karlsruhe,,RADTKEPART,Brückenstraße 160,Karlsruhe,76133,DE,DE,+48 20 1579 9041,info@radtkepartnermarkt.de,,,,DE446067631,,,2013-02-12
+0002000281,DEBI,Rohde Vertriebs KG 10,,ROHDEVERTR,Gewerbepark 127,Düsseldorf,40213,DE,DE,+31 32 5079 843,buchhaltung@rohdevertriebskg10.de,,,,DE011313548,,,2018-05-17
+0002000282,KUNA,Betriebskantine Radtke AG,,BETRIEBSKA,Am Hafen 94,Karlsruhe,76133,DE,DE,+48 86 4348 5244,info@betriebskantinerad.de,DE771185421,,,DE008683919,,,2024-10-06
+0002000283,DEBI,Böhm Großhandel GmbH 15,,BÖHMGROSSH,Bahnhofstraße 96,Dortmund,44135,DE,DE,+41 67 2720 3704,buchhaltung@böhmgroßhandelgmbh.de,DE526516586,,,DE139806634,,,2017-02-22
+0002000284,KUNA,Bäckerei Winkler 14,,BÄCKEREIWI,Gewerbepark 98,Bielefeld,33602,DE,DE,+49 75 8116 7083,bestellung@bäckereiwinkler14.de,DE480440811,,,DE563108978,,,2015-07-28
+0002000285,DEBI,Winkler Großhandel GmbH 15,,WINKLERGRO,Schulstraße 13,Zürich,8001,CH,DE,+41 83 1312 7027,buchhaltung@winklergroßhandelg.ch,,,,,,,2022-08-26
+0002000286,KUNA,Betriebskantine Krause AG,,BETRIEBSKA,Schulstraße 2,Kraków,30-001,PL,EN,+43 45 8169 2789,buchhaltung@betriebskantinekra.pl,,,,PL764579709,,,2018-10-11
+0002000287,KUNA,Vetter Handels GmbH & Co. KG,,VETTERHAND,Ringstraße 60,Wuppertal,42103,DE,DE,+49 29 6134 2411,info@vetterhandelsgmbhc.de,,,,DE866569019,,,2012-04-28
+0002000288,DEBI,Eckert Vertriebs KG,,ECKERTVERT,Brückenstraße 30,Köln,50667,DE,DE,+43 89 3978 5908,buchhaltung@eckertvertriebskg.de,,,,DE031686226,,,2011-07-23
+0002000289,DEBI,Bergmann Vertriebs KG 8,,BERGMANNVE,Schulstraße 101,Dortmund,44135,DE,DE,+43 37 1841 4726,buchhaltung@bergmannvertriebsk.de,,,,DE597127271,,,2011-04-26
+0002000290,KUNA,Bergmann Partnermarkt Stuttgart,,BERGMANNPA,Brückenstraße 169,Stuttgart,70173,DE,DE,+43 94 6907 6726,,,,,DE663484701,,,2024-06-16
+0002000291,KUNA,Sommer Partnermarkt Wuppertal,,SOMMERPART,,Wuppertal,42103,DE,DE,+49 48 4749 9263,info@sommerpartnermarkt.de,DE156854809,,,DE527235315,,,2018-05-20
+0002000292,KUNA,Metzgerei Krause,,METZGEREIK,Marktplatz 138,Wuppertal,42103,DE,DE,+43 35 2221 3587,einkauf@metzgereikrause.de,DE251331302,,,DE586481583,,,2010-03-01
+0002000293,KUNA,Betriebskantine Ziegler AG 5,,BETRIEBSKA,Brückenstraße 12,Frankfurt am Main,60311,DE,DE,+43 52 2966 7764,buchhaltung@betriebskantinezie.de,DE510978461,,,DE427488946,,,2012-10-07
+0002000294,ZCUS,Kiosk Böhm Warszawa,Zentrale,KIOSKBÖHMW,Am Hafen 58,Warszawa,00-001,PL,EN,+31 78 8107 9107,buchhaltung@kioskböhmwarszawa.pl,,,,PL385960198,,,2017-10-13
+0002000295,KUNA,Amann Gastronomie GmbH 3,Zentrale,AMANNGASTR,Hauptstraße 173,Rotterdam,3011 AA,NL,EN,+43 22 6315 3536,,,,,,,,2025-02-07
+0002000296,KUNA,Amann Gastronomie GmbH 10,,AMANNGASTR,Marktplatz 233,Wuppertal,42103,DE,DE,+33 62 4408 5364,bestellung@amanngastronomiegm.de,,,,DE381040646,,,2010-10-17
+0002000297,KUNA,Metzgerei Bergmann,Zentrale,METZGEREIB,Brückenstraße 147,Düsseldorf,40213,DE,DE,+43 83 5665 9385,bestellung@metzgereibergmann.de,,,,DE550837642,,,2025-01-10
+0002000298,ZCUS,Kiosk Rohde Stuttgart,,KIOSKROHDE,Marktplatz 154,Stuttgart,70173,DE,DE,+41 57 6772 6153,einkauf@kioskrohdestuttgar.de,DE638161570,,,DE449324951,,,2010-04-05
+0002000299,KUNA,Betriebskantine Hartmann AG,Zentrale,BETRIEBSKA,Gewerbepark 213,Graz,8010,AT,DE,+48 33 4711 3334,buchhaltung@betriebskantinehar.at,,,,,,,2019-09-24
+0002000300,KUNA,Hotel Kaufmann Rotterdam,Zentrale,HOTELKAUFM,Schulstraße 107,Rotterdam,3011 AA,NL,EN,+33 49 5285 8078,bestellung@hotelkaufmannrotte.nl,,,,,,,2011-01-18
+0002000301,KUNA,Bäckerei Radtke 15,,BÄCKEREIRA,Industriering 159,Münster,48143,DE,DE,+43 78 3056 1535,buchhaltung@bäckereiradtke15.de,,,,DE898348685,,,2010-04-19
+0002000302,DEBI,Krause Großhandel GmbH 15,,KRAUSEGROS,Lindenweg 57,Duisburg,47051,DE,DE,+33 32 7897 3038,einkauf@krausegroßhandelgm.de,,,,DE549422554,,,2017-12-24
+0002000303,KUNA,Bäckerei Vogel,,BÄCKEREIVO,Hauptstraße 181,Leipzig,04109,DE,DE,+31 68 6195 4264,info@bäckereivogel.de,DE590471276,,,DE915008625,,,2026-07-28
+0002000304,ZCUS,Kiosk Wendt Freiburg,,KIOSKWENDT,Schulstraße 106,Freiburg,79098,DE,DE,+31 65 7609 340,einkauf@kioskwendtfreiburg.de,DE697807546,,,DE781528330,,,2016-12-11
+0002000305,KUNA,Ullrich Gastronomie GmbH 9,,ULLRICHGAS,Marktplatz 161,Essen,45127,DE,DE,+31 90 1406 289,einkauf@ullrichgastronomie.de,DE944371877,,,DE555174419,,,2024-06-22
+0002000306,DEBI,Dittrich Großhandel GmbH,Zentrale,DITTRICHGR,Hauptstraße 121,Stuttgart,70173,DE,DE,+33 49 7498 6730,bestellung@dittrichgroßhandel.de,,,,DE997523269,,,2017-07-14
+0002000307,KUNA,Vetter Handels GmbH & Co. KG 5,,VETTERHAND,Am Hafen 169,Dresden,01067,DE,DE,+31 62 9646 1207,einkauf@vetterhandelsgmbhc.de,,,,DE519160101,,,2023-09-07
+0002000308,ZCUS,Kiosk Wendt Freiburg 16,,KIOSKWENDT,Bahnhofstraße 219,Freiburg,79098,DE,DE,+41 65 9683 7014,info@kioskwendtfreiburg.de,DE805246872,,,DE328908482,,,2026-03-06
+0002000309,KUNA,Böhm Gastronomie GmbH 6,,BÖHMGASTRO,Lindenweg 218,Bremen,28195,DE,DE,+49 90 6009 8185,einkauf@böhmgastronomiegmb.de,DE089683017,,,DE432100757,,,2023-12-03
+0002000310,KUNA,Hotel Lehmann Augsburg,,HOTELLEHMA,Industriering 116,Augsburg,86150,DE,DE,+43 55 9838 5860,bestellung@hotellehmannaugsbu.de,DE327556629,,,DE165361652,,,2020-01-06
+0002000311,KUNA,Winkler Partnermarkt Dresden,,WINKLERPAR,Industriering 84,Dresden,01067,DE,DE,+48 86 5126 5936,bestellung@winklerpartnermark.de,DE892892453,,,DE418769207,,,2025-11-28
+0002000312,KUNA,Dittrich Gastronomie GmbH,,DITTRICHGA,Lindenweg 184,Mannheim,68159,DE,DE,+48 68 4695 7660,bestellung@dittrichgastronomi.de,,,,DE840663079,,X,2013-08-12
+0002000313,KUNA,Betriebskantine Ullrich AG 9,,BETRIEBSKA,Gewerbepark 37,Warszawa,00-001,PL,EN,+33 39 6585 8839,info@betriebskantineull.pl,,,,PL427560473,,,2024-08-10
+0002000314,KUNA,Metzgerei Thiel,,METZGEREIT,Feldweg 185,Köln,50667,DE,DE,+33 98 4970 2873,einkaufmetzgereithiel.de,,,,DE312204156,,,2011-10-25
+0002000315,ZCUS,Kiosk Brandes Bielefeld,,KIOSKBRAND,Schulstraße 160,Bielefeld,33602,DE,DE,+41 99 2901 3668,bestellung@kioskbrandesbielef.de,DE761013760,,,DE937006658,,,2020-10-21
+0002000316,KUNA,Bäckerei Ziegler 12,,BÄCKEREIZI,Talstraße 220,Bielefeld,33602,DE,DE,+49 81 7090 7095,buchhaltung@bäckereiziegler12.de,DE015121924,,,DE355473058,,,2020-01-26
+0002000317,KUNA,Vogel Gastronomie GmbH,,VOGELGASTR,Bahnhofstraße 64,Düsseldorf,40213,DE,DE,+33 22 9985 4512,info@vogelgastronomiegm.de,DE071077561,,,DE752496588,,,2012-10-19
+0002000318,KUNA,Betriebskantine Radtke AG 15,,BETRIEBSKA,Lindenweg 111,Münster,48143,DE,DE,+33 95 7412 5612,info@betriebskantinerad.de,DE513102874,,,DE272321525,,,2025-12-27
+0002000319,KUNA,Bäckerei Eckert,,BÄCKEREIEC,Gewerbepark 162,Essen,45127,DE,DE,+43 36 7005 2075,info@bäckereieckert.de,,,,DE529184389,,,2021-10-10
+0002000320,DEBI,Clemens Vertriebs KG 8,,CLEMENSVER,Hauptstraße 184,Bremen,28195,DE,DE,+48 34 9706 7799,info@clemensvertriebskg.de,DE980932585,,,DE403938687,,,2025-03-28
+0002000321,ZCUS,Kiosk Eckert Essen,,KIOSKECKER,Bahnhofstraße 163,Essen,45127,DE,DE,+31 97 3883 8984,buchhaltung@kioskeckertessen.de,,,,DE786971563,,,2010-09-15
+0002000322,KUNA,Bäckerei Radtke 8,Zentrale,BÄCKEREIRA,Bahnhofstraße 65,München,80331,DE,DE,+48 61 6497 7668,bestellung@bäckereiradtke8.de,DE852716855,,,DE189747077,,,2013-12-15
+0002000323,DEBI,Lehmann Großhandel GmbH 8,,LEHMANNGRO,Brückenstraße 67,Dortmund,44135,DE,DE,+48 97 8835 4653,einkauf@lehmanngroßhandelg.de,DE344286930,,,DE158501376,,,2025-06-17
+0002000324,KUNA,Ullrich Gastronomie GmbH 3,,ULLRICHGAS,Bahnhofstraße 88,Augsburg,86150,DE,DE,+31 91 1589 2793,bestellung@ullrichgastronomie.de,DE874685494,,,DE823755642,,,2022-12-18
+0002000325,KUNA,Betriebskantine Thiel AG 17,,BETRIEBSKA,Talstraße 173,Hannover,30159,DE,DE,+49 55 2550 6559,bestellung@betriebskantinethi.de,DE536751722,,,DE161328266,,,2019-11-28
+0002000326,KUNA,Hotel Brandes Bonn,,HOTELBRAND,Gewerbepark 25,Bonn,53111,DE,DE,+49 88 4513 9641,info@hotelbrandesbonn.de,,,,DE510597596,,,2014-10-24
+0002000327,KUNA,Thiel Partnermarkt Bremen,,THIELPARTN,Talstraße 4,Bremen,28195,DE,DE,+48 73 4592 298,bestellung@thielpartnermarktb.de,,,,DE671743282,,,2015-04-17
+0002000328,KUNA,Frank Handels GmbH & Co. KG,,FRANKHANDE,Hauptstraße 158,Bonn,53111,DE,DE,+48 68 9218 8209,info@frankhandelsgmbhco.de,DE063682484,,,DE145850788,,,2021-01-26
+0002000329,DEBI,Böhm Vertriebs KG 8,,BÖHMVERTRI,Bahnhofstraße 162,Dresden,01067,DE,DE,+31 28 5412 8986,info@böhmvertriebskg8.de,,,,DE837796204,,,2019-10-24
+0002000330,KUNA,Metzgerei Brandes,Zentrale,METZGEREIB,Hauptstraße 200,Wuppertal,42103,DE,DE,+43 82 6246 7103,info@metzgereibrandes.de,,,,DE065444053,,,2013-07-22
+0002000331,KUNA,Bäckerei Vetter 12,,BÄCKEREIVE,Brückenstraße 188,Essen,45127,DE,DE,+33 79 8680 5997,einkauf@bäckereivetter12.de,,,,DE119754942,,,2012-04-14
+0002000332,ZCUS,Kiosk Clemens Frankfurt am Main,,KIOSKCLEME,Lindenweg 183,Frankfurt am Main,60311,DE,DE,+33 64 4471 7971,bestellung@kioskclemensfrankf.de,DE252230681,,,DE866054107,X,,2018-08-09
+0002000333,KUNA,Thiel Gastronomie GmbH,Zentrale,THIELGASTR,Ringstraße 93,Hannover,30159,DE,DE,+48 67 9641 9038,info@thielgastronomiegm.de,,,,DE887985838,,,2018-03-18
+0002000334,KUNA,Bäckerei Vogel 11,,BÄCKEREIVO,Brückenstraße 113,Augsburg,86150,DE,DE,+49 68 9738 7871,buchhaltung@bäckereivogel11.de,DE529429570,,,DE441677564,,,2023-05-27
+0002000335,KUNA,Metzgerei Lehmann 15,,METZGEREIL,Gewerbepark 120,Nürnberg,90403,DE,DE,+41 64 5369 9400,bestellung@metzgereilehmann15.de,DE322942722,,,DE710916259,,,2016-12-12
+0002000336,DEBI,Amann Vertriebs KG,,AMANNVERTR,Bahnhofstraße 178,Basel,4051,CH,DE,+48 30 7031 9088,einkauf@amannvertriebskg.ch,,,,,,,2025-07-12
+0002000337,KUNA,Hotel Dittrich Essen,,HOTELDITTR,Marktplatz 195,Essen,45127,DE,DE,+31 33 8616 4992,bestellung@hoteldittrichessen.de,,,,DE325208182,,,2025-04-27
+0002000338,DEBI,Vogel Großhandel GmbH 14,,VOGELGROSS,Marktplatz 113,Düsseldorf,40213,DE,DE,+48 78 1404 7727,info@vogelgroßhandelgmb.de,DE639359221,,,DE747093315,,,2017-03-14
+0002000339,KUNA,Hotel Radtke Lille,,HOTELRADTK,Ringstraße 144,Lille,59000,FR,FR,+41 34 5016 524,einkauf@hotelradtkelille.fr,,,,,,,2022-11-17
+0002000340,DEBI,Brandes Vertriebs KG,,BRANDESVER,Ringstraße 112,Dresden,01067,DE,DE,+41 68 2207 8556,bestellung@brandesvertriebskg.de,DE280829656,,,DE346303322,,,2021-01-08
+0002000341,KUNA,Amann Partnermarkt Freiburg 11,,AMANNPARTN,Gewerbepark 184,Freiburg,79098,DE,DE,+31 64 7171 9340,info@amannpartnermarktf.de,,,,DE373949189,,,2025-02-11
+0002000342,KUNA,Krause Handels GmbH & Co. KG 13,,KRAUSEHAND,Industriering 124,Duisburg,47051,DE,DE,+48 95 7679 8409,buchhaltung@krausehandelsgmbhc.de,,,,DE195508636,,,2017-01-17
+0002000343,KUNA,Brandes Partnermarkt Warszawa,,BRANDESPAR,Am Hafen 115,Warszawa,00-001,PL,EN,,einkauf@brandespartnermark.pl,,,,PL911460014,,,2020-08-07
+0002000344,KUNA,Betriebskantine Sommer AG 9,,BETRIEBSKA,Feldweg 142,Hannover,30159,DE,DE,+43 46 2992 1704,info@betriebskantinesom.de,DE020198260,,,DE525813796,,,2017-06-09
+0002000345,DEBI,Rohde Vertriebs KG 19,,ROHDEVERTR,Lindenweg 226,Duisburg,47051,DE,DE,+31 25 8332 3565,bestellung@rohdevertriebskg19.de,DE419994580,,,DE009178374,,,2019-07-25
+0002000346,KUNA,Bäckerei Stein 6,,BÄCKEREIST,Hauptstraße 48,Leipzig,04109,DE,DE,+48 98 5359 7820,einkauf@bäckereistein6.de,DE296639118,,,DE525712062,,,2017-10-23
+0002000347,KUNA,Bäckerei Krause 16,,BÄCKEREIKR,Ringstraße 152,Köln,50667,DE,DE,+49 94 5639 9753,bestellung@bäckereikrause16.de,,,,DE513505771,,,2015-02-28
+0002000348,KUNA,Frank Gastronomie GmbH 4,,FRANKGASTR,Marktplatz 26,Köln,50667,DE,DE,+48 72 7920 1363,einkauf@frankgastronomiegm.de,DE470337810,,,DE234378613,,,2022-10-06
+0002000349,KUNA,Hotel Sommer Freiburg,,HOTELSOMME,Marktplatz 212,Freiburg,79098,DE,DE,+43 99 8494 4113,info@hotelsommerfreibur.de,DE951617364,,,DE232148126,,,2026-02-21
+0002000350,DEBI,Engel Vertriebs KG 18,,ENGELVERTR,Schulstraße 228,Duisburg,47051,DE,DE,+31 27 7235 4633,einkauf@engelvertriebskg18.de,DE103087462,,,DE080674792,,,2011-08-04
+0002000351,ZCUS,Kiosk Hartmann Mannheim,Zentrale,KIOSKHARTM,Schulstraße 15,Mannheim,68159,DE,DE,+31 68 5867 7561,info@kioskhartmannmannh.de,DE217974093,,,DE595957798,,,2015-07-08
+0002000352,KUNA,Frank Handels GmbH & Co. KG 2,,FRANKHANDE,Marktplatz 29,Karlsruhe,76133,DE,DE,+31 55 5138 5299,bestellung@frankhandelsgmbhco.de,DE174679668,,,DE870129536,,,2022-06-21
+0002000353,ZCUS,Kiosk Stein Freiburg,,KIOSKSTEIN,Lindenweg 196,Freiburg,79098,DE,DE,+41 91 9770 561,buchhaltung@kiosksteinfreiburg.de,DE093769087,,,DE056772649,,,2026-07-12
+0002000354,KUNA,Hotel Krause Warszawa,,HOTELKRAUS,Hauptstraße 31,Warszawa,00-001,PL,EN,+48 43 4170 9980,buchhaltung@hotelkrausewarszaw.pl,,,,,,,2017-04-23
+0002000355,KUNA,Metzgerei Sievers 18,,METZGEREIS,Schulstraße 78,Bochum,44787,DE,DE,+48 35 1705 1528,einkauf@metzgereisievers18.de,DE542632463,,,DE695551140,,,2024-11-05
+0002000356,KUNA,Lehmann Gastronomie GmbH,,LEHMANNGAS,Hauptstraße 127,Augsburg,86150,DE,DE,+43 97 2801 9827,bestellung@lehmanngastronomie.de,DE286792160,,,DE834834249,,,2024-06-12
+0002000357,KUNA,Metzgerei Sievers 18,Zentrale,METZGEREIS,Bahnhofstraße 26,Duisburg,47051,DE,DE,+41 64 4998 1393,einkauf@metzgereisievers18.de,DE311637918,,,DE060171906,,,2014-11-28
+0002000358,ZCUS,Kiosk Stein Dortmund,,KIOSKSTEIN,Marktplatz 215,Dortmund,44135,DE,DE,+33 46 5894 974,info@kiosksteindortmund.de,DE526803569,,,DE612029447,,,2021-12-07
+0002000359,KUNA,Hotel Stein Freiburg,,HOTELSTEIN,Schulstraße 31,Freiburg,79098,DE,DE,+49 74 9393 4265,buchhaltung@hotelsteinfreiburg.de,DE327418647,,,DE920922878,,,2011-01-28
+0002000360,ZCUS,Kiosk Clemens München,Zentrale,KIOSKCLEME,Am Hafen 183,München,80331,DE,DE,+31 62 9684 1314,bestellung@kioskclemensmünche.de,DE933322153,,,DE220638733,,,2016-08-25
+0002000361,ZCUS,Kiosk Böhm Leipzig,,KIOSKBÖHML,Marktplatz 91,Leipzig,04109,DE,DE,+33 24 2402 2642,bestellung@kioskböhmleipzig.de,DE626913923,,,DE873853308,,,2014-03-14
+0002000362,KUNA,Betriebskantine Böhm AG,,BETRIEBSKA,Gewerbepark 89,Amsterdam,1012 AB,NL,EN,+43 85 6105 5410,buchhaltung@betriebskantineböh.nl,,,,,,,2019-01-22
+0002000363,ZCUS,Kiosk Sommer Düsseldorf,,KIOSKSOMME,Marktplatz 182,Düsseldorf,40213,DE,DE,+48 37 4630 3174,info@kiosksommerdüsseld.de,DE167882347,,,DE184483917,,,2018-11-10
+0002000364,KUNA,Hotel Ullrich Mannheim,,HOTELULLRI,Marktplatz 142,Mannheim,68159,DE,DE,+41 35 6503 2794,info@hotelullrichmannhe.de,DE014303287,,,DE068145220,,,2020-02-22
+0002000365,ZCUS,Kiosk Hartmann Wien,Zentrale,KIOSKHARTM,Ringstraße 212,Wien,1010,AT,DE,,buchhaltung@kioskhartmannwien.at,,,,AT733878825,,,2012-03-19
+0002000366,KUNA,Betriebskantine Vogel AG 9,,BETRIEBSKA,Marktplatz 219,Amsterdam,1012 AB,NL,EN,+43 35 6390 7212,einkauf@betriebskantinevog.nl,,,,NL504821873,,,2016-03-11
+0002000367,KUNA,Brandes Handels GmbH & Co. KG 6,,BRANDESHAN,Hauptstraße 164,Karlsruhe,76133,DE,DE,+49 51 6883 7393,einkauf@brandeshandelsgmbh.de,DE732558229,,,DE918888094,,,2014-10-16
+0002000368,KUNA,Ziegler Gastronomie GmbH 11,,ZIEGLERGAS,Industriering 32,München,80331,DE,DE,+31 22 1529 5150,buchhaltung@zieglergastronomie.de,DE807231729,,,DE986098861,,,2020-07-27
+0002000369,KUNA,Metzgerei Stein 19,,METZGEREIS,Marktplatz 40,Essen,45127,DE,DE,+49 88 5930 5065,info@metzgereistein19.de,DE863467561,,,DE941256795,,,2018-01-22
+0002000370,KUNA,Hotel Amann Hamburg,,HOTELAMANN,Am Hafen 154,Hamburg,20095,DE,DE,+31 77 9727 316,buchhaltung@hotelamannhamburg.de,DE284306903,,,DE943833140,,,2012-05-11
+0002000371,KUNA,Betriebskantine Amann AG,Zentrale,BETRIEBSKA,Talstraße 67,Karlsruhe,76133,DE,DE,+43 78 5458 3242,buchhaltungbetriebskantineama.de,DE047291549,,,DE216825447,,,2019-12-21
+0002000372,KUNA,Metzgerei Krause 19,,METZGEREIK,Bahnhofstraße 69,Essen,45127,DE,DE,+49 42 2732 1445,info@metzgereikrause19.de,DE648059825,,,DE990003968,,,2025-04-12
+0002000373,KUNA,Betriebskantine Hartmann AG 17,,BETRIEBSKA,Brückenstraße 188,Rotterdam,3011 AA,NL,EN,+43 66 6189 3170,,,,,NL498311301,,,2013-08-09
+0002000374,KUNA,Radtke Gastronomie GmbH 8,,RADTKEGAST,Ringstraße 34,Bremen,28195,DE,DE,+43 30 3711 4699,einkauf@radtkegastronomieg.de,DE107829247,,,DE457167264,,,2017-03-16
+0002000375,KUNA,Eckert Gastronomie GmbH 19,,ECKERTGAST,Feldweg 228,Nürnberg,90403,DE,DE,+33 62 4867 2716,bestellung@eckertgastronomieg.de,,,,DE357517640,,,2012-09-10
+0002000376,KUNA,Metzgerei Bergmann 11,Zentrale,METZGEREIB,Marktplatz 44,Freiburg,79098,DE,DE,+48 65 7468 7782,info@metzgereibergmann1.de,DE049178267,,,DE797244336,,,2016-01-18
+0002000377,KUNA,Betriebskantine Eckert AG 13,,BETRIEBSKA,Hauptstraße 157,Wuppertal,42103,DE,DE,+49 91 7773 9225,info@betriebskantineeck.de,DE138084026,,,DE146753889,,,2021-08-08
+0002000378,DEBI,Frank Großhandel GmbH 4,,FRANKGROSS,Brückenstraße 164,Dresden,01067,DE,DE,,info@frankgroßhandelgmb.de,DE466467200,,,DE747431952,,,2023-01-12
+0002000379,KUNA,Ullrich Gastronomie GmbH 9,,ULLRICHGAS,Hauptstraße 41,Bielefeld,33602,DE,DE,+33 41 1335 3051,info@ullrichgastronomie.de,DE456418848,,,DE029396816,,,2011-12-22
+0002000380,ZCUS,Kiosk Wendt Essen,,KIOSKWENDT,Marktplatz 147,Essen,45127,DE,DE,+48 20 6437 1748,buchhaltung@kioskwendtessen.de,,,,DE542536322,,,2023-04-15
+0002000381,KUNA,Krause Handels GmbH & Co. KG 15,,KRAUSEHAND,Marktplatz 99,Augsburg,86150,DE,DE,+33 20 7266 5937,info@krausehandelsgmbhc.de,DE656442939,,,DE408704868,,,2018-12-11
+0002000382,KUNA,Ziegler Gastronomie GmbH 16,,ZIEGLERGAS,Feldweg 1,Düsseldorf,40213,DE,DE,+49 63 1860 7749,buchhaltung@zieglergastronomie.de,DE751161110,,,DE094392822,,,2024-04-10
+0002000383,KUNA,Bäckerei Lehmann 11,,BÄCKEREILE,Feldweg 211,Essen,45127,DE,DE,+43 47 5618 2598,einkauf@bäckereilehmann11.de,,,,DE058518124,,,2015-08-19
+0002000384,KUNA,Bäckerei Frank 18,,BÄCKEREIFR,Hauptstraße 178,Basel,4051,CH,DE,+31 95 3459 2737,buchhaltung@bäckereifrank18.ch,,,,,,,2023-05-28
+0002000385,KUNA,Metzgerei Bergmann 8,,METZGEREIB,Marktplatz 187,Bonn,53111,DE,DE,+41 92 6895 4373,bestellung@metzgereibergmann8.de,,,,DE020871801,,,2023-08-17
+0002000386,KUNA,Metzgerei Vetter 11,,METZGEREIV,Lindenweg 155,Wien,1010,AT,DE,+43 51 5432 8556,einkauf@metzgereivetter11.at,,,,AT760844096,,,2013-06-09
+0002000387,KUNA,Krause Handels GmbH & Co. KG 13,,KRAUSEHAND,Lindenweg 89,Bochum,44787,DE,DE,+49 84 9113 4746,buchhaltung@krausehandelsgmbhc.de,,,,DE959720707,,,2015-11-06
+0002000388,KUNA,Metzgerei Wendt 2,,METZGEREIW,Marktplatz 102,Freiburg,79098,DE,DE,+48 96 3243 8100,info@metzgereiwendt2.de,,,,DE980762803,,,2022-01-01
+0002000389,KUNA,Wendt Partnermarkt Kiel,,WENDTPARTN,Marktplatz 83,Kiel,24103,DE,DE,+48 85 2192 7605,einkauf@wendtpartnermarktk.de,,,,DE855853579,,,2015-01-03
+0002000390,KUNA,Betriebskantine Clemens AG 2,,BETRIEBSKA,Schulstraße 239,Mannheim,68159,DE,DE,+31 53 3784 2551,buchhaltung@betriebskantinecle.de,DE623232803,,,DE709363555,,,2026-08-26
+0002000391,KUNA,Metzgerei Engel,,METZGEREIE,Bahnhofstraße 151,Essen,45127,DE,DE,+41 40 6504 3590,bestellung@metzgereiengel.de,,,,DE151806206,,,2026-01-10
+0002000392,DEBI,Krause Vertriebs KG 11,,KRAUSEVERT,Feldweg 5,Amsterdam,1012 AB,NL,EN,+33 29 5799 8301,info@krausevertriebskg1.nl,,,,NL590051847,,,2012-03-03
+0002000393,KUNA,Wendt Partnermarkt Dresden,,WENDTPARTN,Feldweg 89,Dresden,01067,DE,DE,+31 55 3513 3426,info@wendtpartnermarktd.de,,,,DE633058100,,,2011-08-07
+0002000394,ZCUS,Kiosk Engel Dortmund,Zentrale,KIOSKENGEL,Talstraße 144,Dortmund,44135,DE,DE,+49 59 8107 1664,einkauf@kioskengeldortmund.de,DE093444374,,,DE242314602,,,2020-06-10
+0002000395,KUNA,Ziegler Gastronomie GmbH 7,,ZIEGLERGAS,Hauptstraße 68,Bochum,44787,DE,DE,+31 26 5634 6948,einkauf@zieglergastronomie.de,,,,DE863904237,,,2026-01-14
+0002000396,DEBI,Thiel Großhandel GmbH,,THIELGROSS,Lindenweg 67,Dresden,01067,DE,DE,+49 81 6272 7055,info@thielgroßhandelgmb.de,,,,DE727133522,,,2017-04-14
+0002000397,KUNA,Bergmann Handels GmbH & Co. KG 15,Zentrale,BERGMANNHA,Marktplatz 192,Stuttgart,70173,DE,DE,+48 88 2288 972,einkauf@bergmannhandelsgmb.de,,,,DE603205584,,,2025-09-21
+0002000398,ZCUS,Kiosk Vogel Bonn,,KIOSKVOGEL,Lindenweg 37,Bonn,53111,DE,DE,+41 67 2729 8125,bestellung@kioskvogelbonn.de,DE348844744,,,DE636673381,,,2017-06-10
+0002000399,KUNA,Rohde Handels GmbH & Co. KG 6,,ROHDEHANDE,,Essen,45127,DE,DE,+49 44 8743 6757,info@rohdehandelsgmbhco.de,DE685997168,,,DE847759777,,,2021-02-17
+0002000400,ZCUS,Kiosk Thiel Freiburg,Zentrale,KIOSKTHIEL,Feldweg 200,Freiburg,79098,DE,DE,+48 66 5113 970,bestellung@kioskthielfreiburg.de,,,,DE220392702,,,2014-09-17
+0002000401,KUNA,Ziegler Handels GmbH & Co. KG 10,,ZIEGLERHAN,Talstraße 227,Bochum,44787,DE,DE,+33 35 1602 7706,einkauf@zieglerhandelsgmbh.de,,,,DE132684237,,,2016-03-05
+0002000402,KUNA,Bäckerei Stein 17,,BÄCKEREIST,Ringstraße 184,Dresden,01067,DE,DE,+31 92 7705 7001,bestellung@bäckereistein17.de,DE215430456,,,DE278493527,,,2017-11-23
+0002000403,KUNA,Lehmann Gastronomie GmbH 17,,LEHMANNGAS,Bahnhofstraße 234,Münster,48143,DE,DE,+41 57 7070 2221,info@lehmanngastronomie.de,DE223019995,,,DE798496624,,,2012-08-24
+0002000404,KUNA,Betriebskantine Bergmann AG,Zentrale,BETRIEBSKA,Lindenweg 163,Wuppertal,42103,DE,DE,+49 37 9386 2568,info@betriebskantineber.de,,,,DE185848366,,,2013-05-05
+0002000405,KUNA,Engel Partnermarkt Essen,Zentrale,ENGELPARTN,Lindenweg 145,Essen,45127,DE,DE,+41 89 6311 3563,buchhaltung@engelpartnermarkte.de,DE553859482,,,DE471616037,,,2020-05-13
+0002000406,KUNA,Bäckerei Wendt 6,,BÄCKEREIWE,Brückenstraße 160,Stuttgart,70173,DE,DE,+33 42 6452 7053,einkauf@bäckereiwendt6.de,DE966910606,,,DE973976255,,,2013-04-21
+0002000407,DEBI,Sievers Vertriebs KG 2,,SIEVERSVER,Feldweg 75,Wien,1010,AT,DE,+41 41 4783 9622,info@sieversvertriebskg.at,,,,AT371682067,,,2017-10-13
+0002000408,KUNA,Hotel Stein Duisburg,,HOTELSTEIN,Bahnhofstraße 32,Duisburg,47051,DE,DE,,bestellung@hotelsteinduisburg.de,DE502283646,,,DE859367923,,,2020-02-17
+0002000409,KUNA,Radtke Partnermarkt Münster,,RADTKEPART,Marktplatz 195,Münster,48143,DE,DE,+49 24 1955 1130,bestellung@radtkepartnermarkt.de,DE653649120,,,DE709459021,,,2018-03-25
+0002000410,KUNA,Clemens Gastronomie GmbH,,CLEMENSGAS,Industriering 118,Münster,48143,DE,DE,+43 39 5077 1239,buchhaltung@clemensgastronomie.de,DE309313113,,,DE697514872,,,2021-11-05
+0002000411,DEBI,Engel Vertriebs KG 19,,ENGELVERTR,Hauptstraße 22,Hamburg,20095,DE,DE,+43 55 4521 2544,buchhaltung@engelvertriebskg19.de,DE305445539,,,DE988815611,,,2013-08-27
+0002000412,ZCUS,Kiosk Ziegler Freiburg,Zentrale,KIOSKZIEGL,Feldweg 156,Freiburg,79098,DE,DE,+41 62 6419 3294,bestellung@kioskzieglerfreibu.de,,,,DE214767312,,,2025-11-26
+0002000413,KUNA,Ziegler Gastronomie GmbH 12,,ZIEGLERGAS,Marktplatz 122,Mannheim,68159,DE,DE,+49 25 4830 2231,bestellung@zieglergastronomie.de,,,,DE014205306,,,2013-03-11
+0002000414,KUNA,Stein Gastronomie GmbH 16,,STEINGASTR,Am Hafen 104,Amsterdam,1012 AB,NL,EN,+48 30 8001 9197,info@steingastronomiegm.nl,,,,NL318112739,,,2018-12-04
+0002000415,KUNA,Metzgerei Krause 14,,METZGEREIK,Talstraße 81,Hamburg,20095,DE,DE,+43 87 9710 1323,info@metzgereikrause14.de,DE551036659,,,DE391488388,,,2026-06-22
+0002000416,KUNA,Metzgerei Sommer,,METZGEREIS,Feldweg 179,Dortmund,44135,DE,DE,+49 59 5411 1665,bestellung@metzgereisommer.de,,,,DE533319710,X,,2012-08-20
+0002000417,DEBI,Wendt Vertriebs KG,,WENDTVERTR,Feldweg 47,Freiburg,79098,DE,DE,+43 93 2002 7567,info@wendtvertriebskg.de,DE513722915,,,DE146413452,,,2014-02-04
+0002000418,ZCUS,Kiosk Kaufmann Nürnberg,,KIOSKKAUFM,Gewerbepark 211,Nürnberg,90403,DE,DE,+49 29 8167 6696,einkauf@kioskkaufmannnürnb.de,,,,DE247502975,,,2015-05-03
+0002000419,KUNA,Hotel Rohde Wien,,HOTELROHDE,Schulstraße 86,Wien,1010,AT,DE,+43 73 5359 7876,info@hotelrohdewien.at,,,,AT286194742,,,2014-09-11
+0002000420,KUNA,Böhm Partnermarkt Stuttgart,,BÖHMPARTNE,Feldweg 134,Stuttgart,70173,DE,DE,+31 41 1194 8005,info@böhmpartnermarktst.de,,,,DE539102450,,,2026-08-10
+0002000421,KUNA,Metzgerei Engel 11,,METZGEREIE,Am Hafen 137,Leipzig,04109,DE,DE,+41 94 5813 7414,bestellung@metzgereiengel11.de,,,,DE913261996,,,2025-03-22
+0002000422,DEBI,Engel Großhandel GmbH 15,,ENGELGROSS,Marktplatz 235,Freiburg,79098,DE,DE,+33 46 4144 1460,bestellung@engelgroßhandelgmb.de,DE574111470,,,DE060748297,,,2024-08-17
+0002000423,KUNA,Kaufmann Handels GmbH & Co. KG 14,,KAUFMANNHA,Bahnhofstraße 169,Frankfurt am Main,60311,DE,DE,+43 84 4828 7909,einkauf@kaufmannhandelsgmb.de,,,,DE210003130,,,2013-03-15
+0002000424,KUNA,Ullrich Gastronomie GmbH 11,,ULLRICHGAS,Am Hafen 3,Bielefeld,33602,DE,DE,+31 20 7433 2753,buchhaltung@ullrichgastronomie.de,DE308218156,,,DE983667121,,,2017-07-18
+0002000425,KUNA,Metzgerei Engel 3,,METZGEREIE,Talstraße 162,Düsseldorf,40213,DE,DE,+48 95 3234 2507,einkauf@metzgereiengel3.de,,,,DE992624774,,,2020-09-16
+0002000426,KUNA,Vetter Partnermarkt Kiel,Zentrale,VETTERPART,Gewerbepark 65,Kiel,24103,DE,DE,+41 56 8546 4198,einkauf@vetterpartnermarkt.de,,,,DE185615434,,,2015-06-02
+0002000427,KUNA,Betriebskantine Böhm AG 8,,BETRIEBSKA,Feldweg 66,Lyon,69001,FR,FR,+31 79 4016 5451,info@betriebskantineböh.fr,,,,,,,2020-11-20
+0002000428,KUNA,Vogel Partnermarkt Zürich,,VOGELPARTN,Ringstraße 232,Zürich,8001,CH,DE,+41 80 8636 5531,einkauf@vogelpartnermarktz.ch,,,,,,,2018-01-26
+0002000429,ZCUS,Kiosk Sievers Duisburg,,KIOSKSIEVE,Marktplatz 229,Duisburg,47051,DE,DE,+48 77 4131 168,buchhaltung@kiosksieversduisbu.de,,,,DE016374183,,,2026-09-04
+0002000430,KUNA,Betriebskantine Stein AG 2,,BETRIEBSKA,Feldweg 227,Essen,45127,DE,DE,+41 38 3994 3615,info@betriebskantineste.de,,,,DE757407640,,,2024-01-21
+0002000431,KUNA,Metzgerei Krause 13,,METZGEREIK,Hauptstraße 53,München,80331,DE,DE,+31 57 6829 9597,info@metzgereikrause13.de,,,,DE766807109,,,2020-10-25
+0002000432,DEBI,Lehmann Vertriebs KG,,LEHMANNVER,Am Hafen 224,Bremen,28195,DE,DE,+31 66 9672 983,einkauf@lehmannvertriebskg.de,DE510625945,,,DE438693201,,,2012-10-18
+0002000433,KUNA,Amann Handels GmbH & Co. KG,,AMANNHANDE,Schulstraße 39,Bonn,53111,DE,DE,+48 43 5209 4863,einkauf@amannhandelsgmbhco.de,DE149007585,,,DE869635351,,,2020-04-26
+0002000434,KUNA,Betriebskantine Clemens AG 12,,BETRIEBSKA,Talstraße 35,Warszawa,00-001,PL,EN,+31 75 2144 4698,einkauf@betriebskantinecle.pl,,,,,,,2021-06-13
+0002000435,DEBI,Amann Großhandel GmbH,,AMANNGROSS,Feldweg 22,Mannheim,68159,DE,DE,+31 42 6566 861,einkauf@amanngroßhandelgmb.de,DE948970498,,,DE183392098,,,2026-12-11
+0002000436,KUNA,Betriebskantine Böhm AG 2,,BETRIEBSKA,Lindenweg 230,München,80331,DE,DE,+41 73 7031 6797,info@betriebskantineböh.de,DE326031318,,,DE156739475,,,2022-10-23
+0002000437,ZCUS,Kiosk Amann Hannover,,KIOSKAMANN,Industriering 55,Hannover,30159,DE,DE,+41 42 8124 3608,einkauf@kioskamannhannover.de,,,,DE596479505,,,2014-06-13
+0002000438,KUNA,Hotel Sommer Rotterdam,,HOTELSOMME,Feldweg 189,Rotterdam,3011 AA,NL,EN,+49 27 9876 703,info@hotelsommerrotterd.nl,,,,NL443481903,X,,2020-05-02
+0002000439,KUNA,Hotel Rohde Freiburg,,HOTELROHDE,Schulstraße 236,Freiburg,79098,DE,DE,+48 71 7464 9705,buchhaltung@hotelrohdefreiburg.de,,,,DE160337447,,,2018-07-25
+0002000440,ZCUS,Kiosk Dittrich Münster,,KIOSKDITTR,Feldweg 40,Münster,48143,DE,DE,+33 81 5059 4466,bestellung@kioskdittrichmünst.de,,,,DE340510624,,,2019-08-03
+0002000441,KUNA,Betriebskantine Brandes AG 10,,BETRIEBSKA,Hauptstraße 152,Bonn,53111,DE,DE,+41 82 1804 8996,bestellung@betriebskantinebra.de,DE505383763,,,DE449313121,,,2014-02-21
+0002000442,KUNA,Amann Partnermarkt Hamburg,,AMANNPARTN,Talstraße 74,Hamburg,20095,DE,DE,+31 30 4696 4126,buchhaltung@amannpartnermarkth.de,DE646561917,,,DE834009126,,,2024-09-26
+0002000443,DEBI,Ziegler Großhandel GmbH,,ZIEGLERGRO,Gewerbepark 5,Düsseldorf,40213,DE,DE,+43 74 1655 5629,bestellung@zieglergroßhandelg.de,,,,DE715236864,,,2020-04-19
+0002000444,KUNA,Winkler Partnermarkt Karlsruhe,,WINKLERPAR,Talstraße 125,Karlsruhe,76133,DE,DE,+31 35 8220 5791,info@winklerpartnermark.de,DE769752809,,,DE435000801,,,2020-11-01
+0002000445,KUNA,Krause Gastronomie GmbH 3,,KRAUSEGAST,Hauptstraße 123,Düsseldorf,423,DE,DE,+31 56 4602 4583,buchhaltung@krausegastronomieg.de,,,,DE014992452,,,2018-03-19
+0002000446,KUNA,Hotel Sievers Augsburg,,HOTELSIEVE,Gewerbepark 182,Augsburg,86150,DE,DE,+49 26 2747 4747,bestellung@hotelsieversaugsbu.de,DE779371411,,,DE899815725,,,2025-08-03
+0002000447,KUNA,Betriebskantine Amann AG 8,,BETRIEBSKA,Brückenstraße 145,Duisburg,47051,DE,DE,+41 72 4041 2949,buchhaltung@betriebskantineama.de,DE717547041,,,DE040897843,,,2025-04-28
+0002000448,KUNA,Bäckerei Brandes 4,Zentrale,BÄCKEREIBR,Feldweg 115,Dresden,01067,DE,DE,+43 84 1317 463,buchhaltung@bäckereibrandes4.de,DE723998101,,,DE621379494,,,2022-09-07
+0002000449,DEBI,Stein Großhandel GmbH,,STEINGROSS,Schulstraße 117,Bonn,53111,DE,DE,+33 43 8426 4673,bestellung@steingroßhandelgmb.de,,,,DE200200923,,,2010-11-05
+0002000450,KUNA,Krause Handels GmbH & Co. KG 17,,KRAUSEHAND,Schulstraße 205,Leipzig,04109,DE,DE,+41 54 8858 5808,buchhaltung@krausehandelsgmbhc.de,DE558145346,,,DE193231840,,,2014-07-12
+0002000451,KUNA,Betriebskantine Wendt AG 2,,BETRIEBSKA,Am Hafen 232,Leipzig,04109,DE,DE,+49 60 1128 3336,buchhaltung@betriebskantinewen.de,DE787965042,,,DE058780924,,,2025-10-04
+0002000452,KUNA,Kaufmann Partnermarkt Mannheim,,KAUFMANNPA,Schulstraße 56,Mannheim,68159,DE,DE,+48 44 8246 2282,buchhaltung@kaufmannpartnermar.de,,,,DE769851806,,,2026-07-02
+0002000453,DEBI,Lehmann Vertriebs KG 7,,LEHMANNVER,Gewerbepark 113,Nürnberg,90403,DE,DE,+43 40 5540 3591,einkauf@lehmannvertriebskg.de,DE421801312,,,DE261300358,,,2024-08-04
+0002000454,KUNA,Bergmann Partnermarkt Bonn,,BERGMANNPA,Bahnhofstraße 215,Bonn,53111,DE,DE,+41 91 5905 2755,buchhaltung@bergmannpartnermar.de,,,,DE973956322,,,2019-10-20
+0002000455,KUNA,Ullrich Gastronomie GmbH 3,,ULLRICHGAS,Marktplatz 87,Wien,1010,AT,DE,+49 73 7245 4636,bestellung@ullrichgastronomie.at,,,,,,,2016-07-03
+0002000456,KUNA,Thiel Handels GmbH & Co. KG,Zentrale,THIELHANDE,Lindenweg 164,Freiburg,79098,DE,DE,+33 41 1357 1901,einkauf@thielhandelsgmbhco.de,,,,DE372989001,,,2010-12-11
+0002000457,KUNA,Sievers Partnermarkt Dortmund,Zentrale,SIEVERSPAR,Schulstraße 117,Dortmund,44135,DE,DE,+48 53 9486 575,buchhaltung@sieverspartnermark.de,DE172041504,,,DE165428273,,,2015-06-18
+0002000458,DEBI,Gruber Großhandel GmbH 7,,GRUBERGROS,Schulstraße 31,Bielefeld,33602,DE,DE,+31 83 2343 4421,buchhaltung@grubergroßhandelgm.de,DE568831095,,,DE573353519,,,2015-06-25
+0002000459,KUNA,Sievers Gastronomie GmbH,,SIEVERSGAS,Hauptstraße 85,Freiburg,79098,DE,DE,+33 47 5862 8472,buchhaltungsieversgastronomie.de,DE605839909,,,DE517749183,,,2023-02-01
+0002000460,KUNA,Ullrich Gastronomie GmbH 17,,ULLRICHGAS,Talstraße 130,Köln,50667,DE,DE,+41 97 9559 4569,info@ullrichgastronomie.de,,,,DE905484957,,,2024-11-28
+0002000461,KUNA,Bergmann Partnermarkt Wien,,BERGMANNPA,Brückenstraße 111,Wien,1010,AT,DE,+31 24 8690 6100,buchhaltung@bergmannpartnermar.at,,,,AT813017282,,,2012-01-21
+0002000462,DEBI,Ullrich Großhandel GmbH 8,,ULLRICHGRO,Am Hafen 162,Wuppertal,42103,DE,DE,+33 38 9404 2704,info@ullrichgroßhandelg.de,DE337808573,,,DE659579234,,,2011-10-02
+0002000463,KUNA,Thiel Gastronomie GmbH 2,,THIELGASTR,Hauptstraße 171,Münster,48143,DE,DE,+48 66 8911 4146,info@thielgastronomiegm.de,DE190051054,,,DE414117135,,,2016-07-15
+0002000464,KUNA,Hotel Vetter Zürich,,HOTELVETTE,Brückenstraße 170,Zürich,8001,CH,DE,+49 98 5612 2863,,,,,,,,2024-03-28
+0002000465,KUNA,Metzgerei Clemens,,METZGEREIC,Feldweg 61,Nürnberg,90403,DE,DE,,einkauf@metzgereiclemens.de,DE095881887,,,DE992284659,,,2022-07-07
+0002000466,KUNA,Metzgerei Krause 4,,METZGEREIK,Feldweg 138,Bremen,28195,DE,DE,+31 60 6874 6272,einkauf@metzgereikrause4.de,,,,DE670462564,,,2024-12-13
+0002000467,KUNA,Metzgerei Ullrich,,METZGEREIU,Talstraße 214,Karlsruhe,76133,DE,DE,+33 36 1766 7767,einkauf@metzgereiullrich.de,,,,DE826231258,,,2024-05-15
+0002000468,KUNA,Eckert Handels GmbH & Co. KG,,ECKERTHAND,Bahnhofstraße 190,Münster,48143,DE,DE,+48 54 3022 5587,info@eckerthandelsgmbhc.de,,,,DE346040764,,,2013-06-21
+0002000469,KUNA,Metzgerei Vogel,,METZGEREIV,Schulstraße 158,Stuttgart,70173,DE,DE,+31 84 9336 6074,buchhaltung@metzgereivogel.de,DE798073347,,,DE206054486,,,2025-04-13
+0002000470,KUNA,Radtke Gastronomie GmbH 14,,RADTKEGAST,Bahnhofstraße 1,Mannheim,68159,DE,DE,+41 37 4597 6346,bestellung@radtkegastronomieg.de,DE914601536,,,DE689699175,,,2025-02-17
+0002000471,KUNA,Vetter Partnermarkt Rotterdam,,VETTERPART,Hauptstraße 124,Rotterdam,3011 AA,NL,EN,+48 76 3923 8242,buchhaltung@vetterpartnermarkt.nl,,,,,,,2020-07-27
+0002000472,KUNA,Betriebskantine Hartmann AG 18,,BETRIEBSKA,Gewerbepark 133,Düsseldorf,40213,DE,DE,+33 25 6518 2391,buchhaltung@betriebskantinehar.de,DE269833144,,,DE375439847,,,2025-07-07
+0002000473,KUNA,Bäckerei Clemens 19,,BÄCKEREICL,Am Hafen 56,Hannover,30159,DE,DE,+49 56 1420 4050,bestellung@bäckereiclemens19.de,,,,DE907514177,,,2026-03-03
+0002000474,ZCUS,Kiosk Ziegler Essen,,KIOSKZIEGL,Gewerbepark 15,Essen,45127,DE,DE,+33 92 6585 3215,bestellung@kioskziegleressen.de,,,,DE539195052,,,2015-03-03
+0002000475,KUNA,Metzgerei Krause 9,,METZGEREIK,Ringstraße 55,Zürich,8001,CH,DE,+41 54 9488 2086,buchhaltung@metzgereikrause9.ch,,,,,,,2024-05-22
+0002000476,KUNA,Bäckerei Lehmann 13,,BÄCKEREILE,Feldweg 127,Dortmund,44135,DE,DE,+33 66 2852 9423,bestellung@bäckereilehmann13.de,,,,DE281085557,,,2019-12-14
+0002000477,DEBI,Engel Großhandel GmbH 3,,ENGELGROSS,Marktplatz 188,Augsburg,86150,DE,DE,+41 71 9084 8212,einkauf@engelgroßhandelgmb.de,,,,DE530413714,,,2013-09-20
+0002000478,KUNA,Hotel Brandes Köln,,HOTELBRAND,Talstraße 191,Köln,50667,DE,DE,+43 21 6920 2990,info@hotelbrandesköln.de,DE201834449,,,DE548063337,,,2025-06-08
+0002000479,ZCUS,Kiosk Dittrich Hamburg,,KIOSKDITTR,Gewerbepark 33,Hamburg,20095,DE,DE,+43 47 5903 7125,einkauf@kioskdittrichhambu.de,DE161785297,,,DE357759721,,,2016-05-03
+0002000480,KUNA,Clemens Gastronomie GmbH 19,,CLEMENSGAS,Marktplatz 53,Mannheim,68159,DE,DE,+31 68 6920 8651,buchhaltung@clemensgastronomie.de,,,,DE723231014,,,2026-06-28
+0002000481,DEBI,Engel Vertriebs KG 18,,ENGELVERTR,Industriering 55,Bonn,53111,DE,DE,+43 55 6157 7971,info@engelvertriebskg18.de,,,,DE904466416,,,2016-12-21
+0002000482,KUNA,Betriebskantine Dittrich AG,Zentrale,BETRIEBSKA,Talstraße 110,Rotterdam,3011 AA,NL,EN,+43 64 8441 9940,info@betriebskantinedit.nl,,,,,,,2012-03-23
+0002000483,KUNA,Bergmann Partnermarkt Karlsruhe,,BERGMANNPA,Industriering 5,Karlsruhe,76133,DE,DE,+41 72 7814 9128,bestellung@bergmannpartnermar.de,,,,DE969288097,,,2020-04-21
+0002000484,KUNA,Hotel Böhm Stuttgart,,HOTELBÖHMS,Gewerbepark 132,Stuttgart,70173,DE,DE,+31 74 8190 4003,buchhaltung@hotelböhmstuttgart.de,,,,DE633927664,,,2019-01-09
+0002000485,ZCUS,Kiosk Ullrich Bochum 12,,KIOSKULLRI,Hauptstraße 203,Bochum,44787,DE,DE,+43 92 7862 2102,bestellung@kioskullrichbochum.de,,,,DE066390898,,,2011-06-03
+0002000486,DEBI,Lehmann Vertriebs KG 11,,LEHMANNVER,Talstraße 2,Graz,8010,AT,DE,+41 25 5377 242,einkauf@lehmannvertriebskg.at,,,,,,,2019-08-12
+0002000487,KUNA,Betriebskantine Gruber AG 5,,BETRIEBSKA,Lindenweg 124,Zürich,8001,CH,DE,+49 76 8183 625,bestellung@betriebskantinegru.ch,,,,,,,2020-01-19
+0002000488,KUNA,Metzgerei Engel 9,,METZGEREIE,Lindenweg 192,Frankfurt am Main,60311,DE,DE,+31 30 8016 7332,bestellung@metzgereiengel9.de,DE694991963,,,DE177367151,,,2016-09-24
+0002000489,KUNA,Bäckerei Engel,,BÄCKEREIEN,Gewerbepark 91,Hannover,30159,DE,DE,+49 83 3639 4517,einkauf@bäckereiengel.de,,,,DE516670495,,,2018-05-11
+0002000490,KUNA,Hartmann Partnermarkt Nürnberg,,HARTMANNPA,Gewerbepark 64,Nürnberg,90403,DE,DE,+31 37 1133 8826,einkauf@hartmannpartnermar.de,DE707496080,,,DE237781672,,,2012-05-10
+0002000491,KUNA,Ullrich Partnermarkt Bielefeld,,ULLRICHPAR,Industriering 239,Bielefeld,33602,DE,DE,+49 27 2079 5363,einkauf@ullrichpartnermark.de,DE083390178,,,DE694758810,,,2015-03-21
+0002000492,KUNA,Betriebskantine Wendt AG 11,,BETRIEBSKA,Gewerbepark 223,Zürich,8001,CH,DE,+48 25 8785 2482,buchhaltung@betriebskantinewen.ch,,,,,,,2015-07-11
+0002000493,KUNA,Sievers Gastronomie GmbH 18,,SIEVERSGAS,,Köln,50667,DE,DE,+48 96 8417 2853,info@sieversgastronomie.de,,,,DE401841131,,,2021-06-12
+0002000494,KUNA,Gruber Handels GmbH & Co. KG 7,,GRUBERHAND,Ringstraße 157,Amsterdam,1012 AB,NL,EN,+33 93 1956 9270,info@gruberhandelsgmbhc.nl,,,,NL708129624,,,2024-11-04
+0002000495,KUNA,Betriebskantine Winkler AG,,BETRIEBSKA,Am Hafen 164,Bonn,53111,DE,DE,+43 88 5261 7242,einkauf@betriebskantinewin.de,DE481133168,,,DE550714978,,,2013-07-16
+0002000496,KUNA,Engel Gastronomie GmbH,,ENGELGASTR,Am Hafen 45,Essen,45127,DE,DE,+43 38 5967 4248,einkauf@engelgastronomiegm.de,,,,DE070082704,,,2018-09-16
+0002000497,KUNA,Bäckerei Sommer,,BÄCKEREISO,Bahnhofstraße 94,Duisburg,47051,DE,DE,+48 44 4608 5162,einkauf@bäckereisommer.de,DE669586484,,,DE653670628,,,2024-02-26
+0002000498,KUNA,Hotel Brandes Düsseldorf,,HOTELBRAND,Am Hafen 110,Düsseldorf,40213,DE,DE,+48 59 9760 9592,info@hotelbrandesdüssel.de,,,,DE526683529,,,2012-05-26
+0002000499,KUNA,Kaufmann Gastronomie GmbH,,KAUFMANNGA,Brückenstraße 194,Duisburg,47051,DE,DE,+41 93 4647 7972,buchhaltung@kaufmanngastronomi.de,DE695564048,,,DE062036861,,,2017-01-13
+0002000500,KUNA,Hotel Dittrich Dresden,,HOTELDITTR,Am Hafen 35,Dresden,01067,DE,DE,+49 95 1311 3755,einkauf@hoteldittrichdresd.de,DE545168254,,,DE666083113,,,2022-09-03
+0002000501,DEBI,Ziegler Vertriebs KG 2,,ZIEGLERVER,Brückenstraße 237,Bremen,28195,DE,DE,+33 43 7169 8935,buchhaltung@zieglervertriebskg.de,DE480936774,,,DE966323786,,,2018-03-05
+0002000502,KUNA,Hotel Thiel Karlsruhe,Zentrale,HOTELTHIEL,Schulstraße 41,Karlsruhe,76133,DE,DE,+48 72 2701 269,buchhaltung@hotelthielkarlsruh.de,DE619321113,,,DE612100748,,,2011-04-13
+0002000503,KUNA,Betriebskantine Krause AG 5,Zentrale,BETRIEBSKA,Am Hafen 197,Leipzig,04109,DE,DE,+43 54 2851 4786,info@betriebskantinekra.de,DE153629533,,,DE010210170,,,2016-06-01
+0002000504,KUNA,Gruber Gastronomie GmbH 10,,GRUBERGAST,Bahnhofstraße 3,Karlsruhe,76133,DE,DE,+31 27 3543 8408,bestellung@grubergastronomieg.de,,,,DE124030198,,,2017-06-12
+0002000505,DEBI,Wendt Großhandel GmbH,Zentrale,WENDTGROSS,Feldweg 72,Freiburg,79098,DE,DE,+33 77 1366 2653,einkauf@wendtgroßhandelgmb.de,DE612292740,,,DE792965445,,,2019-07-21
+0002000506,KUNA,Betriebskantine Rohde AG,,BETRIEBSKA,Marktplatz 174,Amsterdam,1012 AB,NL,EN,+31 94 6957 1153,bestellung@betriebskantineroh.nl,,,,NL186090754,,,2017-02-09
+0002000507,ZCUS,Kiosk Amann Hamburg,,KIOSKAMANN,Am Hafen 160,Hamburg,20095,DE,DE,+48 87 2317 4490,buchhaltung@kioskamannhamburg.de,,,,DE449640443,,,2018-06-27
+0002000508,KUNA,Amann Handels GmbH & Co. KG 7,Zentrale,AMANNHANDE,Schulstraße 34,Bochum,44787,DE,DE,+48 31 3467 136,buchhaltung@amannhandelsgmbhco.de,DE191081006,,,DE699809774,,,2022-10-22
+0002000509,KUNA,Hotel Bergmann Basel,,HOTELBERGM,Marktplatz 52,Basel,4051,CH,DE,+33 50 9603 9569,info@hotelbergmannbasel.ch,,,,,,,2015-01-20
+0002000510,KUNA,Betriebskantine Vogel AG 13,,BETRIEBSKA,Industriering 220,Hamburg,20095,DE,DE,+41 32 7113 5442,einkauf@betriebskantinevog.de,DE502168671,,,DE697969048,,,2016-06-04
+0002000511,KUNA,Ziegler Handels GmbH & Co. KG 19,,ZIEGLERHAN,Schulstraße 69,München,80331,DE,DE,+33 44 3929 3168,bestellung@zieglerhandelsgmbh.de,DE272595056,,,DE086107577,,,2019-06-28
+0002000512,KUNA,Bäckerei Brandes 4,,BÄCKEREIBR,Hauptstraße 240,Rotterdam,3011 AA,NL,EN,+31 80 8882 2834,,,,,NL720702155,,,2013-05-11
+0002000513,KUNA,Bäckerei Amann 5,,BÄCKEREIAM,Marktplatz 178,Köln,50667,DE,DE,+33 50 1731 206,info@bäckereiamann5.de,,,,DE244212937,,,2011-11-11
+0002000514,KUNA,Metzgerei Thiel 14,,METZGEREIT,Brückenstraße 193,Lille,59000,FR,FR,+41 21 7472 6351,bestellung@metzgereithiel14.fr,,,,,,,2020-02-28
+0002000515,KUNA,Lehmann Gastronomie GmbH 9,,LEHMANNGAS,Bahnhofstraße 81,Bielefeld,33602,DE,DE,+33 53 1037 4231,info@lehmanngastronomie.de,DE323753476,,,DE428123187,,,2016-02-16
+0002000516,KUNA,Bäckerei Hartmann 9,Zentrale,BÄCKEREIHA,Feldweg 39,Dresden,01067,DE,DE,+33 49 2484 1606,einkauf@bäckereihartmann9.de,,,,DE102638153,,,2014-02-08
+0002000517,KUNA,Metzgerei Sommer 14,,METZGEREIS,Lindenweg 160,Wien,1010,AT,DE,+49 76 2435 1160,einkauf@metzgereisommer14.at,,,,AT070607972,,,2013-01-08
+0002000518,KUNA,Wendt Handels GmbH & Co. KG,,WENDTHANDE,Ringstraße 239,Düsseldorf,40213,DE,DE,+41 70 1062 8528,buchhaltung@wendthandelsgmbhco.de,DE379998127,,,DE932816272,,,2012-09-08
+0002000519,KUNA,Betriebskantine Vetter AG,,BETRIEBSKA,Talstraße 115,Dortmund,44135,DE,DE,+31 53 1805 9216,info@betriebskantinevet.de,DE684007150,,,DE681145237,,,2014-12-24
+0002000520,KUNA,Bäckerei Sommer 13,,BÄCKEREISO,Brückenstraße 81,Münster,48143,DE,DE,+41 43 8480 9701,buchhaltung@bäckereisommer13.de,DE072204962,,,DE528595656,,,2019-12-05
+0002000521,KUNA,Betriebskantine Gruber AG 4,,BETRIEBSKA,Talstraße 151,Leipzig,04109,DE,DE,+48 55 4368 2590,bestellung@betriebskantinegru.de,DE077921834,,,DE808541895,,,2025-12-08
+0002000522,DEBI,Amann Vertriebs KG 11,,AMANNVERTR,Schulstraße 94,Wuppertal,42103,DE,DE,+48 53 6427 8674,einkauf@amannvertriebskg11.de,DE383570248,,,DE896046031,,,2013-01-20
+0002000523,KUNA,Bergmann Handels GmbH & Co. KG 16,,BERGMANNHA,Hauptstraße 212,Dresden,01067,DE,DE,+48 29 9870 7327,info@bergmannhandelsgmb.de,,,,DE514521740,,,2016-05-27
+0002000524,KUNA,Gruber Gastronomie GmbH 13,,GRUBERGAST,Hauptstraße 10,Rotterdam,3011 AA,NL,EN,+43 21 7685 5822,bestellung@grubergastronomieg.nl,,,,NL912273859,,,2011-10-16
+0002000525,KUNA,Betriebskantine Sievers AG,,BETRIEBSKA,Marktplatz 106,Wien,1010,AT,DE,+33 85 5423 8971,bestellung@betriebskantinesie.at,,,,AT259741073,,,2013-12-07
+0002000526,KUNA,Bäckerei Brandes 8,,BÄCKEREIBR,Ringstraße 31,Düsseldorf,40213,DE,DE,+43 53 9025 433,info@bäckereibrandes8.de,DE213717498,,,DE561349435,,,2024-11-20
+0002000527,KUNA,Bäckerei Böhm 3,,BÄCKEREIBÖ,Schulstraße 144,Karlsruhe,76133,DE,DE,+33 31 7106 465,bestellung@bäckereiböhm3.de,DE544160737,,,DE601598281,,,2024-06-11
+0002000528,KUNA,Bäckerei Bergmann 14,,BÄCKEREIBE,Ringstraße 125,Karlsruhe,76133,DE,DE,+41 31 6197 9902,info@bäckereibergmann14.de,,,,DE375189656,,,2016-10-11
+0002000529,KUNA,Ullrich Gastronomie GmbH 9,,ULLRICHGAS,Gewerbepark 36,Kiel,24103,DE,DE,,buchhaltung@ullrichgastronomie.de,,,,DE365456128,,,2024-02-01
+0002000530,KUNA,Hartmann Handels GmbH & Co. KG 11,,HARTMANNHA,Schulstraße 230,Dortmund,44135,DE,DE,+43 67 2998 7300,einkauf@hartmannhandelsgmb.de,,,,DE993750201,,,2012-02-12
+0002000531,KUNA,Lehmann Gastronomie GmbH 10,,LEHMANNGAS,Gewerbepark 88,Hamburg,20095,DE,DE,+31 80 7434 2381,bestellung@lehmanngastronomie.de,DE365559257,,,DE565073423,,,2026-04-02
+0002000532,KUNA,Hotel Thiel Duisburg,,HOTELTHIEL,Bahnhofstraße 37,Duisburg,47051,DE,DE,+31 79 2981 3285,info@hotelthielduisburg.de,DE929592341,,,DE033410249,,,2015-01-08
+0002000533,KUNA,Betriebskantine Sommer AG 12,,BETRIEBSKA,Lindenweg 102,Köln,50667,DE,DE,+31 22 8607 5470,einkauf@betriebskantinesom.de,DE221708304,,,DE949930592,,,2013-12-16
+0002000534,DEBI,Sommer Vertriebs KG,Zentrale,SOMMERVERT,Industriering 51,Bremen,28195,DE,DE,+49 45 7495 2123,bestellung@sommervertriebskg.de,DE021959808,,,DE691658437,,,2014-08-08
+0002000535,DEBI,Lehmann Vertriebs KG 11,,LEHMANNVER,Gewerbepark 181,Nürnberg,90403,DE,DE,+33 92 4871 2045,einkauf@lehmannvertriebskg.de,,,,DE758450209,,,2026-07-25
+0002000536,KUNA,Stein Handels GmbH & Co. KG,,STEINHANDE,Feldweg 133,Leipzig,04109,DE,DE,+33 73 8658 1919,einkauf@steinhandelsgmbhco.de,DE103825180,,,DE122531299,,,2020-07-01
+0002000537,KUNA,Bäckerei Dittrich 3,,BÄCKEREIDI,Ringstraße 25,Warszawa,00-001,PL,EN,+48 26 2040 6066,info@bäckereidittrich3.pl,,,,PL558132409,X,,2014-03-21
+0002000538,KUNA,Dittrich Handels GmbH & Co. KG 3,,DITTRICHHA,Talstraße 93,Zürich,8001,CH,DE,+41 84 6112 248,bestellung@dittrichhandelsgmb.ch,,,,,,,2013-11-04
+0002000539,KUNA,Bäckerei Ullrich 12,,BÄCKEREIUL,Feldweg 78,Augsburg,86150,DE,DE,+31 47 7728 4753,bestellung@bäckereiullrich12.de,,,,DE894753730,,,2016-04-23
+0002000540,KUNA,Kaufmann Gastronomie GmbH 11,,KAUFMANNGA,Marktplatz 39,Nürnberg,90403,DE,DE,+49 40 2740 6211,einkauf@kaufmanngastronomi.de,DE046853127,,,DE119033522,,,2018-10-13
+0002000541,KUNA,Krause Partnermarkt Bonn,,KRAUSEPART,Ringstraße 142,Bonn,53111,DE,DE,+33 96 2839 1211,info@krausepartnermarkt.de,DE083462548,,,DE476188302,,,2013-11-15
+0002000542,KUNA,Betriebskantine Clemens AG 3,,BETRIEBSKA,Am Hafen 206,Dortmund,44135,DE,DE,+49 40 4397 1028,einkauf@betriebskantinecle.de,,,,DE242001672,,,2015-03-26
+0002000543,KUNA,Betriebskantine Böhm AG 10,,BETRIEBSKA,Am Hafen 207,Basel,4051,CH,DE,+43 85 2729 1353,info@betriebskantineböh.ch,,,,,,,2012-02-28
+0002000544,KUNA,Bäckerei Kaufmann,,BÄCKEREIKA,Hauptstraße 114,Kraków,30-001,PL,EN,,info@bäckereikaufmann.pl,,,,PL487824408,,,2012-09-28
+0002000545,KUNA,Rohde Gastronomie GmbH,,ROHDEGASTR,Industriering 45,Freiburg,79098,DE,DE,+49 69 3111 1035,einkauf@rohdegastronomiegm.de,DE784885842,,,DE221727136,,,2026-02-13
+0002000546,DEBI,Rohde Großhandel GmbH 11,,ROHDEGROSS,Industriering 48,Mannheim,68159,DE,DE,+33 34 1212 4506,bestellung@rohdegroßhandelgmb.de,,,,DE972956987,,,2016-12-18
+0002000547,ZCUS,Kiosk Engel Duisburg,,KIOSKENGEL,Gewerbepark 171,Duisburg,47051,DE,DE,+31 23 3150 4921,buchhaltung@kioskengelduisburg.de,DE088548082,,,DE824951482,,,2017-04-28
+0002000548,KUNA,Kaufmann Handels GmbH & Co. KG 2,,KAUFMANNHA,Bahnhofstraße 170,Bielefeld,33602,DE,DE,+31 36 8475 8280,buchhaltung@kaufmannhandelsgmb.de,,,,DE847107517,,,2016-03-08
+0002000549,KUNA,Gruber Partnermarkt Mannheim,,GRUBERPART,Schulstraße 179,Mannheim,68159,DE,DE,+49 46 6725 4334,bestellung@gruberpartnermarkt.de,DE251106282,,,DE301334314,,,2017-05-11
+0002000550,DEBI,Stein Großhandel GmbH 16,,STEINGROSS,Gewerbepark 209,Mannheim,68159,DE,DE,+49 66 3048 2796,buchhaltung@steingroßhandelgmb.de,DE560210257,,,DE502207279,,,2013-12-17
+0002000551,DEBI,Clemens Großhandel GmbH 3,Zentrale,CLEMENSGRO,Lindenweg 148,Freiburg,79098,DE,DE,+49 79 9222 5858,info@clemensgroßhandelg.de,,,,DE472952543,,,2014-12-12
+0002000552,DEBI,Winkler Großhandel GmbH 6,,WINKLERGRO,Feldweg 23,Stuttgart,70173,DE,DE,+43 99 9299 7724,bestellung@winklergroßhandelg.de,DE669258871,,,DE388656485,,,2010-07-14
+0002000553,KUNA,Bäckerei Lehmann 3,,BÄCKEREILE,Lindenweg 75,Frankfurt am Main,60311,DE,DE,+31 60 9280 6723,bestellung@bäckereilehmann3.de,,,,DE964135074,,,2019-09-06
+0002000554,KUNA,Vogel Gastronomie GmbH 7,,VOGELGASTR,Am Hafen 217,Köln,50667,DE,DE,+33 78 3802 5415,einkauf@vogelgastronomiegm.de,DE565210537,,,DE970217526,,,2016-03-26
+0002000555,KUNA,Metzgerei Eckert,,METZGEREIE,Talstraße 38,Mannheim,68159,DE,DE,+33 75 4828 5848,info@metzgereieckert.de,DE111647349,,,DE218106533,,,2011-08-14
+0002000556,KUNA,Lehmann Gastronomie GmbH 3,,LEHMANNGAS,Bahnhofstraße 45,Kiel,24103,DE,DE,+43 44 6065 1400,einkauf@lehmanngastronomie.de,,,,DE028732645,,,2013-04-18
+0002000557,KUNA,Betriebskantine Engel AG,,BETRIEBSKA,Schulstraße 229,Freiburg,79098,DE,DE,+41 43 7174 2674,info@betriebskantineeng.de,DE362458420,,,DE066487349,,,2025-07-02
+0002000558,KUNA,Metzgerei Wendt 5,,METZGEREIW,Bahnhofstraße 199,Düsseldorf,40213,DE,DE,+48 91 1452 827,einkauf@metzgereiwendt5.de,DE730025252,,,DE605505453,,,2015-11-17
+0002000559,KUNA,Metzgerei Gruber 18,,METZGEREIG,Am Hafen 105,Hannover,30159,DE,DE,+41 69 8880 243,einkauf@metzgereigruber18.de,,,,DE277436299,,,2019-09-17
+0002000560,KUNA,Rohde Handels GmbH & Co. KG 17,Zentrale,ROHDEHANDE,Bahnhofstraße 61,Essen,45127,DE,DE,+48 22 9396 9818,info@rohdehandelsgmbhco.de,,,,DE166061817,,,2010-09-03
+0002000561,KUNA,Ziegler Partnermarkt Dresden,,ZIEGLERPAR,Feldweg 120,Dresden,01067,DE,DE,+48 26 9248 985,einkauf@zieglerpartnermark.de,,,,DE100845044,,,2014-01-17
+0002000562,KUNA,Metzgerei Clemens 12,,METZGEREIC,Talstraße 206,Karlsruhe,76133,DE,DE,+49 58 7172 4786,einkauf@metzgereiclemens12.de,,,,DE531319512,,,2015-08-09
+0002000563,KUNA,Hotel Ullrich Bonn,,HOTELULLRI,Industriering 4,Bonn,53111,DE,DE,+33 74 4600 6854,bestellung@hotelullrichbonn.de,,,,DE433120623,,,2022-03-05
+0002000564,KUNA,Betriebskantine Krause AG 5,,BETRIEBSKA,Industriering 72,Nürnberg,90403,DE,DE,+48 43 3849 2371,buchhaltung@betriebskantinekra.de,DE734997885,,,DE341976002,,,2010-09-09
+0002000565,KUNA,Betriebskantine Sommer AG 11,,BETRIEBSKA,Am Hafen 173,Düsseldorf,40213,DE,DE,+49 22 9032 4897,einkauf@betriebskantinesom.de,DE812133262,,,DE506639200,,,2014-07-20
+0002000566,DEBI,Sievers Großhandel GmbH,,SIEVERSGRO,Ringstraße 30,Hannover,30159,DE,DE,+43 84 5353 7601,buchhaltung@sieversgroßhandelg.de,DE401725180,,,DE658534592,,,2017-02-17
+0002000567,KUNA,Sievers Gastronomie GmbH 9,,SIEVERSGAS,Bahnhofstraße 233,Frankfurt am Main,60311,DE,DE,+33 93 8921 9199,einkauf@sieversgastronomie.de,DE956544086,,,DE259215763,,,2013-06-22
+0002000568,KUNA,Hotel Ullrich Bonn 15,,HOTELULLRI,Brückenstraße 140,Bonn,53111,DE,DE,+41 51 9928 6379,einkauf@hotelullrichbonn15.de,DE884376889,,,DE992578583,,,2024-08-23
+0002000569,KUNA,Bäckerei Stein 10,,BÄCKEREIST,Brückenstraße 9,Duisburg,47051,DE,DE,+43 36 7315 2294,einkauf@bäckereistein10.de,DE385012182,,,DE293848276,,,2017-01-24
+0002000570,KUNA,Bäckerei Clemens 4,,BÄCKEREICL,Lindenweg 143,Köln,50667,DE,DE,+33 45 4985 1645,info@bäckereiclemens4.de,,,,DE567979596,,,2017-04-04
+0002000571,KUNA,Bäckerei Stein 8,,BÄCKEREIST,Am Hafen 138,Mannheim,68159,DE,DE,+48 90 9267 3760,bestellung@bäckereistein8.de,,,,DE854674856,,,2016-11-27
+0002000572,KUNA,Metzgerei Engel 15,,METZGEREIE,Industriering 45,Mannheim,68159,DE,DE,+33 33 5193 7608,buchhaltung@metzgereiengel15.de,DE174143849,,,DE621687304,,,2015-10-18
+0002000573,DEBI,Radtke Vertriebs KG,,RADTKEVERT,Feldweg 231,Leipzig,04109,DE,DE,+33 61 9113 7367,einkauf@radtkevertriebskg.de,DE923228727,,,DE202686939,,,2023-03-19
+0002000574,KUNA,Winkler Partnermarkt Wien,,WINKLERPAR,Lindenweg 157,Wien,1010,AT,DE,+31 38 1034 4584,info@winklerpartnermark.at,,,,AT454198755,,,2018-03-20
+0002000575,KUNA,Metzgerei Gruber 11,,METZGEREIG,Gewerbepark 175,Dresden,01067,DE,DE,+31 47 1799 2342,info@metzgereigruber11.de,,,,DE040358289,X,,2010-04-19
+0002000576,KUNA,Metzgerei Vogel 19,,METZGEREIV,Bahnhofstraße 12,Nürnberg,90403,DE,DE,+41 56 5872 3886,info@metzgereivogel19.de,,,,DE232986636,,,2022-08-28
+0002000577,KUNA,Metzgerei Dittrich,Zentrale,METZGEREID,Industriering 40,Leipzig,04109,DE,DE,+33 63 4881 5380,bestellung@metzgereidittrich.de,,,,DE049369284,,,2019-09-22
+0002000578,DEBI,Amann Großhandel GmbH 16,,AMANNGROSS,Lindenweg 187,Augsburg,86150,DE,DE,+41 66 2779 5148,buchhaltung@amanngroßhandelgmb.de,DE345983707,,,DE879314412,X,,2013-05-03
+0002000579,DEBI,Krause Großhandel GmbH 17,,KRAUSEGROS,Bahnhofstraße 240,Essen,45127,DE,DE,+43 97 4418 5841,buchhaltung@krausegroßhandelgm.de,DE430337301,,,DE174290216,,,2011-03-23
+0002000580,DEBI,Vogel Vertriebs KG 9,,VOGELVERTR,Hauptstraße 81,Augsburg,86150,DE,DE,+48 31 5838 7766,einkauf@vogelvertriebskg9.de,DE164304078,,,DE033583529,,,2010-04-02
+0002000581,KUNA,Winkler Handels GmbH & Co. KG,,WINKLERHAN,Marktplatz 65,Karlsruhe,76133,DE,DE,+49 80 3093 8281,bestellung@winklerhandelsgmbh.de,DE936177954,,,DE128111425,,,2018-11-11
+0002000582,KUNA,Engel Partnermarkt Münster,,ENGELPARTN,Gewerbepark 202,Münster,48143,DE,DE,+49 61 9428 4153,einkauf@engelpartnermarktm.de,DE550629384,,,DE258878008,,,2026-07-12
+0002000583,ZCUS,Kiosk Hartmann Graz,,KIOSKHARTM,Bahnhofstraße 190,Graz,8010,AT,DE,+41 58 6789 9598,info@kioskhartmanngraz.at,,,,,,,2022-09-01
+0002000584,KUNA,Hotel Wendt Wien,,HOTELWENDT,Hauptstraße 123,Wien,1010,AT,DE,+49 67 1015 8428,einkauf@hotelwendtwien.at,,,,AT839646681,,,2023-08-14
+0002000585,KUNA,Hotel Eckert Karlsruhe,,HOTELECKER,Industriering 73,Karlsruhe,76133,DE,DE,+48 37 6502 1320,bestellung@hoteleckertkarlsru.de,DE471794402,,,DE661090736,,,2022-09-25
+0002000586,KUNA,Bäckerei Sommer 19,Zentrale,BÄCKEREISO,Marktplatz 22,Essen,45127,DE,DE,+43 23 2197 9971,buchhaltung@bäckereisommer19.de,,,,DE811751882,,,2010-02-01
+0002000587,KUNA,Hartmann Partnermarkt Freiburg,,HARTMANNPA,Brückenstraße 177,Freiburg,79098,DE,DE,+48 87 1871 8552,einkauf@hartmannpartnermar.de,,,,DE791370453,,,2019-08-15
+0002000588,KUNA,Bäckerei Brandes 15,Zentrale,BÄCKEREIBR,Gewerbepark 110,Kraków,30-001,PL,EN,+33 32 9917 9719,einkauf@bäckereibrandes15.pl,,,,PL494066594,,,2016-11-01
+0002000589,KUNA,Gruber Partnermarkt Karlsruhe,,GRUBERPART,Industriering 31,Karlsruhe,76133,DE,DE,+33 55 3632 8441,buchhaltung@gruberpartnermarkt.de,,,,DE997044540,,,2011-12-17
+0002000590,KUNA,Vogel Handels GmbH & Co. KG 16,,VOGELHANDE,Schulstraße 183,Freiburg,79098,DE,DE,+33 50 8580 8254,buchhaltung@vogelhandelsgmbhco.de,DE758621161,,,DE822340874,,,2015-10-27
+0002000591,KUNA,Rohde Partnermarkt Düsseldorf,,ROHDEPARTN,Ringstraße 205,Düsseldorf,40213,DE,DE,+33 99 8589 4536,buchhaltung@rohdepartnermarktd.de,,,,DE783832780,,,2015-02-14
+0002000592,KUNA,Winkler Gastronomie GmbH,,WINKLERGAS,Feldweg 74,Bremen,28195,DE,DE,+31 75 1181 3722,info@winklergastronomie.de,,,,DE201943456,,,2010-09-02
+0002000593,ZCUS,Kiosk Radtke Dresden,,KIOSKRADTK,Brückenstraße 217,Dresden,01067,DE,DE,+31 93 4760 5909,info@kioskradtkedresden.de,DE773607589,,,DE577516584,,,2018-01-06
+0002000594,KUNA,Ziegler Partnermarkt Stuttgart,,ZIEGLERPAR,Ringstraße 36,Stuttgart,70173,DE,DE,+41 95 5003 619,info@zieglerpartnermark.de,DE874811057,,,DE674612663,,,2010-04-27
+0002000595,KUNA,Betriebskantine Amann AG 9,,BETRIEBSKA,Marktplatz 86,Münster,48143,DE,DE,+31 55 1143 1804,info@betriebskantineama.de,DE953792846,,,DE977331072,,,2021-01-08
+0002000596,KUNA,Betriebskantine Eckert AG 3,,BETRIEBSKA,Hauptstraße 31,Dortmund,44135,DE,DE,+48 58 8572 3970,buchhaltung@betriebskantineeck.de,,,,DE051711070,,,2025-07-17
+0002000597,ZCUS,Kiosk Dittrich Kiel,,KIOSKDITTR,Gewerbepark 150,Kiel,24103,DE,DE,+49 99 9515 5233,bestellung@kioskdittrichkiel.de,DE892959319,,,DE503877712,,,2021-11-26
+0002000598,KUNA,Böhm Gastronomie GmbH 9,,BÖHMGASTRO,Hauptstraße 68,Graz,8010,AT,DE,+48 49 8372 1356,info@böhmgastronomiegmb.at,,,,AT343880584,,,2010-05-12
+0002000599,ZCUS,Kiosk Vogel Leipzig,,KIOSKVOGEL,,Leipzig,04109,DE,DE,+33 59 1535 9145,buchhaltung@kioskvogelleipzig.de,DE125587086,,,DE572609030,,,2018-06-12
+0002000600,KUNA,Vogel Partnermarkt Bielefeld,,VOGELPARTN,Brückenstraße 176,Bielefeld,33602,DE,DE,+31 30 5976 1552,,,,,DE797283710,,,2018-05-16
+0002000601,KUNA,Metzgerei Clemens 18,,METZGEREIC,Lindenweg 10,Kiel,24103,DE,DE,+31 94 6069 6340,info@metzgereiclemens18.de,DE621585444,,,DE141774105,X,,2010-04-01
+0002000602,KUNA,Wendt Gastronomie GmbH 5,,WENDTGASTR,Hauptstraße 77,Dresden,01067,DE,DE,+31 49 2016 5548,bestellung@wendtgastronomiegm.de,DE753489232,,,DE949713605,,,2020-09-18
+0002000603,KUNA,Winkler Partnermarkt Hamburg,,WINKLERPAR,Brückenstraße 79,Hamburg,20095,DE,DE,+31 92 3274 4038,info@winklerpartnermark.de,,,,DE447067860,,,2010-12-28
+0002000604,ZCUS,Kiosk Sievers Freiburg,,KIOSKSIEVE,Marktplatz 30,Freiburg,79098,DE,DE,+48 86 9482 7994,einkauf@kiosksieversfreibu.de,DE471006322,,,DE377655008,,,2020-08-02
+0002000605,KUNA,Krause Partnermarkt Frankfurt am Main,,KRAUSEPART,Bahnhofstraße 165,Frankfurt am Main,60311,DE,DE,+49 98 1912 8542,einkauf@krausepartnermarkt.de,DE855610353,,,DE653033068,,,2021-10-23
+0002000606,ZCUS,Kiosk Gruber Nürnberg,Zentrale,KIOSKGRUBE,Schulstraße 135,Nürnberg,90403,DE,DE,+41 69 1414 438,einkauf@kioskgrubernürnber.de,,,,DE045781138,,,2020-04-08
+0002000607,KUNA,Metzgerei Winkler,,METZGEREIW,Hauptstraße 221,Dresden,01067,DE,DE,+31 67 4000 7060,buchhaltung@metzgereiwinkler.de,,,,DE834275929,,,2020-02-25
+0002000608,KUNA,Hotel Amann Kraków,,HOTELAMANN,Industriering 156,Kraków,30-001,PL,EN,+41 85 4525 2011,bestellung@hotelamannkraków.pl,,,,PL279707065,,,2013-02-05
+0002000609,KUNA,Hotel Vogel Münster,,HOTELVOGEL,Industriering 63,Münster,48143,DE,DE,+48 76 5417 1592,bestellung@hotelvogelmünster.de,DE228959500,,,DE882246551,,,2021-03-19
+0002000610,DEBI,Radtke Vertriebs KG 16,,RADTKEVERT,Gewerbepark 28,Münster,48143,DE,DE,,info@radtkevertriebskg1.de,DE499124129,,,DE195537937,,,2024-08-12
+0002000611,KUNA,Bäckerei Bergmann 4,,BÄCKEREIBE,Hauptstraße 5,Frankfurt am Main,60311,DE,DE,+41 71 1469 7422,buchhaltung@bäckereibergmann4.de,,,,DE649251944,,,2019-11-11
+0002000612,DEBI,Hartmann Vertriebs KG 11,,HARTMANNVE,Brückenstraße 77,Wien,1010,AT,DE,+43 28 6850 6781,info@hartmannvertriebsk.at,,,,AT898025994,,,2015-10-23
+0002000613,KUNA,Betriebskantine Frank AG,,BETRIEBSKA,Am Hafen 188,Münster,48143,DE,DE,+31 68 2702 4459,bestellung@betriebskantinefra.de,,,,DE240806138,,,2025-12-04
+0002000614,KUNA,Bergmann Gastronomie GmbH,,BERGMANNGA,Marktplatz 235,Rotterdam,3011 AA,NL,EN,+43 30 4644 1188,einkauf@bergmanngastronomi.nl,,,,NL469148634,,,2018-01-05
+0002000615,DEBI,Eckert Vertriebs KG 14,,ECKERTVERT,Gewerbepark 118,Bielefeld,33602,DE,DE,+33 36 6707 4377,buchhaltung@eckertvertriebskg1.de,,,,DE725995860,,,2012-04-03
+0002000616,DEBI,Clemens Vertriebs KG 13,,CLEMENSVER,Hauptstraße 202,Mannheim,68159,DE,DE,+41 84 4161 2102,einkauf@clemensvertriebskg.de,DE362938702,,,DE593233558,,,2024-04-08
+0002000617,KUNA,Hotel Clemens Essen,,HOTELCLEME,Ringstraße 19,Essen,45127,DE,DE,+33 35 1119 4909,buchhaltung@hotelclemensessen.de,DE858023765,,,DE554306487,,,2020-09-04
+0002000618,KUNA,Hotel Clemens Dortmund,,HOTELCLEME,Ringstraße 147,Dortmund,44135,DE,DE,+43 77 8197 2721,info@hotelclemensdortmu.de,,,,DE779261377,,,2022-02-04
+0002000619,KUNA,Clemens Gastronomie GmbH 16,,CLEMENSGAS,Lindenweg 171,Stuttgart,70173,DE,DE,+48 80 4776 2169,buchhaltung@clemensgastronomie.de,,,,DE672561906,,,2015-03-16
+0002000620,ZCUS,Kiosk Radtke Essen,,KIOSKRADTK,Gewerbepark 19,Essen,45127,DE,DE,+49 30 9200 8546,buchhaltung@kioskradtkeessen.de,DE543771705,,,DE050895039,,,2021-07-12
+0002000621,DEBI,Clemens Großhandel GmbH 10,,CLEMENSGRO,Schulstraße 222,München,80331,DE,DE,+49 89 9011 7679,buchhaltung@clemensgroßhandelg.de,DE928485208,,,DE656552094,,,2013-04-07
+0002000622,KUNA,Bäckerei Kaufmann 9,,BÄCKEREIKA,Marktplatz 221,Leipzig,04109,DE,DE,+41 64 4368 7344,buchhaltung@bäckereikaufmann9.de,DE498690677,,,DE518493001,,,2021-12-06
+0002000623,DEBI,Frank Großhandel GmbH 4,,FRANKGROSS,Gewerbepark 99,Köln,50667,DE,DE,+49 47 2973 4720,info@frankgroßhandelgmb.de,,,,DE101483109,,,2013-11-09
+0002000624,KUNA,Amann Gastronomie GmbH 11,Zentrale,AMANNGASTR,Gewerbepark 165,Dortmund,44135,DE,DE,+33 88 3457 6197,info@amanngastronomiegm.de,DE498003191,,,DE096143288,,,2021-02-25
+0002000625,DEBI,Dittrich Großhandel GmbH 10,,DITTRICHGR,Ringstraße 233,Basel,4051,CH,DE,+49 86 9648 4209,bestellung@dittrichgroßhandel.ch,,,,,,,2014-07-07
+0002000626,KUNA,Ziegler Partnermarkt Nürnberg,,ZIEGLERPAR,Feldweg 31,Nürnberg,90403,DE,DE,+49 29 8755 1405,einkauf@zieglerpartnermark.de,DE343590627,,,DE648134640,,,2020-01-03
+0002000627,KUNA,Hotel Eckert Bonn,,HOTELECKER,Gewerbepark 109,Bonn,53111,DE,DE,+41 57 9259 9115,einkauf@hoteleckertbonn.de,DE020720573,,,DE268343233,,X,2016-11-02
+0002000628,KUNA,Böhm Gastronomie GmbH 10,,BÖHMGASTRO,Ringstraße 13,Basel,4051,CH,DE,+41 26 6547 341,bestellung@böhmgastronomiegmb.ch,,,,,,,2021-09-08
+0002000629,KUNA,Bäckerei Böhm 17,Zentrale,BÄCKEREIBÖ,Marktplatz 148,Karlsruhe,5372,DE,DE,+43 76 6236 9628,einkauf@bäckereiböhm17.de,DE817513269,,,DE144573054,,,2012-11-16
+0002000630,KUNA,Krause Partnermarkt Wuppertal,,KRAUSEPART,Ringstraße 40,Wuppertal,42103,DE,DE,+48 28 4879 4978,buchhaltung@krausepartnermarkt.de,,,,DE349565391,,,2013-11-25
+0002000631,KUNA,Gruber Handels GmbH & Co. KG 15,,GRUBERHAND,Talstraße 229,Kraków,30-001,PL,EN,+43 79 8509 7558,einkauf@gruberhandelsgmbhc.pl,,,,PL277934927,,,2018-10-04
+0002000632,KUNA,Metzgerei Sievers 2,,METZGEREIS,Feldweg 218,Dresden,01067,DE,DE,+31 79 3385 814,buchhaltung@metzgereisievers2.de,DE128624262,,,DE266466710,,,2014-08-13
+0002000633,KUNA,Gruber Handels GmbH & Co. KG 16,,GRUBERHAND,Marktplatz 157,Bonn,53111,DE,DE,+31 41 5725 7842,bestellung@gruberhandelsgmbhc.de,,,,DE206030265,,,2018-12-01
+0002000634,KUNA,Vogel Partnermarkt Amsterdam,,VOGELPARTN,Bahnhofstraße 227,Amsterdam,1012 AB,NL,EN,+33 20 8436 8619,bestellung@vogelpartnermarkta.nl,,,,NL701932053,,,2025-01-13
+0002000635,KUNA,Ullrich Partnermarkt Wuppertal,,ULLRICHPAR,Lindenweg 43,Wuppertal,42103,DE,DE,+49 85 4950 690,buchhaltung@ullrichpartnermark.de,DE627603474,,,DE104781978,,,2023-06-24
+0002000636,KUNA,Böhm Partnermarkt Zürich,,BÖHMPARTNE,,Zürich,8001,CH,DE,+41 84 1959 3993,bestellung@böhmpartnermarktzü.ch,,,,,,,2012-12-09
+0002000637,DEBI,Radtke Großhandel GmbH,,RADTKEGROS,Ringstraße 177,Hannover,30159,DE,DE,+49 51 4349 6801,buchhaltung@radtkegroßhandelgm.de,DE748996711,,,DE247010768,,,2022-04-16
+0002000638,KUNA,Bergmann Gastronomie GmbH 13,,BERGMANNGA,Gewerbepark 137,Köln,50667,DE,DE,+33 98 2564 5888,bestellung@bergmanngastronomi.de,DE304251405,,,DE946266052,,,2026-03-18
+0002000639,KUNA,Hotel Radtke Lyon,,HOTELRADTK,Hauptstraße 69,Lyon,69001,FR,FR,+33 99 1817 6155,einkauf@hotelradtkelyon.fr,,,,FR929232850,,,2013-05-15
+0002000640,KUNA,Bäckerei Brandes 3,,BÄCKEREIBR,Marktplatz 78,Essen,45127,DE,DE,,einkauf@bäckereibrandes3.de,DE755823614,,,DE087415076,,,2022-02-13
+0002000641,KUNA,Frank Gastronomie GmbH 8,,FRANKGASTR,Talstraße 147,Dresden,01067,DE,DE,+41 20 8704 7889,info@frankgastronomiegm.de,,,,DE615205291,,,2013-03-18
+0002000642,KUNA,Gruber Gastronomie GmbH 2,,GRUBERGAST,Lindenweg 209,Leipzig,04109,DE,DE,+31 74 2657 7592,,,,,DE731011170,,,2018-08-05
+0002000643,KUNA,Brandes Handels GmbH & Co. KG 7,,BRANDESHAN,Lindenweg 44,Bonn,53111,DE,DE,+33 92 7851 9808,buchhaltung@brandeshandelsgmbh.de,DE291600094,,,DE008574199,,,2010-03-11
+0002000644,KUNA,Metzgerei Brandes 6,,METZGEREIB,Brückenstraße 208,Mannheim,68159,DE,DE,+31 44 3861 1405,info@metzgereibrandes6.de,,,,DE903422158,X,,2010-10-18
+0002000645,DEBI,Frank Großhandel GmbH 8,,FRANKGROSS,Feldweg 113,Hamburg,20095,DE,DE,+33 25 3639 736,buchhaltung@frankgroßhandelgmb.de,,,,DE996384215,,,2013-10-13
+0002000646,ZCUS,Kiosk Frank Bochum,,KIOSKFRANK,Brückenstraße 172,Bochum,44787,DE,DE,+41 33 3747 8680,buchhaltung@kioskfrankbochum.de,DE329497093,,,DE272402882,,,2024-04-25
+0002000647,DEBI,Hartmann Großhandel GmbH 14,Zentrale,HARTMANNGR,Am Hafen 177,Graz,8010,AT,DE,+33 36 6796 5845,buchhaltung@hartmanngroßhandel.at,,,,AT019260416,,,2014-09-01
+0002000648,KUNA,Winkler Gastronomie GmbH 11,,WINKLERGAS,Industriering 82,München,80331,DE,DE,+43 76 5067 938,buchhaltung@winklergastronomie.de,DE465398195,,,DE726348722,,,2023-02-20
+0002000649,ZCUS,Kiosk Frank Nürnberg,,KIOSKFRANK,Brückenstraße 139,Nürnberg,90403,DE,DE,+49 67 3286 7883,einkauf@kioskfranknürnberg.de,DE245131913,,,DE446507351,,,2020-07-28
+0002000650,KUNA,Hotel Engel Freiburg,Zentrale,HOTELENGEL,Lindenweg 61,Freiburg,79098,DE,DE,+41 84 5197 6512,bestellung@hotelengelfreiburg.de,DE524396720,,,DE032793316,,,2014-05-13
+0002000651,KUNA,Bäckerei Bergmann 9,,BÄCKEREIBE,Schulstraße 184,Nürnberg,90403,DE,DE,+49 50 8803 5549,info@bäckereibergmann9.de,,,,,,,2012-06-06
+0002000652,DEBI,Dittrich Großhandel GmbH 11,,DITTRICHGR,Am Hafen 154,Bremen,28195,DE,DE,+48 46 9504 4613,info@dittrichgroßhandel.de,DE458031315,,,DE586144157,,,2016-05-24
+0002000653,KUNA,Clemens Partnermarkt Lille,,CLEMENSPAR,Brückenstraße 141,Lille,59000,FR,FR,+43 23 4936 3506,info@clemenspartnermark.fr,,,,FR143018672,,,2021-04-19
+0002000654,KUNA,Bäckerei Krause 19,,BÄCKEREIKR,Schulstraße 186,Bielefeld,33602,DE,DE,+43 41 2634 3967,buchhaltung@bäckereikrause19.de,,,,DE216854069,,,2014-10-09
+0002000655,KUNA,Metzgerei Gruber 12,,METZGEREIG,Marktplatz 163,Hannover,30159,DE,DE,+33 35 5387 1926,buchhaltung@metzgereigruber12.de,,,,DE699196276,,,2012-10-06
+0002000656,ZCUS,Kiosk Krause Bochum,,KIOSKKRAUS,Brückenstraße 32,Bochum,44787,DE,DE,+48 84 4963 5421,einkauf@kioskkrausebochum.de,,,,DE076103963,,,2011-10-23
+0002000657,KUNA,Metzgerei Amann 7,,METZGEREIA,Gewerbepark 54,Karlsruhe,76133,DE,DE,+49 43 9335 9373,einkauf@metzgereiamann7.de,DE378632652,,,DE391175900,,,2014-11-01
+0002000658,KUNA,Vogel Gastronomie GmbH 18,,VOGELGASTR,Gewerbepark 189,Stuttgart,70173,DE,DE,+49 31 7698 2576,einkauf@vogelgastronomiegm.de,DE813979423,,,DE675738945,,,2013-11-25
+0002000659,KUNA,Kaufmann Handels GmbH & Co. KG 16,,KAUFMANNHA,Marktplatz 146,Nürnberg,90403,DE,DE,+33 41 4596 5087,buchhaltung@kaufmannhandelsgmb.de,DE145527855,,,DE948657981,,,2023-06-06
+0002000660,KUNA,Vogel Handels GmbH & Co. KG 7,,VOGELHANDE,Feldweg 6,Münster,48143,DE,DE,+33 48 8165 9120,buchhaltung@vogelhandelsgmbhco.de,,,,DE855293132,,,2021-07-06
+0002000661,KUNA,Brandes Gastronomie GmbH 9,,BRANDESGAS,Ringstraße 172,Kiel,24103,DE,DE,+43 40 8247 7575,einkauf@brandesgastronomie.de,DE644602484,,,DE745491344,,,2017-04-06
+0002000662,KUNA,Metzgerei Kaufmann 17,,METZGEREIK,Marktplatz 75,Münster,48143,DE,DE,+43 32 7170 6656,einkauf@metzgereikaufmann1.de,,,,DE145214687,,,2025-07-22
+0002000663,KUNA,Kaufmann Partnermarkt Frankfurt am Main,,KAUFMANNPA,Industriering 221,Frankfurt am Main,60311,DE,DE,+31 70 9334 3753,einkauf@kaufmannpartnermar.de,DE390609539,,,DE360194321,,,2021-06-01
+0002000664,DEBI,Amann Vertriebs KG 8,,AMANNVERTR,,Bielefeld,33602,DE,DE,+43 88 2409 5519,einkauf@amannvertriebskg8.de,,,,DE573528883,,,2022-05-09
+0002000665,DEBI,Hartmann Vertriebs KG 17,,HARTMANNVE,Feldweg 229,Bonn,53111,DE,DE,+43 60 9108 4657,buchhaltung@hartmannvertriebsk.de,,,,DE707315067,,,2020-08-27
+0002000666,ZCUS,Kiosk Sommer Hannover,,KIOSKSOMME,Gewerbepark 25,Hannover,30159,DE,DE,+33 68 4420 4393,buchhaltung@kiosksommerhannove.de,DE037762573,,,DE633000643,,,2025-12-18
+0002000667,KUNA,Metzgerei Rohde 9,,METZGEREIR,Hauptstraße 200,Frankfurt am Main,60311,DE,DE,+49 23 1455 3559,buchhaltung@metzgereirohde9.de,DE185834159,,,DE249030877,,,2015-11-10
+0002000668,KUNA,Hotel Thiel Karlsruhe 16,,HOTELTHIEL,Brückenstraße 40,Karlsruhe,76133,DE,DE,+41 68 9372 4227,info@hotelthielkarlsruh.de,,,,DE405589704,,,2011-07-08
+0002000669,DEBI,Ullrich Vertriebs KG,,ULLRICHVER,Lindenweg 36,Augsburg,86150,DE,DE,+31 51 7728 6163,bestellung@ullrichvertriebskg.de,DE081789289,,,DE780636054,,,2017-09-25
+0002000670,KUNA,Metzgerei Vogel 9,,METZGEREIV,Schulstraße 101,Nürnberg,90403,DE,DE,+48 44 4602 4303,buchhaltung@metzgereivogel9.de,DE151386289,,,DE210683104,,,2011-07-11
+0002000671,KUNA,Krause Handels GmbH & Co. KG 10,,KRAUSEHAND,Lindenweg 54,Duisburg,47051,DE,DE,+41 66 1830 1911,info@krausehandelsgmbhc.de,DE079914684,,,DE616506760,,,2016-12-28
+0002000672,KUNA,Amann Handels GmbH & Co. KG 4,,AMANNHANDE,Am Hafen 94,Essen,45127,DE,DE,+41 99 3952 4969,info@amannhandelsgmbhco.de,DE897786231,,,DE386551589,,,2022-12-20
+0002000673,DEBI,Amann Vertriebs KG 19,,AMANNVERTR,Ringstraße 92,Düsseldorf,6620,DE,DE,+48 60 2417 6571,bestellung@amannvertriebskg19.de,,,,DE445334875,,,2017-03-13
+0002000674,KUNA,Hotel Vogel Leipzig,Zentrale,HOTELVOGEL,Industriering 1,Leipzig,04109,DE,DE,+41 90 9078 8848,info@hotelvogelleipzig.de,DE671701444,,,DE305667217,,,2011-02-19
+0002000675,KUNA,Metzgerei Wendt 11,,METZGEREIW,Talstraße 175,Bochum,44787,DE,DE,+33 77 3374 6484,info@metzgereiwendt11.de,DE814320105,,,DE655631327,,,2010-11-19
+0002000676,DEBI,Thiel Großhandel GmbH 6,Zentrale,THIELGROSS,Am Hafen 119,Düsseldorf,40213,DE,DE,+48 80 6921 7715,bestellung@thielgroßhandelgmb.de,,,,DE085116598,,,2026-10-26
+0002000677,KUNA,Vetter Handels GmbH & Co. KG 19,,VETTERHAND,Gewerbepark 100,Essen,45127,DE,DE,+43 81 5904 3103,info@vetterhandelsgmbhc.de,,,,DE264060489,,,2016-02-11
+0002000678,KUNA,Betriebskantine Winkler AG 17,,BETRIEBSKA,Bahnhofstraße 88,Düsseldorf,40213,DE,DE,+33 79 7517 7591,info@betriebskantinewin.de,DE668266927,,,DE009748371,,,2018-04-04
+0002000679,KUNA,Bäckerei Krause 2,Zentrale,BÄCKEREIKR,Gewerbepark 162,Dresden,01067,DE,DE,+43 59 3059 126,buchhaltung@bäckereikrause2.de,DE962595941,,,DE894706283,,,2017-03-05
+0002000680,ZCUS,Kiosk Sievers Hamburg,,KIOSKSIEVE,Hauptstraße 239,Hamburg,20095,DE,DE,+33 37 9206 1801,einkauf@kiosksievershambur.de,DE790188631,,,DE794790118,,,2018-01-22
+0002000681,DEBI,Vetter Vertriebs KG,Zentrale,VETTERVERT,Am Hafen 229,Lille,59000,FR,FR,+41 45 8853 1873,bestellung@vettervertriebskg.fr,,,,,,,2011-03-27
+0002000682,ZCUS,Kiosk Radtke Mannheim,,KIOSKRADTK,Lindenweg 6,Mannheim,68159,DE,DE,+33 23 2837 199,bestellung@kioskradtkemannhei.de,DE797101783,,,DE233835006,,,2014-05-20
+0002000683,KUNA,Bäckerei Eckert 12,,BÄCKEREIEC,Gewerbepark 22,Hamburg,20095,DE,DE,+43 86 6437 7350,info@bäckereieckert12.de,,,,DE764051772,,,2016-11-25
+0002000684,KUNA,Eckert Gastronomie GmbH 14,,ECKERTGAST,Brückenstraße 193,Essen,45127,DE,DE,+33 84 3235 4019,buchhaltungeckertgastronomieg.de,DE104938447,,,DE350047837,,,2018-03-20
+0002000685,KUNA,Hotel Rohde Duisburg,,HOTELROHDE,Marktplatz 19,Duisburg,47051,DE,DE,+41 74 7938 6001,bestellung@hotelrohdeduisburg.de,,,,DE295133187,,,2013-01-19
+0002000686,KUNA,Ziegler Partnermarkt Bonn,,ZIEGLERPAR,Schulstraße 41,Bonn,53111,DE,DE,+48 56 4461 5267,buchhaltung@zieglerpartnermark.de,,,,,,,2025-08-16
+0002000687,KUNA,Bäckerei Ullrich 9,,BÄCKEREIUL,Lindenweg 65,Bonn,53111,DE,DE,+31 66 5818 5920,info@bäckereiullrich9.de,DE583871654,,,DE659172488,,,2022-11-25
+0002000688,KUNA,Brandes Gastronomie GmbH 10,Zentrale,BRANDESGAS,Marktplatz 141,Hamburg,20095,DE,DE,+48 82 9270 4000,einkauf@brandesgastronomie.de,,,,DE007837812,,,2020-11-26
+0002000689,DEBI,Vogel Vertriebs KG 10,,VOGELVERTR,Feldweg 233,Bremen,28195,DE,DE,+33 88 4666 3721,bestellung@vogelvertriebskg10.de,DE116040053,,,DE032777859,,,2018-02-24
+0002000690,DEBI,Brandes Großhandel GmbH,,BRANDESGRO,Am Hafen 57,Münster,48143,DE,DE,+33 58 6234 316,bestellung@brandesgroßhandelg.de,DE233542099,,,DE181735264,,,2021-10-21
+0002000691,KUNA,Bergmann Handels GmbH & Co. KG 12,,BERGMANNHA,Bahnhofstraße 223,Amsterdam,1012 AB,NL,EN,+33 46 1073 7682,info@bergmannhandelsgmb.nl,,,,NL772788657,,,2024-05-14
+0002000692,KUNA,Amann Partnermarkt München,,AMANNPARTN,Hauptstraße 59,München,80331,DE,DE,+31 76 9598 6089,buchhaltung@amannpartnermarktm.de,DE592368946,,,DE233076562,,,2024-09-20
+0002000693,KUNA,Ullrich Handels GmbH & Co. KG,,ULLRICHHAN,,Kraków,30-001,PL,EN,+31 34 1262 1579,buchhaltung@ullrichhandelsgmbh.pl,,,,,,,2015-04-23
+0002000694,KUNA,Ziegler Handels GmbH & Co. KG 11,Zentrale,ZIEGLERHAN,Brückenstraße 104,Bochum,44787,DE,DE,+43 60 4256 2612,bestellung@zieglerhandelsgmbh.de,DE837481795,,,DE421269332,,,2019-03-18
+0002000695,KUNA,Lehmann Gastronomie GmbH 5,,LEHMANNGAS,Am Hafen 22,Bochum,44787,DE,DE,+31 62 3317 5186,bestellung@lehmanngastronomie.de,DE959638167,,,DE367533975,,,2019-04-10
+0002000696,KUNA,Clemens Gastronomie GmbH 19,,CLEMENSGAS,Lindenweg 145,Leipzig,04109,DE,DE,+41 22 7627 5528,bestellung@clemensgastronomie.de,DE575544045,,,DE677019955,,,2021-07-20
+0002000697,ZCUS,Kiosk Frank Bremen,,KIOSKFRANK,Marktplatz 126,Bremen,28195,DE,DE,+41 98 7515 4314,info@kioskfrankbremen.de,,,,DE828189854,,,2023-03-14
+0002000698,ZCUS,Kiosk Sievers Bremen,,KIOSKSIEVE,Ringstraße 228,Bremen,28195,DE,DE,+48 27 5033 4925,einkauf@kiosksieversbremen.de,DE477377977,,,DE839304038,,,2018-09-17
+0002000699,KUNA,Bäckerei Dittrich 2,,BÄCKEREIDI,Marktplatz 146,Dresden,01067,DE,DE,+49 65 8981 1452,buchhaltung@bäckereidittrich2.de,,,,DE820108629,,,2026-03-16
+0002000700,KUNA,Metzgerei Stein 17,,METZGEREIS,Bahnhofstraße 125,Bremen,28195,DE,DE,+31 46 2185 1787,info@metzgereistein17.de,DE801926308,,,DE675214538,,,2016-10-10
+0002000701,KUNA,Hotel Krause Düsseldorf,,HOTELKRAUS,Industriering 124,Düsseldorf,40213,DE,DE,+49 77 3109 2695,bestellung@hotelkrausedüsseld.de,,,,DE100268037,,,2026-05-24
+0002000702,KUNA,Metzgerei Gruber 8,,METZGEREIG,Schulstraße 57,Bonn,53111,DE,DE,+49 99 7721 9772,einkaufmetzgereigruber8.de,,,,DE065291824,,,2016-08-11
+0002000703,DEBI,Frank Großhandel GmbH 2,Zentrale,FRANKGROSS,Ringstraße 205,Münster,48143,DE,DE,,bestellung@frankgroßhandelgmb.de,,,,DE452340249,,,2023-02-07
+0002000704,KUNA,Hotel Stein Frankfurt am Main,,HOTELSTEIN,Schulstraße 40,Frankfurt am Main,60311,DE,DE,+31 46 8154 9538,buchhaltung@hotelsteinfrankfur.de,DE404946650,,,DE183582685,,,2017-09-14
+0002000705,KUNA,Betriebskantine Radtke AG 12,,BETRIEBSKA,Am Hafen 97,Hannover,30159,DE,DE,+33 48 4351 4519,bestellung@betriebskantinerad.de,DE962598078,,,DE379671570,X,,2016-04-22
+0002000706,KUNA,Bäckerei Bergmann 3,,BÄCKEREIBE,Brückenstraße 113,Freiburg,79098,DE,DE,+33 59 4709 7682,bestellung@bäckereibergmann3.de,DE645324036,,,DE681353666,,,2020-11-10
+0002000707,KUNA,Metzgerei Brandes 15,,METZGEREIB,Talstraße 235,Freiburg,79098,DE,DE,+49 39 2318 8730,einkauf@metzgereibrandes15.de,,,,,,,2019-01-27
+0002000708,KUNA,Hartmann Gastronomie GmbH 7,,HARTMANNGA,Talstraße 59,Essen,45127,DE,DE,+43 91 9700 1897,info@hartmanngastronomi.de,DE493836117,,,DE989659667,,,2016-10-14
+0002000709,KUNA,Betriebskantine Thiel AG 4,,BETRIEBSKA,Industriering 62,Dortmund,44135,DE,DE,+49 54 8731 6398,bestellung@betriebskantinethi.de,,,,DE867724609,,,2025-04-15
+0002000710,DEBI,Ullrich Vertriebs KG 14,,ULLRICHVER,Brückenstraße 124,Stuttgart,70173,DE,DE,+48 65 8385 9900,info@ullrichvertriebskg.de,DE980330428,,,DE000278142,,,2019-07-25
+0002000711,KUNA,Bäckerei Ziegler 8,,BÄCKEREIZI,Am Hafen 15,Graz,8010,AT,DE,+48 72 5214 8046,info@bäckereiziegler8.at,,,,AT232792426,,,2024-08-05
+0002000712,KUNA,Metzgerei Sievers 10,,METZGEREIS,Talstraße 132,Dresden,01067,DE,DE,+49 27 2293 2187,einkauf@metzgereisievers10.de,,,,DE787001508,,,2017-10-13
+0002000713,KUNA,Wendt Gastronomie GmbH 16,,WENDTGASTR,Feldweg 193,Zürich,8001,CH,DE,+33 64 3064 3870,einkauf@wendtgastronomiegm.ch,,,,,,,2024-08-07
+0002000714,KUNA,Bäckerei Winkler 8,Zentrale,BÄCKEREIWI,Am Hafen 198,Augsburg,86150,DE,DE,+33 20 8111 8077,bestellung@bäckereiwinkler8.de,,,,DE677801792,,,2011-04-24
+0002000715,KUNA,Betriebskantine Bergmann AG 7,,BETRIEBSKA,Bahnhofstraße 138,Kraków,2988,PL,EN,+43 93 3897 4386,info@betriebskantineber.pl,,,,PL412939206,,,2026-09-24
+0002000716,KUNA,Bäckerei Engel 16,,BÄCKEREIEN,Gewerbepark 165,Bonn,53111,DE,DE,+43 40 3516 1463,buchhaltung@bäckereiengel16.de,DE786254268,,,DE084958322,,,2011-07-03
+0002000717,DEBI,Ziegler Großhandel GmbH 4,,ZIEGLERGRO,Gewerbepark 199,Bielefeld,33602,DE,DE,+41 38 1942 2879,buchhaltung@zieglergroßhandelg.de,DE223186175,,,DE318714423,,,2023-12-11
+0002000718,DEBI,Winkler Großhandel GmbH 11,Zentrale,WINKLERGRO,Bahnhofstraße 3,Bochum,44787,DE,DE,+31 38 3304 9249,einkauf@winklergroßhandelg.de,DE301585458,,,DE095636224,,,2012-10-03
+0002000719,DEBI,Vetter Vertriebs KG 17,,VETTERVERT,Schulstraße 154,Bielefeld,33602,DE,DE,+43 27 2725 1832,einkauf@vettervertriebskg1.de,,,,DE451195210,,X,2012-01-26
+0002000720,KUNA,Bergmann Partnermarkt Rotterdam,,BERGMANNPA,Ringstraße 164,Rotterdam,3011 AA,NL,EN,+33 53 2205 9496,einkauf@bergmannpartnermar.nl,,,,,X,,2014-03-02
+0002000721,KUNA,Metzgerei Winkler 18,,METZGEREIW,Brückenstraße 220,Münster,48143,DE,DE,+41 57 5885 9011,bestellung@metzgereiwinkler18.de,DE335819462,,,DE758746926,,,2016-10-21
+0002000722,KUNA,Hotel Clemens Mannheim,,HOTELCLEME,Ringstraße 164,Mannheim,68159,DE,DE,+49 55 9972 5598,einkauf@hotelclemensmannhe.de,DE595913473,,,DE806232527,,,2020-10-05
+0002000723,KUNA,Bäckerei Vetter 4,,BÄCKEREIVE,Lindenweg 56,Bremen,28195,DE,DE,+48 30 8642 8918,einkauf@bäckereivetter4.de,DE922438315,,,DE798810883,,,2012-06-09
+0002000724,DEBI,Dittrich Vertriebs KG,,DITTRICHVE,Schulstraße 71,Dortmund,44135,DE,DE,+49 78 5052 4310,buchhaltung@dittrichvertriebsk.de,DE439301566,,,DE284025490,,,2011-05-02
+0002000725,KUNA,Hartmann Partnermarkt Düsseldorf 18,Zentrale,HARTMANNPA,Feldweg 26,Düsseldorf,40213,DE,DE,+31 33 3418 8905,info@hartmannpartnermar.de,,,,DE755000332,,,2010-07-14
+0002000726,DEBI,Krause Großhandel GmbH 10,,KRAUSEGROS,Hauptstraße 32,Karlsruhe,76133,DE,DE,+48 59 6522 2259,bestellung@krausegroßhandelgm.de,DE637336559,,,DE220807030,,,2012-08-14
+0002000727,KUNA,Gruber Partnermarkt Leipzig,,GRUBERPART,Talstraße 166,Leipzig,04109,DE,DE,+41 77 8932 3143,bestellung@gruberpartnermarkt.de,DE326098847,,,DE691764955,,,2019-05-01
+0002000728,KUNA,Hotel Kaufmann Nürnberg,,HOTELKAUFM,Bahnhofstraße 86,Nürnberg,90403,DE,DE,+33 87 5841 181,bestellung@hotelkaufmannnürnb.de,DE264767185,,,DE023634920,,,2010-08-16
+0002000729,KUNA,Betriebskantine Bergmann AG 8,,BETRIEBSKA,Industriering 40,Graz,8010,AT,DE,+31 22 8222 4310,buchhaltung@betriebskantineber.at,,,,,,,2012-10-20
+0002000730,DEBI,Lehmann Großhandel GmbH 13,,LEHMANNGRO,Lindenweg 215,München,80331,DE,DE,+49 35 8187 8136,buchhaltung@lehmanngroßhandelg.de,DE870164614,,,DE078520255,,,2014-05-01
+0002000731,DEBI,Böhm Großhandel GmbH 6,Zentrale,BÖHMGROSSH,Schulstraße 74,Augsburg,86150,DE,DE,+48 96 2262 2520,einkauf@böhmgroßhandelgmbh.de,DE782580757,,,DE112632929,,,2013-07-08
+0002000732,KUNA,Hotel Böhm Wuppertal,,HOTELBÖHMW,Bahnhofstraße 138,Wuppertal,42103,DE,DE,+41 41 4224 513,einkauf@hotelböhmwuppertal.de,DE400213180,,,DE732629332,,,2021-09-06
+0002000733,KUNA,Winkler Partnermarkt Essen,,WINKLERPAR,Marktplatz 145,Essen,9865,DE,DE,+48 86 2086 5991,bestellung@winklerpartnermark.de,,,,DE455779865,,,2023-04-01
+0002000734,DEBI,Vogel Vertriebs KG 15,,VOGELVERTR,Brückenstraße 73,Zürich,8001,CH,DE,+31 20 3836 686,einkauf@vogelvertriebskg15.ch,,,,,,,2024-09-03
+0002000735,KUNA,Böhm Partnermarkt Bonn,,BÖHMPARTNE,Talstraße 50,Bonn,53111,DE,DE,+41 43 1969 6434,einkauf@böhmpartnermarktbo.de,DE968259898,,,DE821345365,,,2025-01-16
+0002000736,KUNA,Bäckerei Lehmann 6,,BÄCKEREILE,Ringstraße 60,Stuttgart,70173,DE,DE,+41 43 7544 3869,einkauf@bäckereilehmann6.de,,,,DE747735430,,,2014-05-28
+0002000737,DEBI,Wendt Großhandel GmbH 8,,WENDTGROSS,Schulstraße 157,Wien,1010,AT,DE,+41 56 7392 9577,einkauf@wendtgroßhandelgmb.at,,,,AT457047818,,,2025-03-19
+0002000738,ZCUS,Kiosk Brandes Kraków,,KIOSKBRAND,Bahnhofstraße 67,Kraków,30-001,PL,EN,,info@kioskbrandeskraków.pl,,,,PL813615667,,,2017-09-19
+0002000739,KUNA,Hotel Ullrich Kiel,,HOTELULLRI,Industriering 99,Kiel,24103,DE,DE,+43 22 2714 324,buchhaltung@hotelullrichkiel.de,DE682857124,,,DE614203073,,,2025-02-09
+0002000740,KUNA,Hotel Hartmann Hamburg,Zentrale,HOTELHARTM,Schulstraße 74,Hamburg,20095,DE,DE,+43 42 4486 7435,einkauf@hotelhartmannhambu.de,,,,DE007993014,,,2022-09-08
+0002000741,KUNA,Hotel Engel Wien,,HOTELENGEL,Marktplatz 105,Wien,1010,AT,DE,,bestellung@hotelengelwien.at,,,,,,,2014-03-18
+0002000742,KUNA,Bäckerei Gruber 18,Zentrale,BÄCKEREIGR,Schulstraße 196,Mannheim,68159,DE,DE,+31 60 6594 7114,bestellung@bäckereigruber18.de,,,,DE936129712,,,2013-05-12
+0002000743,KUNA,Engel Partnermarkt Leipzig,,ENGELPARTN,Industriering 122,Leipzig,04109,DE,DE,+41 81 4197 4429,einkauf@engelpartnermarktl.de,DE840247770,,,DE548604254,,,2025-02-06
+0002000744,ZCUS,Kiosk Rohde Hamburg,Zentrale,KIOSKROHDE,Schulstraße 203,Hamburg,20095,DE,DE,+48 96 7793 8481,info@kioskrohdehamburg.de,DE675301722,,,DE674175432,,,2011-10-03
+0002000745,DEBI,Radtke Vertriebs KG 13,,RADTKEVERT,Talstraße 147,Kraków,30-001,PL,EN,+31 59 6906 1577,info@radtkevertriebskg1.pl,,,,PL303238284,,,2023-10-03
+0002000746,KUNA,Betriebskantine Eckert AG 3,,BETRIEBSKA,Industriering 78,Bielefeld,8477,DE,DE,+31 32 8621 6631,bestellung@betriebskantineeck.de,DE832744370,,,DE737963627,,,2024-02-03
+0002000747,KUNA,Brandes Handels GmbH & Co. KG 17,,BRANDESHAN,Ringstraße 20,Hannover,30159,DE,DE,+43 97 6790 9191,bestellung@brandeshandelsgmbh.de,DE087670618,,,DE843170560,,,2021-05-15
+0002000748,KUNA,Metzgerei Wendt 3,,METZGEREIW,Schulstraße 1,Lyon,69001,FR,FR,+43 48 5332 1406,einkauf@metzgereiwendt3.fr,,,,FR618502169,,,2017-10-06
+0002000749,DEBI,Krause Vertriebs KG 3,,KRAUSEVERT,Industriering 30,Dortmund,44135,DE,DE,+49 74 3399 3673,bestellung@krausevertriebskg3.de,,,,DE774856213,,,2023-04-09
+0002000750,KUNA,Betriebskantine Hartmann AG 13,,BETRIEBSKA,Am Hafen 148,Frankfurt am Main,60311,DE,DE,+33 47 3930 2535,bestellung@betriebskantinehar.de,DE314376904,,,DE072641730,,,2013-09-01
+0002000751,KUNA,Krause Gastronomie GmbH 17,,KRAUSEGAST,Schulstraße 3,Graz,8010,AT,DE,+31 49 5232 5447,buchhaltung@krausegastronomieg.at,,,,AT569227409,,,2015-09-05
+0002000752,KUNA,Bäckerei Wendt 4,Zentrale,BÄCKEREIWE,Ringstraße 168,Düsseldorf,40213,DE,DE,+41 26 6999 1857,bestellung@bäckereiwendt4.de,,,,DE538728025,,,2011-04-05
+0002000753,DEBI,Rohde Vertriebs KG 9,Zentrale,ROHDEVERTR,Feldweg 87,Frankfurt am Main,60311,DE,DE,+41 30 6558 8975,einkauf@rohdevertriebskg9.de,,,,DE857985767,,,2021-08-26
+0002000754,DEBI,Eckert Großhandel GmbH,,ECKERTGROS,Talstraße 219,Karlsruhe,76133,DE,DE,+33 47 2172 6002,bestellung@eckertgroßhandelgm.de,DE757725294,,,DE451605691,,,2025-10-18
+0002000755,KUNA,Amann Gastronomie GmbH 14,,AMANNGASTR,Lindenweg 224,Wuppertal,42103,DE,DE,+31 52 4595 1703,bestellung@amanngastronomiegm.de,,,,DE405999670,,,2016-08-21
+0002000756,KUNA,Bergmann Gastronomie GmbH 12,,BERGMANNGA,Schulstraße 66,Duisburg,47051,DE,DE,+33 78 7593 3931,einkauf@bergmanngastronomi.de,DE178934300,,,DE891616547,,,2011-03-03
+0002000757,KUNA,Thiel Partnermarkt Bielefeld,,THIELPARTN,Gewerbepark 233,Bielefeld,33602,DE,DE,+43 32 4878 2846,buchhaltung@thielpartnermarktb.de,DE966721684,,,DE256461044,,,2014-01-14
+0002000758,KUNA,Hotel Frank Essen,,HOTELFRANK,Gewerbepark 90,Essen,45127,DE,DE,+43 28 6403 6525,buchhaltung@hotelfrankessen.de,DE489582289,,,DE279957664,,,2018-08-08
+0002000759,KUNA,Betriebskantine Vogel AG 2,,BETRIEBSKA,Ringstraße 62,Freiburg,79098,DE,DE,+49 25 8125 8522,buchhaltung@betriebskantinevog.de,,,,DE300947995,,,2011-04-01
+0002000760,ZCUS,Kiosk Vetter Freiburg,,KIOSKVETTE,Feldweg 18,Freiburg,79098,DE,DE,+49 37 6291 4346,info@kioskvetterfreibur.de,DE427308942,,,DE070638303,,,2017-01-15
+0002000761,KUNA,Betriebskantine Ullrich AG 2,,BETRIEBSKA,Gewerbepark 163,München,80331,DE,DE,+33 55 7035 4151,einkauf@betriebskantineull.de,DE430702004,,,DE311284897,,,2018-06-16
+0002000762,KUNA,Metzgerei Stein 15,,METZGEREIS,Marktplatz 88,Leipzig,04109,DE,DE,+41 54 7844 4597,bestellung@metzgereistein15.de,DE705603383,,,DE491084231,,,2020-02-10
+0002000763,DEBI,Sommer Großhandel GmbH 8,,SOMMERGROS,Marktplatz 145,Bielefeld,33602,DE,DE,+49 74 4051 9691,einkauf@sommergroßhandelgm.de,,,,DE997859186,,,2021-07-06
+0002000764,KUNA,Kaufmann Partnermarkt Lille,,KAUFMANNPA,Brückenstraße 213,Lille,59000,FR,FR,+43 55 3671 3679,buchhaltung@kaufmannpartnermar.fr,,,,,,,2025-08-15
+0002000765,KUNA,Radtke Gastronomie GmbH 14,,RADTKEGAST,Schulstraße 45,Bonn,53111,DE,DE,+43 58 3902 2174,einkauf@radtkegastronomieg.de,DE976659184,,,DE071447252,,,2011-06-01
+0002000766,KUNA,Metzgerei Vogel 16,,METZGEREIV,Lindenweg 137,Rotterdam,3011 AA,NL,EN,+31 81 3669 8181,info@metzgereivogel16.nl,,,,,,,2026-03-18
+0002000767,KUNA,Hartmann Gastronomie GmbH 17,,HARTMANNGA,Talstraße 112,Zürich,8001,CH,DE,+43 33 9253 4165,bestellung@hartmanngastronomi.ch,,,,,,,2016-08-02
+0002000768,ZCUS,Kiosk Ziegler Duisburg,Zentrale,KIOSKZIEGL,Talstraße 143,Duisburg,47051,DE,DE,+33 65 7848 3353,einkauf@kioskzieglerduisbu.de,,,,DE864692503,,,2012-03-17
+0002000769,KUNA,Frank Gastronomie GmbH 5,,FRANKGASTR,Feldweg 94,Wuppertal,42103,DE,DE,+31 81 7601 5281,einkauf@frankgastronomiegm.de,DE613485801,,,DE959133320,,,2012-10-02
+0002000770,DEBI,Winkler Vertriebs KG,,WINKLERVER,Am Hafen 12,Stuttgart,70173,DE,DE,+48 44 2086 6852,bestellung@winklervertriebskg.de,,,,DE399198381,,,2019-07-23
+0002000771,KUNA,Betriebskantine Lehmann AG 4,,BETRIEBSKA,Am Hafen 197,Wuppertal,42103,DE,DE,+33 21 9917 884,info@betriebskantineleh.de,,,,DE461162688,,,2011-02-09
+0002000772,DEBI,Sievers Großhandel GmbH 13,,SIEVERSGRO,Lindenweg 191,Basel,4051,CH,DE,+31 78 2554 2827,einkauf@sieversgroßhandelg.ch,,,,,,,2012-12-22
+0002000773,KUNA,Bäckerei Bergmann 8,,BÄCKEREIBE,Marktplatz 64,Graz,8010,AT,DE,+48 97 2868 4384,buchhaltung@bäckereibergmann8.at,,,,AT287166665,,,2010-09-13
+0002000774,DEBI,Eckert Vertriebs KG 19,,ECKERTVERT,Industriering 28,Nürnberg,90403,DE,DE,+43 47 3542 4270,bestellung@eckertvertriebskg1.de,,,,DE092788183,,,2018-06-01
+0002000775,KUNA,Hotel Ullrich Hamburg,,HOTELULLRI,Lindenweg 51,Hamburg,20095,DE,DE,+33 43 9360 3850,info@hotelullrichhambur.de,DE983492395,,,DE026014200,,,2015-01-25
+0002000776,DEBI,Radtke Vertriebs KG 7,,RADTKEVERT,Marktplatz 192,Amsterdam,1012 AB,NL,EN,+48 80 3723 8768,einkauf@radtkevertriebskg7.nl,,,,,,,2025-05-18
+0002000777,KUNA,Bäckerei Brandes 17,,BÄCKEREIBR,Brückenstraße 143,Kraków,30-001,PL,EN,+43 24 2925 399,einkauf@bäckereibrandes17.pl,,,,,,,2014-05-04
+0002000778,KUNA,Sommer Gastronomie GmbH 14,,SOMMERGAST,Talstraße 101,Basel,4051,CH,DE,+31 91 1986 1270,einkauf@sommergastronomieg.ch,,,,,,,2015-06-11
+0002000779,KUNA,Betriebskantine Bergmann AG 3,Zentrale,BETRIEBSKA,Industriering 26,Dresden,01067,DE,DE,+33 43 2516 1321,info@betriebskantineber.de,DE445454110,,,DE247887134,,,2014-02-02
+0002000780,DEBI,Eckert Großhandel GmbH 9,,ECKERTGROS,Am Hafen 50,Kraków,30-001,PL,EN,+48 29 2127 7166,einkauf@eckertgroßhandelgm.pl,,,,PL857336118,,,2020-11-10
+0002000781,KUNA,Ullrich Partnermarkt Düsseldorf,,ULLRICHPAR,Hauptstraße 76,Düsseldorf,40213,DE,DE,+31 68 6060 2399,buchhaltung@ullrichpartnermark.de,DE556680119,,,DE380771754,,,2020-12-22
+0002000782,DEBI,Dittrich Vertriebs KG 17,,DITTRICHVE,Industriering 130,Dortmund,44135,DE,DE,+43 54 8790 6566,einkauf@dittrichvertriebsk.de,,,,DE079523032,,,2024-04-18
+0002000783,KUNA,Hotel Sievers Dresden,,HOTELSIEVE,Industriering 214,Dresden,01067,DE,DE,+49 77 8850 1827,buchhaltung@hotelsieversdresde.de,DE451718359,,,DE362023896,,,2019-10-09
+0002000784,KUNA,Bergmann Gastronomie GmbH 3,,BERGMANNGA,Marktplatz 23,München,80331,DE,DE,+41 44 7430 6877,info@bergmanngastronomi.de,,,,DE855245066,,,2016-08-24
+0002000785,KUNA,Wendt Handels GmbH & Co. KG 13,,WENDTHANDE,Schulstraße 39,Karlsruhe,76133,DE,DE,+49 31 9068 1061,buchhaltung@wendthandelsgmbhco.de,DE974717504,,,DE843921704,,,2015-06-02
+0002000786,KUNA,Krause Handels GmbH & Co. KG 15,,KRAUSEHAND,Hauptstraße 50,Bielefeld,33602,DE,DE,+48 84 8786 3174,bestellung@krausehandelsgmbhc.de,,,,DE784657463,,,2010-09-01
+0002000787,KUNA,Amann Handels GmbH & Co. KG 9,,AMANNHANDE,Am Hafen 188,Leipzig,04109,DE,DE,+41 42 8130 6338,buchhaltung@amannhandelsgmbhco.de,,,,DE077413364,,,2020-11-21
+0002000788,KUNA,Bäckerei Eckert 6,,BÄCKEREIEC,Bahnhofstraße 153,Rotterdam,3011 AA,NL,EN,+33 35 5749 6500,buchhaltung@bäckereieckert6.nl,,,,NL986298480,,,2023-02-17
+0002000789,KUNA,Hotel Radtke Amsterdam,,HOTELRADTK,Am Hafen 33,Amsterdam,1012 AB,NL,EN,+43 83 7074 8925,bestellung@hotelradtkeamsterd.nl,,,,NL726635269,,,2016-07-23
+0002000790,KUNA,Sommer Partnermarkt Bochum,,SOMMERPART,Marktplatz 140,Bochum,44787,DE,DE,+49 85 8908 9341,buchhaltung@sommerpartnermarkt.de,DE780395088,,,DE404703884,,,2016-07-13
+0002000791,DEBI,Bergmann Vertriebs KG 18,,BERGMANNVE,Industriering 84,Bremen,28195,DE,DE,+41 37 2455 4702,bestellung@bergmannvertriebsk.de,,,,DE373581010,,,2010-08-16
+0002000792,KUNA,Winkler Partnermarkt Augsburg,,WINKLERPAR,Marktplatz 148,Augsburg,86150,DE,DE,+43 68 5453 2967,einkauf@winklerpartnermark.de,DE145974589,,,DE805531319,,,2023-01-14
+0002000793,ZCUS,Kiosk Engel Bremen,,KIOSKENGEL,Marktplatz 14,Bremen,28195,DE,DE,+33 41 9557 1517,info@kioskengelbremen.de,DE743690751,,,DE295626532,,,2023-07-20
+0002000794,KUNA,Gruber Partnermarkt Münster,,GRUBERPART,Ringstraße 239,Münster,48143,DE,DE,,bestellung@gruberpartnermarkt.de,DE073595104,,,DE076192362,,,2010-12-26
+0002000795,KUNA,Vogel Handels GmbH & Co. KG 12,Zentrale,VOGELHANDE,Feldweg 108,Leipzig,04109,DE,DE,+31 21 8056 2349,info@vogelhandelsgmbhco.de,,,,DE599393344,,,2021-12-09
+0002000796,DEBI,Engel Großhandel GmbH 19,,ENGELGROSS,Am Hafen 55,Bonn,53111,DE,DE,+33 44 9390 2750,buchhaltung@engelgroßhandelgmb.de,,,,DE410549032,,,2023-06-12
+0002000797,DEBI,Dittrich Vertriebs KG 8,,DITTRICHVE,Feldweg 59,Hannover,30159,DE,DE,+49 58 5762 1638,bestellung@dittrichvertriebsk.de,DE467369294,,,DE182457201,,,2016-09-23
+0002000798,KUNA,Bäckerei Rohde,,BÄCKEREIRO,Gewerbepark 85,Augsburg,86150,DE,DE,+49 97 9035 7332,info@bäckereirohde.de,DE525716713,,,DE873041492,,,2021-01-17
+0002000799,ZCUS,Kiosk Stein Lille,,KIOSKSTEIN,Bahnhofstraße 83,Lille,59000,FR,FR,+48 77 6798 9123,bestellung@kiosksteinlille.fr,,,,FR653812622,,,2019-06-13
+0002000800,KUNA,Vetter Partnermarkt Basel,,VETTERPART,Brückenstraße 211,Basel,4051,CH,DE,+31 43 5203 5025,info@vetterpartnermarkt.ch,,,,,,,2014-02-11
+0002000801,ZCUS,Kiosk Krause Wuppertal,Zentrale,KIOSKKRAUS,Gewerbepark 208,Wuppertal,42103,DE,DE,+31 43 8481 8292,einkauf@kioskkrausewuppert.de,DE812163398,,,DE227024771,,,2011-07-27
+0002000802,DEBI,Böhm Vertriebs KG 3,,BÖHMVERTRI,Ringstraße 5,Münster,48143,DE,DE,+43 37 2449 713,einkauf@böhmvertriebskg3.de,DE134941643,,,DE335893930,,X,2017-04-27
+0002000803,KUNA,Bäckerei Kaufmann 8,,BÄCKEREIKA,Brückenstraße 199,Münster,48143,DE,DE,+49 51 3014 6283,einkauf@bäckereikaufmann8.de,DE315267663,,,DE653454865,,,2026-04-25
+0002000804,KUNA,Betriebskantine Rohde AG 12,Zentrale,BETRIEBSKA,Marktplatz 61,Dortmund,44135,DE,DE,+33 40 1788 3827,bestellung@betriebskantineroh.de,,,,DE831367943,,,2012-11-19
+0002000805,DEBI,Vetter Großhandel GmbH 13,,VETTERGROS,Industriering 234,Nürnberg,90403,DE,DE,+31 74 4659 3342,buchhaltung@vettergroßhandelgm.de,DE513240194,,,DE437765315,,,2012-07-09
+0002000806,KUNA,Frank Gastronomie GmbH 14,Zentrale,FRANKGASTR,Ringstraße 206,Köln,50667,DE,DE,+33 21 8617 1971,einkauf@frankgastronomiegm.de,DE194489413,,,DE532472678,,,2023-10-25
+0002000807,ZCUS,Kiosk Dittrich Mannheim,,KIOSKDITTR,Schulstraße 123,Mannheim,68159,DE,DE,+41 68 3923 5105,bestellung@kioskdittrichmannh.de,,,,DE881067972,,,2022-11-23
+0002000808,ZCUS,Kiosk Rohde Graz,,KIOSKROHDE,Industriering 223,Graz,8010,AT,DE,+49 59 2536 3584,bestellung@kioskrohdegraz.at,,,,,,,2025-01-01
+0002000809,KUNA,Metzgerei Vetter 17,,METZGEREIV,Lindenweg 140,Kiel,24103,DE,DE,+49 52 6835 509,buchhaltung@metzgereivetter17.de,,,,DE323223017,,,2020-12-11
+0002000810,ZCUS,Kiosk Dittrich Dortmund,,KIOSKDITTR,Schulstraße 134,Dortmund,44135,DE,DE,,buchhaltung@kioskdittrichdortm.de,DE044142505,,,DE303755267,,,2026-09-06
+0002000811,KUNA,Böhm Handels GmbH & Co. KG 5,,BÖHMHANDEL,Industriering 235,Stuttgart,70173,DE,DE,+49 67 2877 2695,einkauf@böhmhandelsgmbhcok.de,DE860693264,,,DE664546326,,,2020-12-22
+0002000812,DEBI,Vetter Großhandel GmbH 13,,VETTERGROS,Brückenstraße 165,Essen,45127,DE,DE,+31 99 1570 1930,bestellung@vettergroßhandelgm.de,DE797344130,,,DE983329965,,,2015-10-16
+0002000813,KUNA,Betriebskantine Vetter AG 15,,BETRIEBSKA,Marktplatz 62,Münster,48143,DE,DE,+48 28 9649 3043,einkauf@betriebskantinevet.de,DE393292280,,,DE668665529,,,2018-02-04
+0002000814,KUNA,Hotel Böhm Karlsruhe,,HOTELBÖHMK,Am Hafen 102,Karlsruhe,76133,DE,DE,+48 54 8532 8154,bestellung@hotelböhmkarlsruhe.de,DE693677092,,,DE179629732,,,2018-04-14
+0002000815,KUNA,Hotel Thiel Wuppertal,,HOTELTHIEL,Lindenweg 93,Wuppertal,42103,DE,DE,+43 31 5617 483,bestellung@hotelthielwupperta.de,DE230509241,,,DE002913756,,,2024-03-17
+0002000816,KUNA,Bäckerei Winkler 16,,BÄCKEREIWI,Ringstraße 228,Augsburg,86150,DE,DE,+41 34 3658 3607,info@bäckereiwinkler16.de,,,,DE239919818,,,2025-11-05
+0002000817,DEBI,Thiel Großhandel GmbH 13,,THIELGROSS,Feldweg 100,Freiburg,79098,DE,DE,+43 92 2161 2876,info@thielgroßhandelgmb.de,DE252028335,,,DE278157327,,,2021-01-19
+0002000818,KUNA,Hotel Amann Bonn,,HOTELAMANN,Marktplatz 197,Bonn,53111,DE,DE,+41 75 7059 9970,,,,,DE314438559,,,2014-08-21
+0002000819,ZCUS,Kiosk Vogel Bonn 7,,KIOSKVOGEL,Am Hafen 41,Bonn,53111,DE,DE,+33 65 7187 6488,einkauf@kioskvogelbonn7.de,,,,DE513388544,,,2015-09-05
+0002000820,DEBI,Amann Vertriebs KG 2,,AMANNVERTR,Lindenweg 155,Rotterdam,3011 AA,NL,EN,+48 92 1143 7354,bestellung@amannvertriebskg2.nl,,,,NL035372310,,,2016-12-05
+0002000821,KUNA,Engel Partnermarkt Zürich,,ENGELPARTN,Am Hafen 229,Zürich,8001,CH,DE,+49 82 6204 2613,einkauf@engelpartnermarktz.ch,,,,,,,2020-09-20
+0002000822,ZCUS,Kiosk Radtke Graz,,KIOSKRADTK,Feldweg 216,Graz,8010,AT,DE,+33 97 6964 2245,einkauf@kioskradtkegraz.at,,,,AT835704077,,,2021-09-19
+0002000823,KUNA,Stein Gastronomie GmbH 17,,STEINGASTR,Feldweg 92,Mannheim,68159,DE,DE,+31 99 6561 8087,bestellung@steingastronomiegm.de,DE082852052,,,DE294538894,,,2025-09-07
+0002000824,KUNA,Sievers Partnermarkt Bielefeld,,SIEVERSPAR,Bahnhofstraße 9,Bielefeld,33602,DE,DE,,bestellung@sieverspartnermark.de,,,,DE927941127,,,2016-11-23
+0002000825,KUNA,Wendt Gastronomie GmbH 8,,WENDTGASTR,Gewerbepark 233,Zürich,8001,CH,DE,+48 27 1850 2076,bestellung@wendtgastronomiegm.ch,,,,,,,2025-02-25
+0002000826,KUNA,Bäckerei Dittrich 4,,BÄCKEREIDI,Marktplatz 97,Zürich,8001,CH,DE,+33 25 3461 6728,info@bäckereidittrich4.ch,,,,,,,2021-03-28
+0002000827,KUNA,Hotel Sommer Essen,,HOTELSOMME,Am Hafen 52,Essen,45127,DE,DE,+33 76 3921 6509,info@hotelsommeressen.de,DE436945791,,,DE549735052,,,2015-05-15
+0002000828,KUNA,Hotel Böhm Lyon,,HOTELBÖHML,Bahnhofstraße 217,Lyon,69001,FR,FR,+43 25 5182 1642,info@hotelböhmlyon.fr,,,,FR584730238,,,2026-10-02
+0002000829,KUNA,Betriebskantine Vetter AG 12,,BETRIEBSKA,Gewerbepark 193,Wien,1010,AT,DE,+43 69 2271 8035,buchhaltung@betriebskantinevet.at,,,,AT761120487,,,2013-06-24
+0002000830,ZCUS,Kiosk Gruber Köln,,KIOSKGRUBE,Schulstraße 210,Köln,50667,DE,DE,+49 37 6490 3163,einkauf@kioskgruberköln.de,DE457702306,,,DE307555622,,,2022-05-07
+0002000831,KUNA,Hotel Dittrich Bielefeld,,HOTELDITTR,Hauptstraße 173,Bielefeld,33602,DE,DE,+31 65 6550 1223,buchhaltung@hoteldittrichbiele.de,DE050070963,,,DE948585562,,,2018-06-23
+0002000832,DEBI,Eckert Vertriebs KG 13,Zentrale,ECKERTVERT,Hauptstraße 130,Münster,48143,DE,DE,+33 83 9571 2025,info@eckertvertriebskg1.de,,,,DE089772002,,,2024-02-04
+0002000833,KUNA,Hartmann Handels GmbH & Co. KG 8,,HARTMANNHA,Bahnhofstraße 140,Hamburg,20095,DE,DE,+43 75 6891 2247,bestellung@hartmannhandelsgmb.de,DE321755899,,,DE441474372,,,2022-11-18
+0002000834,KUNA,Bäckerei Eckert 7,,BÄCKEREIEC,Hauptstraße 175,Hamburg,20095,DE,DE,+43 91 9628 5857,einkauf@bäckereieckert7.de,DE581222617,,,DE803219503,,,2018-12-21
+0002000835,KUNA,Radtke Partnermarkt Mannheim,,RADTKEPART,Lindenweg 68,Mannheim,68159,DE,DE,+31 23 2207 920,info@radtkepartnermarkt.de,,,,DE532273253,,,2021-11-14
+0002000836,KUNA,Betriebskantine Kaufmann AG 12,,BETRIEBSKA,Ringstraße 199,Stuttgart,70173,DE,DE,+31 70 6625 7704,einkauf@betriebskantinekau.de,DE971265433,,,DE887905085,,,2025-10-15
+0002000837,KUNA,Bergmann Gastronomie GmbH 6,Zentrale,BERGMANNGA,Brückenstraße 133,Bochum,44787,DE,DE,+33 68 6931 2624,bestellung@bergmanngastronomi.de,,,,DE865406258,,,2023-04-14
+0002000838,KUNA,Hotel Winkler Nürnberg,,HOTELWINKL,Gewerbepark 75,Nürnberg,90403,DE,DE,+49 50 9565 2161,buchhaltung@hotelwinklernürnbe.de,DE123723109,,,DE473397681,,,2017-07-20
+0002000839,DEBI,Rohde Großhandel GmbH 11,,ROHDEGROSS,Lindenweg 152,Münster,48143,DE,DE,+49 99 6944 4791,bestellung@rohdegroßhandelgmb.de,DE927377962,,,DE693849860,,,2024-01-02
+0002000840,KUNA,Metzgerei Bergmann 9,,METZGEREIB,Lindenweg 46,Hannover,30159,DE,DE,+41 66 9071 7435,buchhaltung@metzgereibergmann9.de,DE350508781,,,DE141271521,,,2024-05-25
+0002000841,KUNA,Metzgerei Winkler 14,,METZGEREIW,Bahnhofstraße 75,Leipzig,04109,DE,DE,+31 40 7322 7211,einkauf@metzgereiwinkler14.de,,,,DE990605817,,,2010-11-18
+0002000842,KUNA,Böhm Handels GmbH & Co. KG 12,,BÖHMHANDEL,Gewerbepark 229,Dortmund,44135,DE,DE,+41 20 4853 8883,info@böhmhandelsgmbhcok.de,DE445744050,,,DE819220829,,,2025-12-01
+0002000843,KUNA,Bäckerei Brandes 13,,BÄCKEREIBR,Lindenweg 9,Essen,45127,DE,DE,+48 83 8091 2663,buchhaltung@bäckereibrandes13.de,,,,DE592783959,,,2022-11-10
+0002000844,DEBI,Brandes Großhandel GmbH 11,,BRANDESGRO,Am Hafen 133,Wien,1010,AT,DE,+33 95 8581 8007,buchhaltung@brandesgroßhandelg.at,,,,AT826148441,,,2023-12-02
+0002000845,ZCUS,Kiosk Bergmann Kraków,,KIOSKBERGM,Lindenweg 193,Kraków,30-001,PL,EN,+41 28 4680 9847,info@kioskbergmannkrakó.pl,,,,PL591042861,,,2022-03-11
+0002000846,KUNA,Metzgerei Ziegler 3,,METZGEREIZ,Brückenstraße 177,Nürnberg,90403,DE,DE,+49 92 6069 2297,info@metzgereiziegler3.de,,,,DE490161972,X,,2015-03-23
+0002000847,KUNA,Betriebskantine Amann AG 18,,BETRIEBSKA,Hauptstraße 205,Zürich,8001,CH,DE,+43 95 7164 5843,bestellung@betriebskantineama.ch,,,,,,X,2014-01-18
+0002000848,KUNA,Bäckerei Ullrich 18,,BÄCKEREIUL,Feldweg 182,Freiburg,79098,DE,DE,+49 58 4121 5067,bestellung@bäckereiullrich18.de,DE966811328,,,DE521474065,,,2015-03-21
+0002000849,KUNA,Wendt Handels GmbH & Co. KG 6,,WENDTHANDE,Hauptstraße 82,Freiburg,79098,DE,DE,+33 90 4077 3478,info@wendthandelsgmbhco.de,,,,DE130283944,,,2016-05-24
+0002000850,KUNA,Bäckerei Kaufmann 13,,BÄCKEREIKA,Feldweg 41,Hamburg,20095,DE,DE,+48 44 7694 8898,buchhaltung@bäckereikaufmann13.de,DE059494261,,,DE504635256,,,2018-04-02
+0002000851,KUNA,Sommer Handels GmbH & Co. KG,,SOMMERHAND,Am Hafen 85,Wuppertal,42103,DE,DE,+41 25 7573 8575,einkauf@sommerhandelsgmbhc.de,,,,DE634503974,,,2023-11-20
+0002000852,KUNA,Hotel Hartmann München,,HOTELHARTM,Industriering 150,München,80331,DE,DE,+43 25 1500 9267,info@hotelhartmannmünch.de,,,,DE325957890,,,2022-09-27
+0002000853,ZCUS,Kiosk Rohde Münster 17,,KIOSKROHDE,Lindenweg 36,Münster,2053,DE,DE,+43 83 7788 352,bestellung@kioskrohdemünster1.de,DE138048507,,,DE754869694,,,2014-06-23
+0002000854,DEBI,Eckert Vertriebs KG 10,,ECKERTVERT,Feldweg 161,Leipzig,04109,DE,DE,+41 32 5217 7012,einkauf@eckertvertriebskg1.de,,,,DE877166926,,,2021-12-22
+0002000855,DEBI,Ullrich Großhandel GmbH 12,,ULLRICHGRO,Schulstraße 226,Münster,48143,DE,DE,+41 20 3528 9613,info@ullrichgroßhandelg.de,DE350463607,,,DE802398572,,,2022-05-25
+0002000856,KUNA,Winkler Partnermarkt Frankfurt am Main,,WINKLERPAR,Hauptstraße 23,Frankfurt am Main,60311,DE,DE,+41 32 6432 301,buchhaltung@winklerpartnermark.de,,,,DE265847062,,,2021-04-17
+0002000857,KUNA,Engel Partnermarkt Dortmund,,ENGELPARTN,Feldweg 65,Dortmund,44135,DE,DE,+41 69 5688 8654,buchhaltung@engelpartnermarktd.de,DE209282216,,,DE595515282,,,2024-12-08
+0002000858,KUNA,Bäckerei Krause 16,,BÄCKEREIKR,Lindenweg 168,Wien,1010,AT,DE,+43 68 8588 3368,einkauf@bäckereikrause16.at,,,,AT507266653,,,2025-06-09
+0002000859,KUNA,Radtke Partnermarkt Leipzig,,RADTKEPART,Schulstraße 114,Leipzig,04109,DE,DE,+31 55 1703 1718,einkauf@radtkepartnermarkt.de,DE283966146,,,DE913423037,,,2026-09-10
+0002000860,DEBI,Krause Vertriebs KG 17,,KRAUSEVERT,Hauptstraße 172,Dortmund,44135,DE,DE,+48 40 5533 9595,einkauf@krausevertriebskg1.de,DE608809955,,,DE427313089,,,2015-04-07
+0002000861,KUNA,Radtke Handels GmbH & Co. KG,,RADTKEHAND,Feldweg 39,Köln,50667,DE,DE,+49 76 8182 2218,buchhaltung@radtkehandelsgmbhc.de,,,,DE313999571,,,2010-04-13
+0002000862,DEBI,Bergmann Vertriebs KG 14,,BERGMANNVE,Ringstraße 37,Dresden,01067,DE,DE,+49 23 3164 3823,einkauf@bergmannvertriebsk.de,DE306322956,,,DE138411103,,,2012-11-03
+0002000863,KUNA,Betriebskantine Sievers AG 15,,BETRIEBSKA,Feldweg 231,Bremen,28195,DE,DE,+33 42 6813 1998,bestellung@betriebskantinesie.de,,,,,,,2021-05-23
+0002000864,KUNA,Ullrich Handels GmbH & Co. KG 5,Zentrale,ULLRICHHAN,Ringstraße 176,Essen,45127,DE,DE,+41 50 8516 6460,bestellung@ullrichhandelsgmbh.de,DE534758271,,,DE977631036,,,2011-06-16
+0002000865,KUNA,Metzgerei Thiel 6,,METZGEREIT,Lindenweg 54,Stuttgart,70173,DE,DE,+41 42 3924 5824,einkauf@metzgereithiel6.de,,,,DE625724509,,,2015-05-12
+0002000866,KUNA,Krause Handels GmbH & Co. KG 13,Zentrale,KRAUSEHAND,Lindenweg 227,Amsterdam,1012 AB,NL,EN,+49 34 5304 2084,einkauf@krausehandelsgmbhc.nl,,,,NL825034241,,,2020-10-26
+0002000867,ZCUS,Kiosk Frank Frankfurt am Main,,KIOSKFRANK,Marktplatz 6,Frankfurt am Main,60311,DE,DE,+33 68 6591 904,info@kioskfrankfrankfur.de,DE665583584,,,DE943391277,,,2012-07-15
+0002000868,KUNA,Bäckerei Vetter 19,,BÄCKEREIVE,Ringstraße 174,Duisburg,47051,DE,DE,+43 33 6971 9979,info@bäckereivetter19.de,DE044685624,,,DE211343827,,,2010-03-01
+0002000869,KUNA,Frank Gastronomie GmbH 14,Zentrale,FRANKGASTR,Gewerbepark 13,Bremen,28195,DE,DE,+41 81 5632 9518,info@frankgastronomiegm.de,DE488333968,,,DE147961954,,,2012-07-21
+0002000870,KUNA,Hotel Vogel Kraków,,HOTELVOGEL,Am Hafen 119,Kraków,30-001,PL,EN,+33 68 9070 4159,buchhaltung@hotelvogelkraków.pl,,,,PL991113824,,,2021-06-17
+0002000871,KUNA,Hartmann Partnermarkt Duisburg,,HARTMANNPA,Bahnhofstraße 196,Duisburg,47051,DE,DE,+33 40 6172 1847,einkaufhartmannpartnermar.de,DE053696027,,,DE340679876,,,2024-11-01
+0002000872,KUNA,Frank Partnermarkt Basel,,FRANKPARTN,Feldweg 88,Basel,4051,CH,DE,+48 68 2215 7798,buchhaltung@frankpartnermarktb.ch,,,,,,,2022-04-16
+0002000873,KUNA,Lehmann Gastronomie GmbH 2,,LEHMANNGAS,Hauptstraße 5,Leipzig,04109,DE,DE,+48 41 7491 2302,einkauf@lehmanngastronomie.de,,,,DE883328974,,,2022-06-01
+0002000874,KUNA,Gruber Handels GmbH & Co. KG 4,,GRUBERHAND,Schulstraße 1,Köln,50667,DE,DE,+41 77 8990 4328,bestellung@gruberhandelsgmbhc.de,DE018157403,,,DE826552818,,,2019-08-04
+0002000875,DEBI,Ullrich Großhandel GmbH 8,,ULLRICHGRO,Talstraße 34,Karlsruhe,76133,DE,DE,+41 46 6778 1872,info@ullrichgroßhandelg.de,,,,DE107597603,,,2021-09-03
+0002000876,KUNA,Ziegler Partnermarkt Zürich,,ZIEGLERPAR,Ringstraße 210,Zürich,8001,CH,DE,+48 78 5552 1140,,,,,,,,2020-11-10
+0002000877,KUNA,Betriebskantine Krause AG 12,,BETRIEBSKA,Hauptstraße 233,Leipzig,04109,DE,DE,+43 39 5918 1103,bestellung@betriebskantinekra.de,DE228008809,,,DE329668179,,,2014-11-16
+0002000878,DEBI,Amann Großhandel GmbH 8,,AMANNGROSS,Industriering 236,Leipzig,04109,DE,DE,+49 35 2080 3563,bestellung@amanngroßhandelgmb.de,,,,DE477644873,,,2025-06-15
+0002000879,DEBI,Ullrich Vertriebs KG 4,,ULLRICHVER,Am Hafen 136,Köln,50667,DE,DE,+33 43 6161 589,bestellung@ullrichvertriebskg.de,,,,DE439384063,,,2021-05-03
+0002000880,DEBI,Stein Großhandel GmbH 8,,STEINGROSS,Schulstraße 222,Nürnberg,90403,DE,DE,+31 22 8110 2705,bestellung@steingroßhandelgmb.de,DE484810145,,,DE408058812,,,2026-10-18
+0002000881,KUNA,Betriebskantine Ullrich AG 15,,BETRIEBSKA,Am Hafen 46,Nürnberg,90403,DE,DE,+33 46 2372 5074,bestellung@betriebskantineull.de,,,,DE620500406,,,2019-08-11
+0002000882,KUNA,Bäckerei Rohde 11,,BÄCKEREIRO,Brückenstraße 26,Frankfurt am Main,60311,DE,DE,+43 80 2982 9288,info@bäckereirohde11.de,DE901405583,,,DE319276617,,,2014-04-25
+0002000883,DEBI,Dittrich Großhandel GmbH 5,Zentrale,DITTRICHGR,Marktplatz 188,München,80331,DE,DE,+33 59 2055 7759,info@dittrichgroßhandel.de,,,,DE251709462,,,2013-04-10
+0002000884,KUNA,Hotel Clemens Kiel,,HOTELCLEME,Industriering 185,Kiel,6336,DE,DE,+43 31 8023 3244,einkauf@hotelclemenskiel.de,DE388395080,,,DE184281323,,,2011-06-14
+0002000885,KUNA,Winkler Partnermarkt Graz,,WINKLERPAR,Bahnhofstraße 212,Graz,8010,AT,DE,+49 73 3844 8514,einkauf@winklerpartnermark.at,,,,AT820798529,,,2024-09-26
+0002000886,KUNA,Bäckerei Eckert 10,,BÄCKEREIEC,Feldweg 99,Augsburg,86150,DE,DE,+43 93 8388 916,info@bäckereieckert10.de,,,,DE823269229,,,2022-10-05
+0002000887,DEBI,Bergmann Großhandel GmbH,,BERGMANNGR,Hauptstraße 228,Stuttgart,70173,DE,DE,+31 27 8317 4538,buchhaltung@bergmanngroßhandel.de,,,,DE267096039,,,2014-07-22
+0002000888,KUNA,Hotel Lehmann Wuppertal,,HOTELLEHMA,Am Hafen 17,Wuppertal,42103,DE,DE,+41 51 5550 3657,info@hotellehmannwupper.de,,,,DE296065593,,,2021-08-21
+0002000889,KUNA,Bäckerei Ziegler 17,,BÄCKEREIZI,Ringstraße 221,Mannheim,68159,DE,DE,+31 42 4974 6755,buchhaltung@bäckereiziegler17.de,DE607874687,,,DE284135143,,,2015-08-05
+0002000890,KUNA,Metzgerei Sommer 11,,METZGEREIS,Marktplatz 59,Freiburg,79098,DE,DE,+31 65 1571 1473,einkauf@metzgereisommer11.de,DE779881541,,,DE291762962,,,2014-02-24
+0002000891,KUNA,Betriebskantine Rohde AG 18,,BETRIEBSKA,Industriering 192,München,80331,DE,DE,+49 20 2702 4401,info@betriebskantineroh.de,DE644507636,,,DE562998408,,,2023-01-17
+0002000892,DEBI,Winkler Großhandel GmbH 14,,WINKLERGRO,Marktplatz 225,Kiel,24103,DE,DE,+41 48 4973 8278,buchhaltung@winklergroßhandelg.de,,,,DE462029780,,,2014-12-03
+0002000893,KUNA,Bäckerei Eckert 6,,BÄCKEREIEC,Schulstraße 150,Essen,45127,DE,DE,+43 32 2436 2456,bestellung@bäckereieckert6.de,,,,DE907981914,,,2017-12-19
+0002000894,KUNA,Wendt Partnermarkt Düsseldorf,Zentrale,WENDTPARTN,Am Hafen 81,Düsseldorf,40213,DE,DE,+48 90 2942 5182,info@wendtpartnermarktd.de,,,,DE729672552,,,2024-01-20
+0002000895,KUNA,Hotel Clemens Essen 19,,HOTELCLEME,Brückenstraße 220,Essen,45127,DE,DE,+49 31 2568 8546,einkauf@hotelclemensessen1.de,,,,DE590680220,,,2017-09-17
+0002000896,DEBI,Wendt Vertriebs KG 3,,WENDTVERTR,Feldweg 17,Zürich,8001,CH,DE,+33 58 4298 3550,einkauf@wendtvertriebskg3.ch,,,,,,,2016-12-01
+0002000897,KUNA,Hotel Gruber Münster,,HOTELGRUBE,Talstraße 62,Münster,48143,DE,DE,+33 91 6300 3689,einkauf@hotelgrubermünster.de,,,,DE625223780,,X,2011-06-20
+0002000898,KUNA,Betriebskantine Lehmann AG 7,,BETRIEBSKA,Brückenstraße 73,Leipzig,04109,DE,DE,+48 42 4859 8365,bestellung@betriebskantineleh.de,,,,DE837626422,,,2025-11-19
+0002000899,KUNA,Hotel Clemens Karlsruhe,,HOTELCLEME,Am Hafen 165,Karlsruhe,76133,DE,DE,+41 83 8376 8751,buchhaltung@hotelclemenskarlsr.de,,,,DE130376717,,,2026-10-19
+0002000900,KUNA,Bäckerei Amann 12,Zentrale,BÄCKEREIAM,Gewerbepark 240,Dresden,01067,DE,DE,,buchhaltung@bäckereiamann12.de,,,,DE945663608,,,2023-10-17

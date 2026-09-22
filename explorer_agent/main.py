@@ -6,7 +6,8 @@ import argparse
 from pathlib import Path
 
 from .config import Config
-from .data_loader import discover_table_files, load_all_tables, load_data_dictionary, get_field_description
+from .data_loader import (discover_table_files, load_all_tables, load_data_dictionary,
+                          dictionary_column_types, get_field_description)
 # from .tools import TOOLS, register_dataframe
 from .graph import build_explorer_graph
 # from .schemas import Reflection
@@ -166,14 +167,18 @@ def main():
         Config.ENABLE_CACHE_FAST_PATH, args.duplicates_only,
     )
 
-    dictionary = load_data_dictionary(str(Path(args.data_dir) / args.dictionary_file))
+    dictionary_path = str(Path(args.data_dir) / args.dictionary_file)
+    dictionary = load_data_dictionary(dictionary_path)
+    # SAP data types from the dictionary, so CHAR keys keep their zero padding
+    # and are not silently turned into numbers - see data_loader.load_table.
+    column_types = dictionary_column_types(dictionary_path)
     discovered = discover_table_files(args.data_dir, args.dictionary_file)
     wanted = {t.upper() for t in args.tables} if args.tables else None
     table_files = {k: v for k, v in discovered.items() if wanted is None or k in wanted}
     if not table_files:
         parser.error(f"No table CSV files found in {args.data_dir}"
                      + (f" matching --tables {' '.join(args.tables)}" if args.tables else ""))
-    tables = load_all_tables(args.data_dir, table_files)
+    tables = load_all_tables(args.data_dir, table_files, column_types)
 
     if args.duplicates_only:
         llms = graph = reflector_single = skill_retriever = None

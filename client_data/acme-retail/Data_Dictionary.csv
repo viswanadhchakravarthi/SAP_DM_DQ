@@ -12,6 +12,9 @@ LFA1,SPRAS,Language,CHAR2,Communication language
 LFA1,TELF1,Telephone,CHAR20,Main phone number
 LFA1,SMTP_ADDR,Email Address,CHAR50,Email
 LFA1,STCD1,Tax Number,CHAR20,Tax/VAT identifier
+LFA1,STCD2,Tax Number 2,CHAR20,Second national tax number (e.g. US EIN/SSN)
+LFA1,STCD3,GST / Tax Number 3,CHAR20,Indian GSTIN (15 characters) and other third tax numbers
+LFA1,STCEG,VAT Registration Number,CHAR20,EU VAT registration number (country prefix + national number)
 LFA1,LOEVM,Deletion Flag,CHAR1,Marked for deletion
 LFA1,SPERM,Posting Block,CHAR1,Central posting block
 LFA1,ERDAT,Created On,DATE,Record creation date
@@ -38,3 +41,145 @@ LFBK,BANKN,Bank Account,CHAR20,Bank account number
 LFBK,BKONT,Bank Control Key,CHAR2,Bank sequence/control key
 LFBK,KOINH,Account Holder,CHAR35,Account holder name
 LFBK,IBAN,IBAN,CHAR34,International bank account number
+KNA1,KUNNR,Customer Account Number,CHAR10,Primary key
+KNA1,KTOKD,Customer Account Group,CHAR4,Customer account group
+KNA1,NAME1,Vendor Name 1,CHAR35,Vendor legal/trading name
+KNA1,NAME2,Vendor Name 2,CHAR35,Additional name
+KNA1,SORTL,Search Term,CHAR10,Search term for matching
+KNA1,STRAS,Street Address,CHAR35,Street and house number
+KNA1,ORT01,City,CHAR35,City
+KNA1,PSTLZ,Postal Code,CHAR10,Postal code
+KNA1,LAND1,Country Key,CHAR3,ISO-like country code
+KNA1,SPRAS,Language,CHAR2,Communication language
+KNA1,TELF1,Telephone,CHAR20,Main phone number
+KNA1,SMTP_ADDR,Email Address,CHAR50,Email
+KNA1,STCD1,Tax Number,CHAR20,Tax/VAT identifier
+KNA1,STCD2,Tax Number 2,CHAR20,Second national tax number (e.g. US EIN/SSN)
+KNA1,STCD3,GST / Tax Number 3,CHAR20,Indian GSTIN (15 characters) and other third tax numbers
+KNA1,STCEG,VAT Registration Number,CHAR20,EU VAT registration number (country prefix + national number)
+KNA1,LOEVM,Deletion Flag,CHAR1,Marked for deletion
+KNA1,SPERM,Posting Block,CHAR1,Central posting block
+KNA1,ERDAT,Created On,DATE,Record creation date
+KNB1,KUNNR,Customer Account Number,CHAR10,Primary key / foreign key to KNA1
+KNB1,BUKRS,Company Code,CHAR4,FI organizational unit
+KNB1,AKONT,Reconciliation Account,CHAR10,GL reconciliation account
+KNB1,ZTERM,Payment Terms,CHAR4,Default payment terms
+KNB1,ZWELS,Payment Methods,CHAR10,Allowed payment methods
+KNB1,HBKID,House Bank,CHAR5,Default house bank
+KNB1,SPERR,Company Code Posting Block,CHAR1,Company code level block
+KNB1,LOEVM,Deletion Flag,CHAR1,Marked for deletion
+KNVV,KUNNR,Customer Account Number,CHAR10,Primary key / foreign key to KNA1
+KNVV,VKORG,Sales Organization,CHAR4,Sales org
+KNVV,WAERS,Order Currency,CUKY5,Procurement currency
+KNVV,ZTERM,Payment Terms,CHAR4,Sales payment terms
+KNVV,INCO1,Incoterms,CHAR3,Incoterms part 1
+KNVV,MINBW,Minimum Order Value,DEC,Minimum order value
+KNVV,SPERM,Purchasing Block,CHAR1,Purchasing block
+KNVV,LOEVM,Deletion Flag,CHAR1,Marked for deletion
+MARA,MATNR,Material Number,CHAR18,"Primary key, client level"
+MARA,MTART,Material Type,CHAR4,"HAWA trading, ROH raw, HALB semi, FERT finished, VERP packaging, NLAG non-stock, DIEN service"
+MARA,MBRSH,Industry Sector,CHAR1,H = retail
+MARA,MATKL,Material Group,CHAR9,Merchandise category
+MARA,MEINS,Base Unit of Measure,UNIT3,Unit the material is stocked in
+MARA,BISMT,Old Material Number,CHAR18,Legacy predecessor article number
+MARA,EAN11,EAN / GTIN,CHAR13,Barcode; must pass the GTIN-13 check digit and be unique per article
+MARA,NUMTP,EAN Category,CHAR2,Numbering scheme of the EAN
+MARA,BRGEW,Gross Weight,QUAN,Gross weight in GEWEI
+MARA,NTGEW,Net Weight,QUAN,Net weight; can never exceed the gross weight
+MARA,GEWEI,Weight Unit,UNIT3,Unit for BRGEW/NTGEW
+MARA,MSTAE,Cross-Plant Material Status,CHAR2,Blocks the material across all plants
+MARA,LVORM,Deletion Indicator,CHAR1,Flagged for deletion at client level
+MARA,ERSDA,Created On,DATE,Record creation date
+MARA,ERNAM,Created By,CHAR12,User who created the record
+MAKT,MATNR,Material Number,CHAR18,Foreign key to MARA
+MAKT,SPRAS,Language Key,CHAR2,Language of the description
+MAKT,MAKTX,Material Description,CHAR40,Article description - the field that says what the material IS
+MARC,MATNR,Material Number,CHAR18,Foreign key to MARA
+MARC,WERKS,Plant,CHAR4,Plant the material is extended to
+MARC,EKGRP,Purchasing Group,CHAR3,Mandatory when BESKZ = 'F'
+MARC,DISPO,MRP Controller,CHAR3,Planner responsible
+MARC,DISMM,MRP Type,CHAR2,"PD deterministic, VB reorder point, ND no planning"
+MARC,BESKZ,Procurement Type,CHAR1,"F external, E in-house, X both"
+MARC,PLIFZ,Planned Delivery Time,DEC3,Days; must be > 0 for externally procured
+MARC,EISBE,Safety Stock,QUAN,Never negative
+MARC,MINBE,Reorder Point,QUAN,Used with MRP type VB
+MARC,MAABC,ABC Indicator,CHAR1,Value classification
+MARC,MMSTA,Plant-Specific Material Status,CHAR2,Blocks the material in this plant
+MARC,LVORM,Deletion Indicator,CHAR1,Flagged for deletion at plant level
+MBEW,MATNR,Material Number,CHAR18,Foreign key to MARA
+MBEW,BWKEY,Valuation Area,CHAR4,Equals the plant in this system
+MBEW,VPRSV,Price Control,CHAR1,"S standard price, V moving average"
+MBEW,BKLAS,Valuation Class,CHAR4,Drives account determination; must fit MTART
+MBEW,VERPR,Moving Average Price,CURR,Must be > 0 when VPRSV = 'V'
+MBEW,STPRS,Standard Price,CURR,Must be > 0 when VPRSV = 'S'
+MBEW,PEINH,Price Unit,DEC5,Prices are per PEINH units; never 0
+MBEW,LBKUM,Total Valuated Stock,QUAN,Total stock in the valuation area
+MBEW,SALK3,Total Stock Value,CURR,Value of LBKUM; 0 with stock on hand is an error
+MARD,MATNR,Material Number,CHAR18,Foreign key to MARA
+MARD,WERKS,Plant,CHAR4,Plant; must have a MARC segment
+MARD,LGORT,Storage Location,CHAR4,Storage location within the plant
+MARD,LABST,Unrestricted Stock,QUAN,Never negative
+MARD,INSME,Stock in Quality Inspection,QUAN,Quantity held for inspection
+MARD,SPEME,Blocked Stock,QUAN,Quantity blocked
+MARD,LGPBE,Storage Bin,CHAR10,Bin within the storage location
+MARD,LVORM,Deletion Indicator,CHAR1,Flagged for deletion at storage location level
+MVKE,MATNR,Material Number,CHAR18,Foreign key to MARA
+MVKE,VKORG,Sales Organization,CHAR4,Sales org the material is sold by
+MVKE,VTWEG,Distribution Channel,CHAR2,"10 store, 20 online"
+MVKE,DWERK,Delivering Plant,CHAR4,Must have a MARC segment
+MVKE,VERSG,Material Statistics Group,CHAR1,Statistics update group
+MVKE,KONDM,Material Pricing Group,CHAR2,Pricing group
+MVKE,KTGRM,Account Assignment Group,CHAR2,Mandatory for billing
+MVKE,MTPOS,Item Category Group,CHAR4,Drives sales order item category
+MVKE,MVGR1,Material Group 1,CHAR3,Free material grouping
+MVKE,LVORM,Deletion Indicator,CHAR1,Flagged for deletion at sales level
+ASMD,ASNUM,Service Number,CHAR18,Primary key
+ASMD,ASTYP,Service Category,CHAR4,Service type; 'SERV' for external services
+ASMD,MATKL,Service Group,CHAR9,Material/service group for reporting
+ASMD,MEINS,Base Unit of Measure,UNIT3,"Unit the service is ordered in (STD, M2, ST, ...)"
+ASMD,BKLAS,Valuation Class,CHAR4,Valuation class for account determination
+ASMD,TAXIM,Tax Indicator,CHAR2,Tax indicator for the service
+ASMD,LOEKZ,Deletion Indicator,CHAR1,Marked for deletion
+ASMD,ERNAM,Created By,CHAR12,User who created the record
+ASMD,ERDAT,Created On,DATE,Record creation date
+ASMDT,ASNUM,Service Number,CHAR18,Foreign key to ASMD
+ASMDT,SPRAS,Language Key,CHAR2,Language of the short text
+ASMDT,ASKTX,Service Short Text,CHAR40,Description of the service - the only field that says what the service IS
+BUT000,PARTNER,Business Partner Number,CHAR10,Primary key
+BUT000,TYPE,BP Category,CHAR1,"1 person, 2 organisation, 3 group"
+BUT000,BU_GROUP,BP Grouping,CHAR4,Drives the partner number range
+BUT000,BPKIND,BP Type,CHAR4,Additional classification
+BUT000,NAME_ORG1,Organisation Name 1,CHAR40,Mandatory when TYPE = 2
+BUT000,NAME_ORG2,Organisation Name 2,CHAR40,Additional name
+BUT000,NAME_FIRST,First Name,CHAR40,Mandatory when TYPE = 1
+BUT000,NAME_LAST,Last Name,CHAR40,Mandatory when TYPE = 1
+BUT000,BU_SORT1,Search Term 1,CHAR20,Search term
+BUT000,XBLCK,Central Block,CHAR1,Blocks the BP in every role
+BUT000,XDELE,Central Deletion Flag,CHAR1,Flagged for deletion
+BUT000,CRDAT,Created On,DATE,Creation date
+BUT000,CRNAM,Created By,CHAR12,Creating user
+BUT100,PARTNER,Business Partner Number,CHAR10,Foreign key to BUT000
+BUT100,RLTYP,BP Role,CHAR6,"FLVN00 FI vendor, FLVN01 purchasing, FLCU00 FI customer, FLCU01 sales"
+BUT100,VALID_FROM,Valid From,DATE,Role validity start
+BUT100,VALID_TO,Valid To,DATE,Role validity end
+BUT020,PARTNER,Business Partner Number,CHAR10,Foreign key to BUT000
+BUT020,ADDRNUMBER,Address Number,CHAR10,Foreign key to ADRC
+BUT020,XDFADR,Standard Address Flag,CHAR1,X marks the standard address
+ADRC,ADDRNUMBER,Address Number,CHAR10,Primary key
+ADRC,NAME1,Name,CHAR40,Name held on the address record
+ADRC,STREET,Street,CHAR60,Street name
+ADRC,HOUSE_NUM1,House Number,CHAR10,House number
+ADRC,CITY1,City,CHAR40,City
+ADRC,POST_CODE1,Postal Code,CHAR10,Postal code
+ADRC,COUNTRY,Country Key,CHAR3,Required for tax and output determination
+ADRC,REGION,Region,CHAR3,State or province
+ADRC,TEL_NUMBER,Telephone,CHAR30,Telephone number
+ADRC,SMTP_ADDR,Email Address,CHAR241,Email address
+BUT0ID,PARTNER,Business Partner Number,CHAR10,Foreign key to BUT000
+BUT0ID,IDTYPE,Identification Type,CHAR6,"DEVAT VAT, DE0 tax number, INGST GSTIN"
+BUT0ID,IDNUMBER,Identification Number,CHAR60,Tax or registration number; two BPs sharing one are very likely the same entity
+BUT0ID,COUNTRY,Country,CHAR3,Issuing country
+CVI_VEND_LINK,PARTNER,Business Partner Number,CHAR10,Foreign key to BUT000
+CVI_VEND_LINK,LIFNR,Vendor Account Number,CHAR10,Classic vendor in LFA1
+CVI_CUST_LINK,PARTNER,Business Partner Number,CHAR10,Foreign key to BUT000
+CVI_CUST_LINK,KUNNR,Customer Account Number,CHAR10,Classic customer in KNA1

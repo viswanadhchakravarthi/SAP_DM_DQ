@@ -116,8 +116,27 @@ def _read_csv(tmp_path: Path, display_name: str) -> pd.DataFrame:
     return df
 
 
-def save_table(client_id: str, original_filename: str, tmp_path: Path) -> Dict[str, Any]:
-    """Validate an uploaded table CSV and store it as <TABLE>.csv (replacing that table)."""
+def _safe_subdir(subdir: Optional[str]) -> str:
+    """Sanitized relative folder inside the workspace, or "" - never escapes it."""
+    if not subdir:
+        return ""
+    parts = []
+    for raw in Path(str(subdir)).parts:
+        part = re.sub(r"[^A-Za-z0-9_-]+", "_", raw).strip("._")
+        if part and part not in (".", ".."):
+            parts.append(part)
+    return "/".join(parts)
+
+
+def save_table(client_id: str, original_filename: str, tmp_path: Path,
+               subdir: Optional[str] = None) -> Dict[str, Any]:
+    """Validate an uploaded table CSV and store it as <TABLE>.csv (replacing that table).
+
+    ``subdir`` optionally files it under a folder inside the workspace, so a
+    client can group its tables by business object. The table name comes from the
+    file name either way, so the folder is presentation only (see
+    data_loader.discover_table_files, which searches recursively).
+    """
     try:
         _safe_filename(original_filename)
         try:
@@ -131,8 +150,16 @@ def save_table(client_id: str, original_filename: str, tmp_path: Path) -> Dict[s
             dictionary = meta.get("dictionary")
             if dictionary and re.sub(r"[^A-Z0-9_]+", "_", Path(dictionary["file"]).stem.upper()).strip("_") == table:
                 raise WorkspaceError(f"'{original_filename}' has the same name as the data dictionary")
-            target = f"{table}.csv"
-            os.replace(tmp_path, workspace_dir(client_id) / target)
+            folder = _safe_subdir(subdir)
+            target = f"{folder}/{table}.csv" if folder else f"{table}.csv"
+            previous = (meta.get("tables", {}).get(table) or {}).get("file")
+            destination = workspace_dir(client_id) / target
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            os.replace(tmp_path, destination)
+            # A table that moved to a different folder must not be left behind twice,
+            # or discovery would see the same table under two paths and refuse the run.
+            if previous and previous != target:
+                (workspace_dir(client_id) / previous).unlink(missing_ok=True)
             meta.setdefault("tables", {})[table] = {
                 "file": target,
                 "original_name": Path(original_filename).name,
@@ -197,16 +224,21 @@ def remove_table(client_id: str, table: str) -> Dict[str, Any]:
 
 
 def seed_from_folder(client_id: str, source_dir: str, dictionary_file: str) -> Dict[str, Any]:
-    """Copy an existing data folder (e.g. the repo's data/) into a client's workspace."""
+    """Copy an existing data folder (e.g. the repo's data/) into a client's workspace.
+
+    Recursive, and the source's folder structure is preserved, so a source laid
+    out by business object keeps that layout in the workspace.
+    """
     source = Path(source_dir)
     tmp = new_upload_path(client_id)
     shutil.copyfile(source / dictionary_file, tmp)
     save_dictionary(client_id, dictionary_file, tmp)
-    for path in sorted(source.glob("*.csv")):
+    for path in sorted(source.rglob("*.csv")):
         if path.name.lower() != dictionary_file.lower():
+            folder = path.relative_to(source).parent.as_posix()
             tmp = new_upload_path(client_id)
             shutil.copyfile(path, tmp)
-            save_table(client_id, path.name, tmp)
+            save_table(client_id, path.name, tmp, subdir=None if folder == "." else folder)
     return get_workspace(client_id)
 
 

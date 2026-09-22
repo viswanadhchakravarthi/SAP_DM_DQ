@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project context and working role
+
+This repo is a **POC** for an SAP Data Migration & Data Quality platform. The current focus is the **Data Profiling Agent**, meaning the explorer pipeline and its review loop. Cleansing, transformation, load and reconciliation are not built yet, so don't scaffold them unless asked.
+
+Work on it as a **Senior AI/ML Engineer (Agentic AI, Data Engineering, Enterprise Data Quality)**:
+- Judge changes against production concerns: reliability, security, data privacy, observability, evaluation, maintainability and deployment. Say so when a change weakens one of them, including changes the user asked for.
+- **Don't over-engineer the POC.** Build what the task needs at POC grade and name the production gap in one line, citing the relevant row of "POC vs production" below, instead of building the production version. Add no Kubernetes, auth providers, queues, ORMs or new infrastructure unless asked.
+- Keep the design invariants that make the POC credible (see "Invariants" below). They are cheap now and expensive to add back later.
+- Verify behavior by running the pipeline on the synthetic clients in `client_data/`, then compare findings against that client's answer key (see "Data in this repo"). Don't just reason about the code.
+
 ## Overview
 
 `SAP_DM_DQ` is a memory-augmented agent for SAP data migration / data-quality profiling. It profiles tables statistically, has an LLM propose pandas checks, runs those checks locally in a sandbox, has an LLM judge the results, and lets a human approve/reject findings through a review UI before they are promoted into a reusable skill library.
@@ -34,10 +44,21 @@ python -m explorer_agent.memory.promotion [--run-id <id>] [--dedup-threshold <fl
 
 # Run the human review web app (serves review_app/static/ + JSON API):
 # page 1 (/) picks the client and uploads its data, page 2 (/review.html?client=<id>) reviews findings
-uvicorn review_app.main:app --reload
+uvicorn review_app.main:app --reload   # same as start_appl.bat
 ```
 
 There is no test suite, linter, or `pyproject.toml` configured in this repo currently.
+
+`clean_memory.bat` **wipes all agent state**: it deletes `logs/`, `memory_store/` (skills, vector index, per-client decisions and duplicate rules) and `episodic_memory.db`. Never run it, or anything equivalent, without explicit user confirmation. Its username/password prompt is a local speed bump, not access control.
+
+On this machine `git` is not on PATH. Use GitHub Desktop's bundled `git.exe` (`%LOCALAPPDATA%\GitHubDesktop\app-*\resources\app\git\cmd\git.exe`).
+
+### Data in this repo
+
+- `client_data/<client_id>/` holds **synthetic** SAP vendor-master clients (`acme-retail`, `danawsiv`, `medhovis-therapeutics`, `tarvarka-pvt-ltd`). Each has `Data_Dictionary.csv`, table CSVs and `workspace.json`. Answer keys list the seeded defects (`Object,Table,Key_Field,Key,Org_Key,Field,Issue_Type,Issue_Description`). When you change a dataset, update its answer key in the same change. `sample_output/Answer_Key.csv` is the original reference key.
+- **Answer keys live one level above the client folders**, as `client_data/<client_id>{_,-}{ANSWER_KEY,Answer_Key}.csv` (the naming is inconsistent). Never put one inside `client_data/<client_id>/`. `data_loader.discover_table_files` treats every CSV under `--data-dir` as a table, recursively, except the dictionary. A key inside the client folder would be profiled as table `ANSWER_KEY` and sent to the planner LLM, leaking the answers into the run. Runs are safe because the review app always passes `--data-dir client_data/<client_id>`. Pointing a CLI run at `client_data/` itself also fails, because every client has an `LFA1.csv` and discovery refuses two files with the same table name.
+- `.gitignore` lists `client_data/` and (commented) `episodic_memory.db`, but both **are already tracked in git**, so ignore rules don't apply to them. That is acceptable for synthetic data. Real client data must never be committed. Production would untrack both and keep client data outside the repo entirely.
+- There is **no evaluation harness yet**. Nothing scores findings against the answer keys automatically, so recall and precision are measured by hand today.
 
 ### Configuration
 
@@ -52,6 +73,7 @@ All relative paths (`EPISODIC_DB_PATH`, `LOG_DIR`, `MEMORY_BASE_DIR`) are resolv
 `Config.LLM_PROVIDER` (`llm.provider` / `--llm-provider`: `google`, `groq` or `local`) is the primary backend; `Config.LLM_FALLBACK_PROVIDERS` (`llm.fallback_providers` / `--fallback-providers`) are tried in order after it. `build_llms()` expands this into an ordered model chain (Groq contributes one candidate per entry in `llm.groq.models`) and returns an `LLMBundle` whose planner / reflector / duplicate-rule runnables are `first.with_fallbacks(rest)`. Transient errors are retried inside each provider SDK (`llm.max_retries`, kept low so overloads fail over fast); malformed/missing structured output is retried on the same model (`llm.structured_output_retries`); any remaining failure moves to the next model. When all fail, `LLMChainExhaustedError` is raised: `main.py` skips that table (exit code 1) and `cache_runner.py` falls back to its rule-based heuristic. `metrics.llm_call_failures` / `llm_fallback_calls` count this. Groq models are per-entry dicts in `llm.groq.models` (`structured_output_method`, `reasoning_effort`, `max_tokens`) — `json_schema` is far more reliable than tool-calling for the large `CheckPlan` schema. `Config.validate()` only requires credentials for the primary provider; a fallback missing its key is skipped with a warning. Callers (`graph.py`, `cache_runner.py`) just call `.invoke()` and are unaware of the chain.
 
 The local model is loaded lazily (`llm_providers._get_local_llm()`) and only when `local` is in the chain; provider SDKs are imported per provider, so importing `explorer_agent.main` never pulls `llama_cpp` into memory.
+
 ## Architecture
 
 ### Tri-tier memory system
@@ -121,10 +143,40 @@ LLM-generated pandas code executes in a separate `multiprocessing` process (spaw
 
 Two pages. **Page 1** (`static/index.html` + `setup.js`): pick a client from a typeahead of existing clients or "+ Add client" (created on its first upload), then upload that client's data dictionary and table CSVs. **Page 2** (`static/review.html?client=<client_id>` + `app.js`): the findings dashboard, fixed to that client — client, dictionary and tables are shown read-only in the header and the Run dialog; changing them means going back to page 1 ("Change client / data"). Missing/unknown `client` redirects to page 1.
 
-**Client workspaces and dynamic tables.** Uploaded files live in `explorer_agent/client_workspace.py`'s per-client folder, `data.client_data_dir` (`client_data/<client_id>/`, gitignored raw client data, separate from `memory_store/` knowledge): the dictionary under its uploaded name, each table as `<TABLE>.csv`, and `workspace.json` metadata (rows, columns, upload time). Tables are not configured anywhere: the table name comes from the file name (`data_loader.table_name_from_filename`, `lfa1.csv` → `LFA1`) and `main.py` profiles every CSV in `--data-dir` except the dictionary (`data_loader.discover_table_files`). Uploads are the raw request body (`PUT /api/clients/{id}/dictionary?filename=…`, `PUT /api/clients/{id}/tables?filename=…`, no `python-multipart` dependency), streamed to a temp file, size-capped by `data.max_upload_mb`, then validated (CSV with rows; dictionary needs `Table`/`Field`/`Description`). Other endpoints: `POST /api/clients`, `GET /api/clients/{id}/workspace`, `DELETE /api/clients/{id}/tables/{table}`, `GET /api/dictionary?client_id=` (tooltips from that client's dictionary). `POST /api/jobs/run-explorer` takes only `client_id` plus LLM options — the server builds `--client/--data-dir/--dictionary-file` from the workspace and refuses clients without a dictionary and at least one table. Duplicate detection works for any uploaded table because its matching rules are drafted by the LLM from that client's dictionary and column statistics on first sight of a schema, then reused from that client's memory (see "4-pillar classification and duplicate governance").
+**Client workspaces and dynamic tables.** Uploaded files live in `explorer_agent/client_workspace.py`'s per-client folder, `data.client_data_dir` (`client_data/<client_id>/`, gitignored raw client data, separate from `memory_store/` knowledge): the dictionary under its uploaded name, each table as `<TABLE>.csv`, and `workspace.json` metadata (rows, columns, upload time). Tables are not configured anywhere: the table name comes from the file name (`data_loader.table_name_from_filename`, `lfa1.csv` → `LFA1`) and `main.py` profiles every CSV under `--data-dir`, **searched recursively**, except the dictionary (`data_loader.discover_table_files`). A client can group tables by business object (`vendor-master/LFA1.csv`). The folder is presentation only: the table is still `LFA1`, and two files that map to the same table name abort the run. `client_workspace.save_table(..., subdir=)` and `seed_from_folder` preserve that layout. The loader reads every column as text and restores numeric measures using the dictionary's SAP data type (`apply_column_types`), because pandas inference strips the zero-padding from keys like LIFNR/MATNR. Uploads are the raw request body (`PUT /api/clients/{id}/dictionary?filename=…`, `PUT /api/clients/{id}/tables?filename=…`, no `python-multipart` dependency), streamed to a temp file, size-capped by `data.max_upload_mb`, then validated (CSV with rows; dictionary needs `Table`/`Field`/`Description`). Other endpoints: `POST /api/clients`, `GET /api/clients/{id}/workspace`, `DELETE /api/clients/{id}/tables/{table}`, `GET /api/dictionary?client_id=` (tooltips from that client's dictionary). `POST /api/jobs/run-explorer` takes only `client_id` plus LLM options — the server builds `--client/--data-dir/--dictionary-file` from the workspace and refuses clients without a dictionary and at least one table. Duplicate detection works for any uploaded table because its matching rules are drafted by the LLM from that client's dictionary and column statistics on first sight of a schema, then reused from that client's memory (see "4-pillar classification and duplicate governance").
 
 FastAPI app (`review_app/main.py`) serving a JSON API over `episodic_store` plus the promotion pipeline, with `review_app/static/` (vanilla HTML/CSS/JS) mounted last so `/api/*` routes take precedence. Key endpoints: `/api/runs`, `/api/findings` (filterable by `category`/`rule_scope`), `/api/findings/{id}/decision` (human approve/reject — the gate that `promotion.py` reads from), `/api/promote`, `/api/skills`, `/api/stats` (counts by category/rule_scope), plus per-row endpoints for reviewing individual `detail_rows`: `/api/findings/{id}/items`, `/api/finding-items/{id}/decision`, `/api/finding-items/{id}/verdict` and `/api/finding-items/{id}/autofill` (the `COMPLETENESS` auto-fix workflow), and duplicate governance (`/api/findings/{id}/duplicate-groups`, `/api/findings/{id}/duplicate-groups/{group_id}/verdict`), plus the background run endpoints (`/api/jobs/run-explorer` — accepts `duplicates_only` — `/api/jobs/current`, `/api/jobs/{id}`, `/api/jobs/{id}/stop`) — see "4-pillar classification and duplicate governance" above.
 
 ### Local LLM support (`explorer_agent/local_llms.py`)
 
 `QwenCoderGGUFChatModel` wraps a local GGUF model (via `llama-cpp-python`) as a LangChain `BaseChatModel`, emulating structured output/tool-calling through llama.cpp's grammar-constrained JSON decoding rather than prompt-based coaxing. It supports exactly one bound tool/schema at a time. Used when `local` appears in the provider chain built by `llm_providers.build_llms()`, alongside `ChatGoogleGenerativeAI` (Gemini) and `ChatGroq`. This module deliberately does NOT import `llama_cpp` at module level (it's imported unconditionally by `llm_providers.py`) — the `Llama` instance is constructed only inside `llm_providers._get_local_llm()`.
+
+`review_app/job_manager.py` runs `python -m explorer_agent.main` as a child process and keeps a 1000-line log tail in memory. It allows **one run at a time**, because everything shares one SQLite file and possibly the local LLM singleton. Job state is lost when uvicorn restarts. (`review_app/_init__.py` is misnamed and has no effect. The package imports as a namespace package.)
+
+## Invariants (do not break without an explicit decision)
+
+1. **No raw data reaches an LLM.** Planner input is the allowlisted profile (`table_profiler.py`). Reflector input passes through `privacy_guard.sanitize_result_for_llm`. Duplicate-rule drafting sees only metadata plus `mask_value` samples. `detail_code`/`detail_rows` stay local. Any new LLM call site needs the same treatment. Adding a field to a prompt means adding it to an allowlist, never removing a filter.
+2. **The LLM budget is bounded and independent of column count.** Each table costs 2 calls (planner + reflector), plus 1 duplicate-rule call the first time a client's schema is seen. Cache hits cost less. A feature that adds per-column or per-row LLM calls needs a stated reason and must show up in `metrics.py`.
+3. **Deterministic where business meaning isn't required.** Matching, execution and extraction are plain Python. The LLM decides only *what a column means* and *what to check*, and those decisions are persisted (duplicate rules, skills) so later runs are free and auditable.
+4. **Human gate before reuse.** Nothing becomes a skill without `APPROVED` status plus `reusable` plus `check_code` (`promotion.py`). Remembered duplicate decisions are per client, keyed by record fingerprint.
+5. **Procedural JSON is the source of truth; Chroma is derived.** Only `chroma_store.py` imports `chromadb`.
+6. **LLM-generated code runs only in `sandbox.py`**, never through `exec` in the main process.
+7. **Configuration goes through `Config`.** Non-secrets live in `config.yaml` with an env override. Secrets live only in `.env`. Never hard-code paths or keys.
+
+## POC vs production
+
+This lists what is POC-grade today and what production would need. Use it to name gaps precisely. Don't close them unprompted.
+
+| Area | Today (POC, verified in code) | Required before real client data / production |
+|---|---|---|
+| **Sandbox** | `multiprocessing` spawn, restricted builtins, import blocklist, wall-clock timeout. `resource` rlimits are Unix-only, so **on Windows (the dev machine) only the timeout applies**, with no memory or CPU cap. | Container or microVM isolation (gVisor/Firecracker), no network, read-only FS, enforced memory/CPU limits. Consider replacing free-form code with a check DSL or a vetted primitive library. |
+| **Privacy** | Heuristic masking plus allowlisted profiles. Masked samples and the client dictionary are sent to hosted LLMs (Gemini/Groq). | A DPA and data-residency review per provider (or a local/VPC-hosted model), a real PII classifier, per-client opt-in to hosted LLMs, prompt/response audit logging, retention policy. |
+| **Data at rest** | Raw client CSVs in `client_data/`, row-level PII in `finding_items` (SQLite). Both are **committed to git** (synthetic only). | Untrack from git. Encrypted storage outside the repo, per-client access control, retention and deletion (right-to-erasure) for `finding_items`/`record_data`. |
+| **Review app security** | No authentication or authorization, CORS `*`, uploads capped by size only. Reviewer identity is not recorded on decisions. | SSO/OIDC, role-based access per client, reviewer identity plus an audit trail on every approve/reject/verdict (this is the governance gate), CSRF/CORS tightening, upload content scanning. |
+| **Reliability** | Provider fallback chain, structured-output retries, failed tables skipped with exit code 1. One run at a time. Job state is in memory. | A durable job queue (worker plus retries plus idempotent runs), resumable per-table progress, Postgres instead of SQLite for concurrent writers, pinned model versions. |
+| **Evaluation** | Answer keys exist per synthetic client, but there is **no scoring harness**. Keys are kept out of runs only by where they are stored (see "Data in this repo"). | A harness that scores findings and duplicate groups against answer keys (precision/recall per pillar and issue type), run on every prompt, model or rule change. Regression gate in CI. Track reviewer-approval rate as an online quality signal. |
+| **Observability** | Python logging to console plus a rotating `logs/` file. `RunMetrics` counts LLM calls and cache hits per process. `runs.model` records the primary model only. | Structured logs with run/table/finding correlation IDs, LLM tracing (prompt/version/model/tokens/latency/cost per call), recording which fallback model actually answered, dashboards for failure and fallback rates. |
+| **Maintainability** | No tests, linter or type checking. Additive `ALTER TABLE` migrations in `episodic_store._migrate`. Legacy fields remain (`max_iterations_per_column`, golden-record columns). | pytest around deterministic parts first (duplicate detector, rule compiler, loader typing, privacy guard). Ruff plus mypy, versioned migrations (Alembic), prompt versioning. |
+| **Deployment** | Local `uvicorn --reload`, `.venv`, Windows-specific llama-cpp wheel. | A container image, config per environment, a secrets manager instead of `.env`, CI/CD, and a separate worker from the API. |
+
+When a task touches one of these rows, prefer the POC-sized step that doesn't block the production path. Example: add a `reviewer` column now even without SSO, rather than building SSO.
