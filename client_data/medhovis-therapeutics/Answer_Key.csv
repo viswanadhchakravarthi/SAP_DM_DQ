@@ -1,0 +1,513 @@
+Table,LIFNR,Org_Key,Field,Issue_Type,Issue_Description
+LFA1,0000000965,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000966,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000967,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000968,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000969,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000970,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000971,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000972,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000973,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000974,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000975,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000976,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000977,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000978,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000979,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000980,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000981,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000982,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000983,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000984,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000985,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000986,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000987,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000988,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000989,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000990,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000991,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000992,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000993,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000994,,ERDAT,Dormant Vendor,Clinical vendor created in 2013 with zero company code or purchasing org extensions (dormant master data).
+LFA1,0000000102,,STCD1,Duplicate Tax Number,Shared tax number 36AAACD1234F1Z8 with vendor 0000000101 (Divi's Laboratories Custom Synthesis). Duplicate vendor legal entity.
+LFA1,0000000104,,STCD1,Duplicate Tax Number,Shared tax number CHE-105.824.918 with vendor 0000000103 (Lonza Biologics Custom Synthesis AG). Duplicate vendor legal entity.
+LFA1,0000000106,,STCD1,Duplicate Tax Number,Shared tax number DE812948194 with vendor 0000000105 (Schott Pharma Borosilicate Vials). Duplicate vendor legal entity.
+LFA1,0000000108,,STCD1,Duplicate Tax Number,Shared tax number US22-1928471 with vendor 0000000107 (West Pharmaceutical Services). Duplicate vendor legal entity.
+LFA1,0000000110,,STCD1,Duplicate Tax Number,Shared tax number 36AAACH9876M1Z2 with vendor 0000000109 (Hetero Drugs Bulk API Manufacturing). Duplicate vendor legal entity.
+LFA1,0000000112,,STCD1,Duplicate Tax Number,Shared tax number DE918274619 with vendor 0000000111 (Merck KGaA MilliporeSigma Life Science). Duplicate vendor legal entity.
+LFA1,0000000114,,STCD1,Duplicate Tax Number,Shared tax number US41-9872134 with vendor 0000000113 (Catalent Pharma Solutions). Duplicate vendor legal entity.
+LFA1,0000000116,,STCD1,Duplicate Tax Number,Shared tax number DE560027313 with vendor 0000000115 (Sartorius Stedim Biotech). Duplicate vendor legal entity.
+LFA1,0000000121,,NAME1,Fuzzy Duplicate,"Near duplicate supplier name 'Stevanato Group Ompi Vials' matches 'Stevanato Group Ompi Sterile Vials' (0000000120) in Milan, IT."
+LFA1,0000000123,,NAME1,Fuzzy Duplicate,"Near duplicate supplier name 'Vetter Pharma Fertigung GmbH' matches 'Vetter Pharma Sterile Fill & Finish' (0000000122) in Mannheim, DE."
+LFA1,0000000125,,NAME1,Fuzzy Duplicate,"Near duplicate supplier name 'World Courier Life Science Logistics' matches 'World Courier Biopharma Cold-Chain' (0000000124) in Durham, US."
+LFA1,0000000127,,NAME1,Fuzzy Duplicate,"Near duplicate supplier name 'Granules India API Division' matches 'Granules India Active Pharmaceutical' (0000000126) in Hyderabad, IN."
+LFA1,0000000129,,NAME1,Fuzzy Duplicate,"Near duplicate supplier name 'Bachem AG Peptide Synthesis' matches 'Bachem Peptide Synthesis Group' (0000000128) in Schaffhausen, CH."
+LFA1,0000000131,,NAME1,Fuzzy Duplicate,"Near duplicate supplier name 'Gerresheimer Boleslawiec Glass' matches 'Gerresheimer Primary Packaging Glass' (0000000130) in Frankfurt, DE."
+LFA1,0000000133,,NAME1,Fuzzy Duplicate,"Near duplicate supplier name 'IQVIA Biotech Clinical Trials' matches 'IQVIA Clinical Research Solutions' (0000000132) in Durham, US."
+LFA1,0000000135,,NAME1,Fuzzy Duplicate,"Near duplicate supplier name 'Aurobindo Pharma Active Materials' matches 'Aurobindo Pharma Bulk Chemicals' (0000000134) in Mumbai, IN."
+LFA1,0000000150,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country CH but is blank.
+LFA1,0000000151,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country IN but is blank.
+LFA1,0000000152,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country DE but is blank.
+LFA1,0000000153,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country IN but is blank.
+LFA1,0000000154,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country CH but is blank.
+LFA1,0000000155,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country IE but is blank.
+LFA1,0000000156,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country US but is blank.
+LFA1,0000000157,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country US but is blank.
+LFA1,0000000158,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country IN but is blank.
+LFA1,0000000159,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country CH but is blank.
+LFA1,0000000160,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country IN but is blank.
+LFA1,0000000161,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country US but is blank.
+LFA1,0000000162,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country US but is blank.
+LFA1,0000000163,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country DE but is blank.
+LFA1,0000000164,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country IN but is blank.
+LFA1,0000000165,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country CH but is blank.
+LFA1,0000000166,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country US but is blank.
+LFA1,0000000167,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country CH but is blank.
+LFA1,0000000168,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country IN but is blank.
+LFA1,0000000169,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country US but is blank.
+LFA1,0000000170,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country IN but is blank.
+LFA1,0000000171,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country IN but is blank.
+LFA1,0000000172,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country US but is blank.
+LFA1,0000000173,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country CH but is blank.
+LFA1,0000000174,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country CH but is blank.
+LFA1,0000000175,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country DE but is blank.
+LFA1,0000000176,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country US but is blank.
+LFA1,0000000177,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country CH but is blank.
+LFA1,0000000178,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country US but is blank.
+LFA1,0000000179,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country US but is blank.
+LFA1,0000000180,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country IT but is blank.
+LFA1,0000000181,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country DE but is blank.
+LFA1,0000000182,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country US but is blank.
+LFA1,0000000183,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country IN but is blank.
+LFA1,0000000184,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country IN but is blank.
+LFA1,0000000185,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country IN but is blank.
+LFA1,0000000186,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country IN but is blank.
+LFA1,0000000187,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country CH but is blank.
+LFA1,0000000188,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country US but is blank.
+LFA1,0000000189,,STCD1,Missing Mandatory Field,Tax Number STCD1 is mandatory for country CH but is blank.
+LFA1,0000000195,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000196,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000197,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000198,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000199,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000200,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000201,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000202,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000203,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000204,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000205,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000206,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000207,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000208,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000209,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000210,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000211,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000212,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000213,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000214,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000215,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000216,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000217,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000218,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000219,,PSTLZ,Missing Mandatory Field,Postal Code (PSTLZ) is mandatory in LFA1 but is blank.
+LFA1,0000000225,,NAME1,Missing Mandatory Field,Vendor Name (NAME1) is mandatory in LFA1 but is blank.
+LFA1,0000000226,,NAME1,Missing Mandatory Field,Vendor Name (NAME1) is mandatory in LFA1 but is blank.
+LFA1,0000000227,,NAME1,Missing Mandatory Field,Vendor Name (NAME1) is mandatory in LFA1 but is blank.
+LFA1,0000000228,,NAME1,Missing Mandatory Field,Vendor Name (NAME1) is mandatory in LFA1 but is blank.
+LFA1,0000000229,,NAME1,Missing Mandatory Field,Vendor Name (NAME1) is mandatory in LFA1 but is blank.
+LFA1,0000000230,,NAME1,Missing Mandatory Field,Vendor Name (NAME1) is mandatory in LFA1 but is blank.
+LFA1,0000000231,,NAME1,Missing Mandatory Field,Vendor Name (NAME1) is mandatory in LFA1 but is blank.
+LFA1,0000000232,,NAME1,Missing Mandatory Field,Vendor Name (NAME1) is mandatory in LFA1 but is blank.
+LFA1,0000000233,,NAME1,Missing Mandatory Field,Vendor Name (NAME1) is mandatory in LFA1 but is blank.
+LFA1,0000000234,,NAME1,Missing Mandatory Field,Vendor Name (NAME1) is mandatory in LFA1 but is blank.
+LFA1,0000000240,,LAND1,Missing Mandatory Field,Country Key (LAND1) is mandatory in LFA1 but is blank.
+LFA1,0000000241,,LAND1,Missing Mandatory Field,Country Key (LAND1) is mandatory in LFA1 but is blank.
+LFA1,0000000242,,LAND1,Missing Mandatory Field,Country Key (LAND1) is mandatory in LFA1 but is blank.
+LFA1,0000000243,,LAND1,Missing Mandatory Field,Country Key (LAND1) is mandatory in LFA1 but is blank.
+LFA1,0000000244,,LAND1,Missing Mandatory Field,Country Key (LAND1) is mandatory in LFA1 but is blank.
+LFA1,0000000245,,LAND1,Missing Mandatory Field,Country Key (LAND1) is mandatory in LFA1 but is blank.
+LFA1,0000000246,,LAND1,Missing Mandatory Field,Country Key (LAND1) is mandatory in LFA1 but is blank.
+LFA1,0000000247,,LAND1,Missing Mandatory Field,Country Key (LAND1) is mandatory in LFA1 but is blank.
+LFA1,0000000248,,LAND1,Missing Mandatory Field,Country Key (LAND1) is mandatory in LFA1 but is blank.
+LFA1,0000000249,,LAND1,Missing Mandatory Field,Country Key (LAND1) is mandatory in LFA1 but is blank.
+LFA1,0000000255,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000256,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000257,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000258,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000259,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000260,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000261,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000262,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000263,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000264,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000265,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000266,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000267,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000268,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000269,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000270,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000271,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000272,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000273,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000274,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000275,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000276,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000277,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000278,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000279,,SORTL,Missing Mandatory Field,Search Term (SORTL) is required for matchcode search but is blank.
+LFA1,0000000285,,KTOKK,Missing Mandatory Field,Account Group (KTOKK) is mandatory for S/4HANA BP qualification but is blank.
+LFA1,0000000286,,KTOKK,Missing Mandatory Field,Account Group (KTOKK) is mandatory for S/4HANA BP qualification but is blank.
+LFA1,0000000287,,KTOKK,Missing Mandatory Field,Account Group (KTOKK) is mandatory for S/4HANA BP qualification but is blank.
+LFA1,0000000288,,KTOKK,Missing Mandatory Field,Account Group (KTOKK) is mandatory for S/4HANA BP qualification but is blank.
+LFA1,0000000289,,KTOKK,Missing Mandatory Field,Account Group (KTOKK) is mandatory for S/4HANA BP qualification but is blank.
+LFA1,0000000290,,KTOKK,Missing Mandatory Field,Account Group (KTOKK) is mandatory for S/4HANA BP qualification but is blank.
+LFA1,0000000291,,KTOKK,Missing Mandatory Field,Account Group (KTOKK) is mandatory for S/4HANA BP qualification but is blank.
+LFA1,0000000292,,KTOKK,Missing Mandatory Field,Account Group (KTOKK) is mandatory for S/4HANA BP qualification but is blank.
+LFA1,0000000293,,KTOKK,Missing Mandatory Field,Account Group (KTOKK) is mandatory for S/4HANA BP qualification but is blank.
+LFA1,0000000294,,KTOKK,Missing Mandatory Field,Account Group (KTOKK) is mandatory for S/4HANA BP qualification but is blank.
+LFA1,0000000295,,KTOKK,Missing Mandatory Field,Account Group (KTOKK) is mandatory for S/4HANA BP qualification but is blank.
+LFA1,0000000296,,KTOKK,Missing Mandatory Field,Account Group (KTOKK) is mandatory for S/4HANA BP qualification but is blank.
+LFA1,0000000297,,KTOKK,Missing Mandatory Field,Account Group (KTOKK) is mandatory for S/4HANA BP qualification but is blank.
+LFA1,0000000298,,KTOKK,Missing Mandatory Field,Account Group (KTOKK) is mandatory for S/4HANA BP qualification but is blank.
+LFA1,0000000299,,KTOKK,Missing Mandatory Field,Account Group (KTOKK) is mandatory for S/4HANA BP qualification but is blank.
+LFA1,0000000305,,LAND1,Invalid Country Key,Invalid ISO country code 'IND' (ISO 3166-1 alpha-2 is 'IN').
+LFA1,0000000306,,LAND1,Invalid Country Key,Invalid ISO country code 'SWI' (ISO 3166-1 alpha-2 is 'CH').
+LFA1,0000000307,,LAND1,Invalid Country Key,Invalid ISO country code 'UK' (ISO 3166-1 alpha-2 is 'GB').
+LFA1,0000000308,,LAND1,Invalid Country Key,Invalid ISO country code 'GER' (ISO 3166-1 alpha-2 is 'DE').
+LFA1,0000000309,,LAND1,Invalid Country Key,Invalid ISO country code 'USA' (SAP 2-char code is 'US').
+LFA1,0000000310,,LAND1,Invalid Country Key,Dummy country code 'XX' used during quick clinical trial vendor creation.
+LFA1,0000000315,,PSTLZ,Invalid Postal Code Format,Indian PIN code has 4 digits (expected 6 digits).
+LFA1,0000000316,,PSTLZ,Invalid Postal Code Format,Indian PIN code contaminated with text 'HYD'.
+LFA1,0000000317,,PSTLZ,Invalid Postal Code Format,Swiss postal code contains country prefix 'CH-'.
+LFA1,0000000318,,PSTLZ,Invalid Postal Code Format,US Zip code has 3 digits (expected 5 digits).
+LFA1,0000000319,,PSTLZ,Invalid Postal Code Format,City name entered in Postal Code field.
+LFA1,0000000320,,PSTLZ,Invalid Postal Code Format,German postal code contains letters / prefix 'PLZ'.
+LFA1,0000000321,,PSTLZ,Invalid Postal Code Format,Irish Eircode improperly formatted.
+LFA1,0000000325,,NAME1,Text Hygiene Violation,HTML entity '&amp;' present in legal vendor name.
+LFA1,0000000326,,NAME1,Text Hygiene Violation,HTML entity '&#39;' present in vendor name.
+LFA1,0000000327,,NAME1,Text Hygiene Violation,All-caps casing violation inconsistent with corporate MDG rules.
+LFA1,0000000328,,NAME1,Text Hygiene Violation,Trailing whitespace padding in legal vendor name.
+LFA1,0000000329,,NAME1,Text Hygiene Violation,Non-breaking space entity '&nbsp;' in vendor name.
+LFA1,0000000335,,TELF1,Invalid Phone Format,Alphanumeric text in telephone field.
+LFA1,0000000336,,TELF1,Invalid Phone Format,Dummy placeholder phone number.
+LFA1,0000000337,,TELF1,Invalid Phone Format,String 'N/A' in phone number field.
+LFB1,0000000025,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000025 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000026,2000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000026 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 2000 (LOEVM is blank)."
+LFB1,0000000027,2000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000027 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 2000 (LOEVM is blank)."
+LFB1,0000000028,2000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000028 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 2000 (LOEVM is blank)."
+LFB1,0000000029,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000029 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000030,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000030 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000031,3000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000031 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 3000 (LOEVM is blank)."
+LFB1,0000000031,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000031 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000032,5000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000032 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 5000 (LOEVM is blank)."
+LFB1,0000000033,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000033 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000034,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000034 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000035,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000035 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000036,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000036 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000037,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000037 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000038,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000038 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000039,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000039 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000040,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000040 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000041,2000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000041 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 2000 (LOEVM is blank)."
+LFB1,0000000041,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000041 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000042,4000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000042 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 4000 (LOEVM is blank)."
+LFB1,0000000042,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000042 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000043,2000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000043 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 2000 (LOEVM is blank)."
+LFB1,0000000044,3000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000044 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 3000 (LOEVM is blank)."
+LFB1,0000000045,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000045 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000046,3000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000046 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 3000 (LOEVM is blank)."
+LFB1,0000000046,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000046 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000047,2000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000047 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 2000 (LOEVM is blank)."
+LFB1,0000000048,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000048 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000049,2000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000049 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 2000 (LOEVM is blank)."
+LFB1,0000000049,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000049 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000050,3000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000050 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 3000 (LOEVM is blank)."
+LFB1,0000000050,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000050 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000051,3000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000051 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 3000 (LOEVM is blank)."
+LFB1,0000000052,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000052 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000053,2000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000053 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 2000 (LOEVM is blank)."
+LFB1,0000000053,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000053 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000054,1000,LOEVM,Cross-Table Inconsistency,"Vendor 0000000054 marked for deletion in LFA1 (LOEVM='X'), but active in LFB1 BUKRS 1000 (LOEVM is blank)."
+LFB1,0000000060,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000060 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000061,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000061 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000062,2000,SPERR,Cross-Table Inconsistency,"Vendor 0000000062 centrally blocked in LFA1 (SPERM='X'), but company code 2000 posting block SPERR is blank."
+LFB1,0000000063,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000063 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000064,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000064 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000065,2000,SPERR,Cross-Table Inconsistency,"Vendor 0000000065 centrally blocked in LFA1 (SPERM='X'), but company code 2000 posting block SPERR is blank."
+LFB1,0000000066,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000066 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000067,2000,SPERR,Cross-Table Inconsistency,"Vendor 0000000067 centrally blocked in LFA1 (SPERM='X'), but company code 2000 posting block SPERR is blank."
+LFB1,0000000068,2000,SPERR,Cross-Table Inconsistency,"Vendor 0000000068 centrally blocked in LFA1 (SPERM='X'), but company code 2000 posting block SPERR is blank."
+LFB1,0000000068,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000068 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000069,2000,SPERR,Cross-Table Inconsistency,"Vendor 0000000069 centrally blocked in LFA1 (SPERM='X'), but company code 2000 posting block SPERR is blank."
+LFB1,0000000070,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000070 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000071,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000071 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000072,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000072 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000073,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000073 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000074,5000,SPERR,Cross-Table Inconsistency,"Vendor 0000000074 centrally blocked in LFA1 (SPERM='X'), but company code 5000 posting block SPERR is blank."
+LFB1,0000000075,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000075 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000076,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000076 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000077,3000,SPERR,Cross-Table Inconsistency,"Vendor 0000000077 centrally blocked in LFA1 (SPERM='X'), but company code 3000 posting block SPERR is blank."
+LFB1,0000000078,2000,SPERR,Cross-Table Inconsistency,"Vendor 0000000078 centrally blocked in LFA1 (SPERM='X'), but company code 2000 posting block SPERR is blank."
+LFB1,0000000078,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000078 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000079,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000079 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000080,2000,SPERR,Cross-Table Inconsistency,"Vendor 0000000080 centrally blocked in LFA1 (SPERM='X'), but company code 2000 posting block SPERR is blank."
+LFB1,0000000081,2000,SPERR,Cross-Table Inconsistency,"Vendor 0000000081 centrally blocked in LFA1 (SPERM='X'), but company code 2000 posting block SPERR is blank."
+LFB1,0000000082,2000,SPERR,Cross-Table Inconsistency,"Vendor 0000000082 centrally blocked in LFA1 (SPERM='X'), but company code 2000 posting block SPERR is blank."
+LFB1,0000000083,2000,SPERR,Cross-Table Inconsistency,"Vendor 0000000083 centrally blocked in LFA1 (SPERM='X'), but company code 2000 posting block SPERR is blank."
+LFB1,0000000084,3000,SPERR,Cross-Table Inconsistency,"Vendor 0000000084 centrally blocked in LFA1 (SPERM='X'), but company code 3000 posting block SPERR is blank."
+LFB1,0000000084,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000084 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000085,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000085 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000086,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000086 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000087,2000,SPERR,Cross-Table Inconsistency,"Vendor 0000000087 centrally blocked in LFA1 (SPERM='X'), but company code 2000 posting block SPERR is blank."
+LFB1,0000000088,3000,SPERR,Cross-Table Inconsistency,"Vendor 0000000088 centrally blocked in LFA1 (SPERM='X'), but company code 3000 posting block SPERR is blank."
+LFB1,0000000089,1000,SPERR,Cross-Table Inconsistency,"Vendor 0000000089 centrally blocked in LFA1 (SPERM='X'), but company code 1000 posting block SPERR is blank."
+LFB1,0000000001,3000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 3000 but is blank.
+LFB1,0000000001,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000002,2000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000002,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000003,3000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 3000 but is blank.
+LFB1,0000000004,5000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 5000 but is blank.
+LFB1,0000000005,2000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000006,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000007,2000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000008,2000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000008,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000009,2000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000010,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000011,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000012,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000013,2000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000013,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000014,5000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 5000 but is blank.
+LFB1,0000000015,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000016,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000017,2000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000018,2000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000019,2000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000020,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000021,2000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000022,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000023,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000024,5000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 5000 but is blank.
+LFB1,0000000025,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000026,2000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000027,2000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000028,2000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000029,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000030,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000031,3000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 3000 but is blank.
+LFB1,0000000031,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000032,5000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 5000 but is blank.
+LFB1,0000000033,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000034,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000035,1000,AKONT,Missing Mandatory Field,Reconciliation Account (AKONT) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000041,2000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000041,1000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000042,4000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 4000 but is blank.
+LFB1,0000000042,1000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000043,2000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000044,3000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 3000 but is blank.
+LFB1,0000000045,1000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000046,3000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 3000 but is blank.
+LFB1,0000000046,1000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000047,2000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000048,1000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000049,2000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000049,1000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000050,3000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 3000 but is blank.
+LFB1,0000000050,1000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000051,3000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 3000 but is blank.
+LFB1,0000000052,1000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000053,2000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000053,1000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000054,1000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000055,2000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000055,1000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000056,1000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000057,2000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000058,5000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 5000 but is blank.
+LFB1,0000000058,1000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000059,2000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 2000 but is blank.
+LFB1,0000000059,1000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000060,1000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000061,1000,ZTERM,Missing Mandatory Field,Payment Terms (ZTERM) is mandatory in LFB1 for BUKRS 1000 but is blank.
+LFB1,0000000067,2000,ALL,Duplicate Primary Key,Duplicate primary key record in LFB1 for LIFNR 0000000067 and BUKRS 2000.
+LFB1,0000000068,2000,ALL,Duplicate Primary Key,Duplicate primary key record in LFB1 for LIFNR 0000000068 and BUKRS 2000.
+LFB1,0000000068,1000,ALL,Duplicate Primary Key,Duplicate primary key record in LFB1 for LIFNR 0000000068 and BUKRS 1000.
+LFB1,0000000069,2000,ALL,Duplicate Primary Key,Duplicate primary key record in LFB1 for LIFNR 0000000069 and BUKRS 2000.
+LFB1,0000000070,1000,ALL,Duplicate Primary Key,Duplicate primary key record in LFB1 for LIFNR 0000000070 and BUKRS 1000.
+LFB1,0000000071,1000,ALL,Duplicate Primary Key,Duplicate primary key record in LFB1 for LIFNR 0000000071 and BUKRS 1000.
+LFB1,0000000072,1000,ALL,Duplicate Primary Key,Duplicate primary key record in LFB1 for LIFNR 0000000072 and BUKRS 1000.
+LFB1,0000000073,1000,ALL,Duplicate Primary Key,Duplicate primary key record in LFB1 for LIFNR 0000000073 and BUKRS 1000.
+LFB1,0000000074,5000,ALL,Duplicate Primary Key,Duplicate primary key record in LFB1 for LIFNR 0000000074 and BUKRS 5000.
+LFB1,0000000075,1000,ALL,Duplicate Primary Key,Duplicate primary key record in LFB1 for LIFNR 0000000075 and BUKRS 1000.
+LFB1,0000999001,1000,LIFNR,Orphan Foreign Key,LFB1 record references non-existent vendor 0000999001.
+LFB1,0000999002,1000,LIFNR,Orphan Foreign Key,LFB1 record references non-existent vendor 0000999002.
+LFB1,0000999003,1000,LIFNR,Orphan Foreign Key,LFB1 record references non-existent vendor 0000999003.
+LFB1,0000999004,1000,LIFNR,Orphan Foreign Key,LFB1 record references non-existent vendor 0000999004.
+LFB1,0000999005,1000,LIFNR,Orphan Foreign Key,LFB1 record references non-existent vendor 0000999005.
+LFB1,0000999006,1000,LIFNR,Orphan Foreign Key,LFB1 record references non-existent vendor 0000999006.
+LFB1,0000999007,1000,LIFNR,Orphan Foreign Key,LFB1 record references non-existent vendor 0000999007.
+LFB1,0000999008,1000,LIFNR,Orphan Foreign Key,LFB1 record references non-existent vendor 0000999008.
+LFB1,0000999009,1000,LIFNR,Orphan Foreign Key,LFB1 record references non-existent vendor 0000999009.
+LFB1,0000999010,1000,LIFNR,Orphan Foreign Key,LFB1 record references non-existent vendor 0000999010.
+LFB1,0000999011,1000,LIFNR,Orphan Foreign Key,LFB1 record references non-existent vendor 0000999011.
+LFB1,0000999012,1000,LIFNR,Orphan Foreign Key,LFB1 record references non-existent vendor 0000999012.
+LFB1,0000999013,1000,LIFNR,Orphan Foreign Key,LFB1 record references non-existent vendor 0000999013.
+LFB1,0000999014,1000,LIFNR,Orphan Foreign Key,LFB1 record references non-existent vendor 0000999014.
+LFB1,0000999015,1000,LIFNR,Orphan Foreign Key,LFB1 record references non-existent vendor 0000999015.
+LFM1,0000000011,,EKORG,Missing Mandatory Field,Purchasing Organization (EKORG) is blank in LFM1.
+LFM1,0000000012,,EKORG,Missing Mandatory Field,Purchasing Organization (EKORG) is blank in LFM1.
+LFM1,0000000013,,EKORG,Missing Mandatory Field,Purchasing Organization (EKORG) is blank in LFM1.
+LFM1,0000000014,,EKORG,Missing Mandatory Field,Purchasing Organization (EKORG) is blank in LFM1.
+LFM1,0000000015,,EKORG,Missing Mandatory Field,Purchasing Organization (EKORG) is blank in LFM1.
+LFM1,0000000016,,EKORG,Missing Mandatory Field,Purchasing Organization (EKORG) is blank in LFM1.
+LFM1,0000000017,,EKORG,Missing Mandatory Field,Purchasing Organization (EKORG) is blank in LFM1.
+LFM1,0000000018,,EKORG,Missing Mandatory Field,Purchasing Organization (EKORG) is blank in LFM1.
+LFM1,0000000019,,EKORG,Missing Mandatory Field,Purchasing Organization (EKORG) is blank in LFM1.
+LFM1,0000000020,,EKORG,Missing Mandatory Field,Purchasing Organization (EKORG) is blank in LFM1.
+LFM1,0000000021,,EKORG,Missing Mandatory Field,Purchasing Organization (EKORG) is blank in LFM1.
+LFM1,0000000022,,EKORG,Missing Mandatory Field,Purchasing Organization (EKORG) is blank in LFM1.
+LFM1,0000000023,,EKORG,Missing Mandatory Field,Purchasing Organization (EKORG) is blank in LFM1.
+LFM1,0000000024,,EKORG,Missing Mandatory Field,Purchasing Organization (EKORG) is blank in LFM1.
+LFM1,0000000025,,EKORG,Missing Mandatory Field,Purchasing Organization (EKORG) is blank in LFM1.
+LFM1,0000000031,EK04,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000032,EK04,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000033,EK03,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000034,EK03,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000035,EK03,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000036,EK03,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000037,EK03,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000038,EK03,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000039,EK03,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000040,EK03,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000041,EK02,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000042,EK03,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000043,EK02,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000044,EK04,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000045,EK03,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000046,EK04,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000047,EK02,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000048,EK03,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000049,EK02,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000050,EK04,WAERS,Missing Mandatory Field,Order Currency (WAERS) is blank in LFM1.
+LFM1,0000000061,EK03,WAERS,Currency Inconsistency,Purchasing org order currency (JPY) conflicts with expected plant local currency.
+LFM1,0000000062,EK02,WAERS,Currency Inconsistency,Purchasing org order currency (JPY) conflicts with expected plant local currency.
+LFM1,0000000063,EK03,WAERS,Currency Inconsistency,Purchasing org order currency (JPY) conflicts with expected plant local currency.
+LFM1,0000000064,EK03,WAERS,Currency Inconsistency,Purchasing org order currency (JPY) conflicts with expected plant local currency.
+LFM1,0000000065,EK02,WAERS,Currency Inconsistency,Purchasing org order currency (JPY) conflicts with expected plant local currency.
+LFM1,0000000066,EK03,WAERS,Currency Inconsistency,Purchasing org order currency (JPY) conflicts with expected plant local currency.
+LFM1,0000000067,EK02,WAERS,Currency Inconsistency,Purchasing org order currency (JPY) conflicts with expected plant local currency.
+LFM1,0000000068,EK02,WAERS,Currency Inconsistency,Purchasing org order currency (JPY) conflicts with expected plant local currency.
+LFM1,0000000069,EK02,WAERS,Currency Inconsistency,Purchasing org order currency (JPY) conflicts with expected plant local currency.
+LFM1,0000000070,EK03,WAERS,Currency Inconsistency,Purchasing org order currency (JPY) conflicts with expected plant local currency.
+LFM1,0000000071,EK03,WAERS,Currency Inconsistency,Purchasing org order currency (JPY) conflicts with expected plant local currency.
+LFM1,0000000072,EK03,WAERS,Currency Inconsistency,Purchasing org order currency (JPY) conflicts with expected plant local currency.
+LFM1,0000000073,EK03,WAERS,Currency Inconsistency,Purchasing org order currency (JPY) conflicts with expected plant local currency.
+LFM1,0000000074,EK04,WAERS,Currency Inconsistency,Purchasing org order currency (JPY) conflicts with expected plant local currency.
+LFM1,0000000075,EK03,WAERS,Currency Inconsistency,Purchasing org order currency (JPY) conflicts with expected plant local currency.
+LFM1,0000999016,EK01,LIFNR,Orphan Foreign Key,LFM1 record references non-existent vendor 0000999016.
+LFM1,0000999017,EK01,LIFNR,Orphan Foreign Key,LFM1 record references non-existent vendor 0000999017.
+LFM1,0000999018,EK01,LIFNR,Orphan Foreign Key,LFM1 record references non-existent vendor 0000999018.
+LFM1,0000999019,EK01,LIFNR,Orphan Foreign Key,LFM1 record references non-existent vendor 0000999019.
+LFM1,0000999020,EK01,LIFNR,Orphan Foreign Key,LFM1 record references non-existent vendor 0000999020.
+LFM1,0000999021,EK01,LIFNR,Orphan Foreign Key,LFM1 record references non-existent vendor 0000999021.
+LFM1,0000999022,EK01,LIFNR,Orphan Foreign Key,LFM1 record references non-existent vendor 0000999022.
+LFM1,0000999023,EK01,LIFNR,Orphan Foreign Key,LFM1 record references non-existent vendor 0000999023.
+LFM1,0000999024,EK01,LIFNR,Orphan Foreign Key,LFM1 record references non-existent vendor 0000999024.
+LFM1,0000999025,EK01,LIFNR,Orphan Foreign Key,LFM1 record references non-existent vendor 0000999025.
+LFBK,0000000016,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000017,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000018,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000019,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000020,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000021,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000022,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000023,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000024,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000025,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000026,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000027,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000028,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000029,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000030,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000031,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000032,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000033,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000034,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000035,,BANKL,Missing Mandatory Field,Bank Key (BANKL) is mandatory in LFBK but is blank.
+LFBK,0000000041,83643370,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000042,62331628,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000043,46093485,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000044,42610230,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000045,79006045,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000046,28156176,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000047,30278691,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000048,11786530,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000049,72248476,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000050,84437894,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000051,96374094,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000052,70819406,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000053,43760797,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000054,60257471,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000055,20406192,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000056,93728092,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000057,33667238,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000058,53530953,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000059,15037655,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000060,91947853,KOINH,Missing Mandatory Field,Account Holder (KOINH) is mandatory in LFBK but is blank.
+LFBK,0000000102,HDFC0001,IBAN,Shared Bank Account,Bank account/IBAN (IN89HDFC00019876543210) is shared between vendor 0000000101 and 0000000102. High payment duplication risk.
+LFBK,0000000104,00245,IBAN,Shared Bank Account,Bank account/IBAN (CH9300245000123456789) is shared between vendor 0000000103 and 0000000104. High payment duplication risk.
+LFBK,0000000106,50010517,IBAN,Shared Bank Account,Bank account/IBAN (DE44500105175407324931) is shared between vendor 0000000105 and 0000000106. High payment duplication risk.
+LFBK,0000000108,12000000,IBAN,Shared Bank Account,Bank account/IBAN (US120000001234567890) is shared between vendor 0000000107 and 0000000108. High payment duplication risk.
+LFBK,0000000110,SBI0004,IBAN,Shared Bank Account,Bank account/IBAN (IN91SBI00045678901234) is shared between vendor 0000000109 and 0000000110. High payment duplication risk.
+LFBK,0000000071,82512899,IBAN,Malformed IBAN,IBAN truncated to 5 characters (expected 21).
+LFBK,0000000072,97110526,IBAN,Malformed IBAN,IBAN contains invalid word 'INVALID'.
+LFBK,0000000073,79857528,IBAN,Malformed IBAN,IBAN contains lowercase letters (must be uppercase ISO standard).
+LFBK,0000000074,65960438,IBAN,Malformed IBAN,IBAN missing 2-character country prefix.
+LFBK,0000000075,79606456,IBAN,Malformed IBAN,IBAN truncated to 4 characters.
+LFBK,0000000081,74652224,BANKS,Cross-Table Inconsistency,Bank country (US) differs from vendor legal country (IN).
+LFBK,0000000082,53691032,BANKS,Cross-Table Inconsistency,Bank country (US) differs from vendor legal country (IN).
+LFBK,0000000083,72677838,BANKS,Cross-Table Inconsistency,Bank country (US) differs from vendor legal country (IN).
+LFBK,0000000084,84810710,BANKS,Cross-Table Inconsistency,Bank country (DE) differs from vendor legal country (US).
+LFBK,0000000085,41203946,BANKS,Cross-Table Inconsistency,Bank country (US) differs from vendor legal country (CH).
+LFBK,0000000086,23611261,BANKS,Cross-Table Inconsistency,Bank country (US) differs from vendor legal country (CH).
+LFBK,0000000087,30136557,BANKS,Cross-Table Inconsistency,Bank country (US) differs from vendor legal country (IN).
+LFBK,0000000088,10919011,BANKS,Cross-Table Inconsistency,Bank country (DE) differs from vendor legal country (US).
+LFBK,0000000089,38414954,BANKS,Cross-Table Inconsistency,Bank country (US) differs from vendor legal country (CH).
+LFBK,0000000090,15232787,BANKS,Cross-Table Inconsistency,Bank country (US) differs from vendor legal country (IN).
+LFBK,0000000091,87464504,BANKS,Cross-Table Inconsistency,Bank country (US) differs from vendor legal country (IN).
+LFBK,0000000092,28019281,BANKS,Cross-Table Inconsistency,Bank country (US) differs from vendor legal country (CH).
+LFBK,0000000093,25570397,BANKS,Cross-Table Inconsistency,Bank country (US) differs from vendor legal country (IE).
+LFBK,0000000094,39944861,BANKS,Cross-Table Inconsistency,Bank country (US) differs from vendor legal country (IN).
+LFBK,0000000095,63517156,BANKS,Cross-Table Inconsistency,Bank country (DE) differs from vendor legal country (US).
+LFBK,0000000101,HDFC0001,ALL,Duplicate Primary Key,Duplicate primary key record in LFBK for LIFNR 0000000101 and BANKL HDFC0001.
+LFBK,0000000102,HDFC0001,ALL,Duplicate Primary Key,Duplicate primary key record in LFBK for LIFNR 0000000102 and BANKL HDFC0001.
+LFBK,0000000103,00245,ALL,Duplicate Primary Key,Duplicate primary key record in LFBK for LIFNR 0000000103 and BANKL 00245.
+LFBK,0000000104,00245,ALL,Duplicate Primary Key,Duplicate primary key record in LFBK for LIFNR 0000000104 and BANKL 00245.
+LFBK,0000000105,50010517,ALL,Duplicate Primary Key,Duplicate primary key record in LFBK for LIFNR 0000000105 and BANKL 50010517.
+LFBK,0000000106,50010517,ALL,Duplicate Primary Key,Duplicate primary key record in LFBK for LIFNR 0000000106 and BANKL 50010517.
+LFBK,0000000107,12000000,ALL,Duplicate Primary Key,Duplicate primary key record in LFBK for LIFNR 0000000107 and BANKL 12000000.
+LFBK,0000000108,12000000,ALL,Duplicate Primary Key,Duplicate primary key record in LFBK for LIFNR 0000000108 and BANKL 12000000.
+LFBK,0000000109,SBI0004,ALL,Duplicate Primary Key,Duplicate primary key record in LFBK for LIFNR 0000000109 and BANKL SBI0004.
+LFBK,0000000110,SBI0004,ALL,Duplicate Primary Key,Duplicate primary key record in LFBK for LIFNR 0000000110 and BANKL SBI0004.
+LFBK,0000999026,00245,LIFNR,Orphan Foreign Key,LFBK record references non-existent vendor 0000999026.
+LFBK,0000999027,00245,LIFNR,Orphan Foreign Key,LFBK record references non-existent vendor 0000999027.
+LFBK,0000999028,00245,LIFNR,Orphan Foreign Key,LFBK record references non-existent vendor 0000999028.
+LFBK,0000999029,00245,LIFNR,Orphan Foreign Key,LFBK record references non-existent vendor 0000999029.
+LFBK,0000999030,00245,LIFNR,Orphan Foreign Key,LFBK record references non-existent vendor 0000999030.
+LFBK,0000999031,00245,LIFNR,Orphan Foreign Key,LFBK record references non-existent vendor 0000999031.
+LFBK,0000999032,00245,LIFNR,Orphan Foreign Key,LFBK record references non-existent vendor 0000999032.
+LFBK,0000999033,00245,LIFNR,Orphan Foreign Key,LFBK record references non-existent vendor 0000999033.
+LFBK,0000999034,00245,LIFNR,Orphan Foreign Key,LFBK record references non-existent vendor 0000999034.
+LFBK,0000999035,00245,LIFNR,Orphan Foreign Key,LFBK record references non-existent vendor 0000999035.
+LFA1,0000000001,,ALL,Duplicate Record,Exact duplicate row for LIFNR=0000000001 in LFA1.
+LFA1,0000000002,,ALL,Duplicate Record,Exact duplicate row for LIFNR=0000000002 in LFA1.
+LFA1,0000000003,,ALL,Duplicate Record,Exact duplicate row for LIFNR=0000000003 in LFA1.
+LFA1,0000000004,,ALL,Duplicate Record,Exact duplicate row for LIFNR=0000000004 in LFA1.
+LFA1,0000000005,,ALL,Duplicate Record,Exact duplicate row for LIFNR=0000000005 in LFA1.
+LFA1,0000000006,,ALL,Duplicate Record,Exact duplicate row for LIFNR=0000000006 in LFA1.
+LFA1,0000000007,,ALL,Duplicate Record,Exact duplicate row for LIFNR=0000000007 in LFA1.
+LFA1,0000000008,,ALL,Duplicate Record,Exact duplicate row for LIFNR=0000000008 in LFA1.
+LFA1,0000000009,,ALL,Duplicate Record,Exact duplicate row for LIFNR=0000000009 in LFA1.
+LFA1,0000000010,,ALL,Duplicate Record,Exact duplicate row for LIFNR=0000000010 in LFA1.

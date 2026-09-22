@@ -14,4 +14,12 @@ uvicorn[standard]
 chromadb  # also provides onnxruntime + tokenizers for local all-MiniLM-L6-v2 embeddings
 kagglehub  # only for config.yaml memory.embedding.kaggle_handle
 fg-data-profiling
-llama-cpp-python
+# llama-cpp-python: only needed when llm.provider (config.yaml) is "local".
+# Pinned to the CPU-only wheel from the project's own index. Do NOT relax this to a bare
+# "llama-cpp-python": PyPI publishes only an sdist for 0.3.35 (a from-source build needs
+# MSVC + CMake), and a CUDA-enabled wheel installs ggml-cuda.dll, whose static import of
+# cudart64_12.dll/cublas64_12.dll makes "import llama_cpp" fail on any machine without an
+# NVIDIA GPU + CUDA runtime -- with a misleading "could not find llama.dll" message.
+# Other platforms: see https://abetlen.github.io/llama-cpp-python/whl/cpu for the matching wheel.
+llama-cpp-python @ https://github.com/abetlen/llama-cpp-python/releases/download/v0.3.35/llama_cpp_python-0.3.35-py3-none-win_amd64.whl ; sys_platform == "win32"
+llama-cpp-python==0.3.35 ; sys_platform != "win32"

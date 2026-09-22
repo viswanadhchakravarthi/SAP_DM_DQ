@@ -1,0 +1,1042 @@
+Table,LIFNR,Org_Key,Field,Issue_Type,Issue_Description
+LFA1,0000070061,,KTOKK,Invalid Account Group,Account group 'Z999' is not one of the configured vendor account groups.
+LFA1,0000070061,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000070061,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000070067,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000070140,,STCD1,Tax Number / Address Mismatch,GSTIN starts with state code '07' but the vendor's address is in Noida (state code '09').
+LFA1,0000070181,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000070181,,TELF1,Invalid Phone Number,'unknown' is not a usable telephone number.
+LFA1,0000070187,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000070187,,TELF1,Invalid Phone Number,'000' is not a usable telephone number.
+LFA1,0000070214,,ERDAT,Invalid Date,'0000-00-00' is not a valid date.
+LFA1,0000070295,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000070295,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000070295,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000070326,,LIFNR,Duplicate Vendor,Rebranded/renamed vendor kept as a second master record (0000070326 / 0000214460): different name and tax number but the SAME bank account - payments split across two vendor numbers.
+LFA1,0000070333,,ERDAT,Placeholder Date,"Creation date 1900-01-01 is the SAP initial date, not a real creation date."
+LFA1,0000070333,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000070360,,STCD1,Invalid Tax Number Format,Tax number 'DE373765' does not match the DE format (was 'DE373765356').
+LFA1,0000070386,,PSTLZ,Invalid Postal Code,Postal code 'X0096' does not match the format used in DE.
+LFA1,0000070386,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000070405,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000070405,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000070405,,STCD1,Invalid Tax Number Format,Tax number '3679995' does not match the VN format (was '3679995283').
+LFA1,0000070578,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000070615,,STCD1,Invalid Tax Number Format,Tax number 'GB493829' does not match the GB format (was 'GB493829626').
+LFA1,0000070630,,STCD1,Duplicate Vendor,Same legal entity entered twice (0000070630 / 0000228803): identical tax number FR32199076209 and identical bank account; only the legal-form spelling differs.
+LFA1,0000070762,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000070764,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000070881,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000070881,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000070976,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000070976,,NAME1,Duplicate Vendor,Same name and same address entered under two vendor numbers (0000070976 / 0000266360); no tax number on the newer record to link them.
+LFA1,0000071275,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000071334,,NAME1,Duplicate Vendor,Misspelled re-entry of the same vendor (0000071334 / 0000418895): 'Terlouw & Meulenbelt N.V.' vs 'Tarlouw & Meulenbelt N.V.' at the same city and postal code.
+LFA1,0000071396,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000071510,,PSTLZ,Missing Address,Postal code is empty.
+LFA1,0000071543,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000071543,,STRAS,Placeholder Address,Street contains the placeholder '.'.
+LFA1,0000071625,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000071688,,STCD1,Invalid Tax Number Format,Tax number '512181087-8756' does not match the BD format (was '512181087-8756').
+LFA1,0000071846,,LIFNR,Duplicate Vendor,Rebranded/renamed vendor kept as a second master record (0000071846 / 0000297611): different name and tax number but the SAME bank account - payments split across two vendor numbers.
+LFA1,0000071945,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000072086,,STCD1,Invalid Tax Number Format,Tax number 'DE447263' does not match the DE format (was 'DE447263325').
+LFA1,0000072214,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000072214,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000072333,,PSTLZ,Invalid Postal Code,Postal code '00000' does not match the format used in GB.
+LFA1,0000072410,,NAME1,Duplicate Vendor,"Same vendor with and without accents/&-spelling (0000072410 / 0000224133): 'Vermeer Techniek N.V.' vs 'Vermeer Techniek N.V.', linked by an identical tax number and bank account."
+LFA1,0000072535,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000073055,,TELF1,Invalid Phone Number,'N/A' is not a usable telephone number.
+LFA1,0000073101,,ERDAT,Placeholder Date,"Creation date 1900-01-01 is the SAP initial date, not a real creation date."
+LFA1,0000073148,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000073169,,NAME1,Duplicate Vendor,Legacy all-caps record and its re-keyed replacement (0000073169 / 0000153885); the tax number differs only by embedded spaces.
+LFA1,0000073295,,PSTLZ,Invalid Postal Code,Postal code '803940' does not match the format used in DE.
+LFA1,0000073298,,SMTP_ADDR,Duplicate Vendor,"Same vendor entered twice (0000073298 / 0000155023): identical e-mail address and phone number, tax number missing on the newer record."
+LFA1,0000073403,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000073577,,SORTL,Missing Search Term,Search term is empty.
+LFA1,0000073608,,STCD1,Duplicate Vendor,Same legal entity entered twice (0000073608 / 0000244963): identical tax number GB276132001 and identical bank account; only the legal-form spelling differs.
+LFA1,0000073709,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000073709,,STCD1,Invalid Tax Number Format,Tax number 'fr29447168830' does not match the FR format (was 'FR29447168830').
+LFA1,0000073713,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000073760,,STCD1,Duplicate Vendor,Same legal entity entered twice (0000073760 / 0000270415): identical tax number GB869826997 and identical bank account; only the legal-form spelling differs.
+LFA1,0000073917,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000073917,,NAME1,Duplicate Vendor,Misspelled re-entry of the same vendor (0000073917 / 0000283978): 'Kuipers Handel B.V.' vs 'Kuipars Handel B.V.' at the same city and postal code.
+LFA1,0000074109,,SMTP_ADDR,Duplicate Vendor,"Same vendor entered twice (0000074109 / 0000121666): identical e-mail address and phone number, tax number missing on the newer record."
+LFA1,0000074355,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000074446,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000074526,,STCD1,Duplicate Vendor,"Three master records for one supplier (0000074526 / 0000293539 / 0000281437): same tax number and bank account, three different spellings of the name."
+LFA1,0000074595,,STRAS,Missing Address,Street address is empty.
+LFA1,0000074606,,STCD1,Duplicate Vendor,Same legal entity entered twice (0000074606 / 0000236344): identical tax number PL0339859633 and identical bank account; only the legal-form spelling differs.
+LFA1,0000074634,,TELF1,Invalid Phone Number,'1234' is not a usable telephone number.
+LFA1,0000074678,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000074678,,PSTLZ,Invalid Postal Code,Postal code '5100000' does not match the format used in CN.
+LFA1,0000074693,,STCD1,Duplicate Vendor,Same legal entity entered twice (0000074693 / 0000137528): identical tax number DE725076568 and identical bank account; only the legal-form spelling differs.
+LFA1,0000074772,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000074772,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000074783,,LAND1,Invalid Country Code,"'EU' is a region, not a country."
+LFA1,0000074850,,STCD1,Duplicate Vendor,Same legal entity entered twice (0000074850 / 0000462137): identical tax number NL280198342B83 and identical bank account; only the legal-form spelling differs.
+LFA1,0000074858,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000074858,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000074939,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000074952,,SMTP_ADDR,Duplicate Vendor,"Same vendor entered twice (0000074952 / 0000263591): identical e-mail address and phone number, tax number missing on the newer record."
+LFA1,0000075005,,NAME1,Duplicate Vendor,Same name and same address entered under two vendor numbers (0000075005 / 0000181941); no tax number on the newer record to link them.
+LFA1,0000075038,,ERDAT,Future Date,Creation date 2027-02-06 lies in the future.
+LFA1,0000075038,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000075243,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000075375,,SMTP_ADDR,Invalid Email Format,'n/a' is not a valid e-mail address.
+LFA1,0000075431,,SMTP_ADDR,Invalid Email Format,'@zawadzki-logistyka.pl' is not a valid e-mail address.
+LFA1,0000075447,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000075456,,NAME1,Duplicate Vendor,Same name and same address entered under two vendor numbers (0000075456 / 0000247133); no tax number on the newer record to link them.
+LFA1,0000075523,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000075523,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000075526,,SORTL,Missing Search Term,Search term is empty.
+LFA1,0000075534,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000075534,,NAME1,Duplicate Vendor,Same name and same address entered under two vendor numbers (0000075534 / 0000497608); no tax number on the newer record to link them.
+LFA1,0000075714,,KTOKK,Invalid Account Group,Account group '' is not one of the configured vendor account groups.
+LFA1,0000075726,,NAME1,Duplicate Vendor,Misspelled re-entry of the same vendor (0000075726 / 0000209051): 'Venturi Stampa & Partner S.p.A.' vs 'Vanturi Stampa & Partner S.p.A.' at the same city and postal code.
+LFA1,0000075764,,STCD1,Duplicate Vendor,"Same company, two addresses (0000075764 / 0000465673): identical tax number DE339873020 but different city - one record is a branch address kept as a separate vendor."
+LFA1,0000075777,,NAME1,Duplicate Vendor,Misspelled re-entry of the same vendor (0000075777 / 0000427738): 'Sancerre SAS' vs 'Sancarre SAS' at the same city and postal code.
+LFA1,0000075812,,STRAS,Missing Address,Street address is empty.
+LFA1,0000075826,,LAND1,Invalid Country Code,"'XX' is a placeholder, not a real country."
+LFA1,0000075871,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000075871,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000075907,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000076126,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000076221,,NAME1,Duplicate Vendor,Legacy all-caps record and its re-keyed replacement (0000076221 / 0000266322); the tax number differs only by embedded spaces.
+LFA1,0000076264,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000076324,,PSTLZ,Missing Address,Postal code is empty.
+LFA1,0000076460,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000076460,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000076693,,LAND1,Missing Mandatory Field,"Country key is empty, so the address cannot be validated or used for tax determination."
+LFA1,0000076728,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000076970,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000076970,,STCD1,Duplicate Vendor,"Three master records for one supplier (0000076970 / 0000132829 / 0000172558): same tax number and bank account, three different spellings of the name."
+LFA1,0000076971,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000077024,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000077024,,TELF1,Invalid Phone Number,'./.' is not a usable telephone number.
+LFA1,0000077033,,ORT01,Missing Address,City is empty.
+LFA1,0000077033,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000077074,,SMTP_ADDR,Invalid Email Format,'braganca-comercio.pt' is not a valid e-mail address.
+LFA1,0000077254,,NAME1,Duplicate Vendor,Legacy all-caps record and its re-keyed replacement (0000077254 / 0000192076); the tax number differs only by embedded spaces.
+LFA1,0000077270,,TELF1,Invalid Phone Number,'+49' is not a usable telephone number.
+LFA1,0000077302,,LIFNR,Duplicate Vendor,Rebranded/renamed vendor kept as a second master record (0000077302 / 0000131962): different name and tax number but the SAME bank account - payments split across two vendor numbers.
+LFA1,0000077406,,SMTP_ADDR,Invalid Email Format,'sales@@guangzhou-mingda.com.cn' is not a valid e-mail address.
+LFA1,0000077435,,STRAS,Missing Address,Street address is empty.
+LFA1,0000077503,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000077557,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000077712,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000077750,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000077750,,SPRAS,Invalid Language Key,'XX' is not a valid language key.
+LFA1,0000077886,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000077886,,STCD1,Duplicate Vendor,Same legal entity entered twice (0000077886 / 0000266236): identical tax number GB272974420 and identical bank account; only the legal-form spelling differs.
+LFA1,0000077902,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000077985,,STCD1,Duplicate Vendor,Same legal entity entered twice (0000077985 / 0000270068): identical tax number 8339084703 and identical bank account; only the legal-form spelling differs.
+LFA1,0000077998,,NAME1,Duplicate Vendor,"Same vendor with and without accents/&-spelling (0000077998 / 0000216270): 'Deverill Technologies Ltd' vs 'Deverill Technologies Ltd', linked by an identical tax number and bank account."
+LFA1,0000078015,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000078039,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000078064,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000078064,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000078165,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000078165,,STRAS,Missing Address,Street address is empty.
+LFA1,0000078196,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000078196,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000078196,,SPRAS,Inconsistent Language,Communication language 'RU' does not fit country 'CN'.
+LFA1,0000078196,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000078282,,LIFNR,Duplicate Vendor,Rebranded/renamed vendor kept as a second master record (0000078282 / 0000200250): different name and tax number but the SAME bank account - payments split across two vendor numbers.
+LFA1,0000078284,,NAME1,Duplicate Vendor,"Misspelled re-entry of the same vendor (0000078284 / 0000283819): 'Kim Son & Bao Tin Co., Ltd' vs 'Kim Son & Bao Tin Co., Ltd' at the same city and postal code."
+LFA1,0000078304,,NAME1,Duplicate Vendor,Misspelled re-entry of the same vendor (0000078304 / 0000443700): 'Falkenstein Textil AG' vs 'Falkensteni Textil AG' at the same city and postal code.
+LFA1,0000078326,,STCD1,Duplicate Vendor,"Same company, two addresses (0000078326 / 0000176116): identical tax number DE500953997 but different city - one record is a branch address kept as a separate vendor."
+LFA1,0000078342,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000078359,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000078359,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000078435,,NAME1,Duplicate Vendor,Same name and same address entered under two vendor numbers (0000078435 / 0000294667); no tax number on the newer record to link them.
+LFA1,0000078440,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000078489,,NAME1,Duplicate Vendor,Same name and same address entered under two vendor numbers (0000078489 / 0000112659); no tax number on the newer record to link them.
+LFA1,0000078491,,SMTP_ADDR,Duplicate Vendor,"Same vendor entered twice (0000078491 / 0000436048): identical e-mail address and phone number, tax number missing on the newer record."
+LFA1,0000078492,,LIFNR,Duplicate Vendor,Rebranded/renamed vendor kept as a second master record (0000078492 / 0000250791): different name and tax number but the SAME bank account - payments split across two vendor numbers.
+LFA1,0000078548,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000078548,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000078603,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000078630,,STCD1,Duplicate Vendor,"Same company, two addresses (0000078630 / 0000441866): identical tax number FR06642387614 but different city - one record is a branch address kept as a separate vendor."
+LFA1,0000078683,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000078715,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000078947,,STCD1,Duplicate Vendor,"Three master records for one supplier (0000078947 / 0000469457 / 0000420802): same tax number and bank account, three different spellings of the name."
+LFA1,0000079064,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000079115,,NAME1,Duplicate Vendor,Same name and same address entered under two vendor numbers (0000079115 / 0000185748); no tax number on the newer record to link them.
+LFA1,0000079293,,NAME1,Duplicate Vendor,Same name and same address entered under two vendor numbers (0000079293 / 0000234586); no tax number on the newer record to link them.
+LFA1,0000079303,,STCD1,Duplicate Vendor,"Same company, two addresses (0000079303 / 0000199132): identical tax number DE490905822 but different city - one record is a branch address kept as a separate vendor."
+LFA1,0000079432,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000079432,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000079496,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000079496,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000079556,,LIFNR,Duplicate Vendor,Rebranded/renamed vendor kept as a second master record (0000079556 / 0000254779): different name and tax number but the SAME bank account - payments split across two vendor numbers.
+LFA1,0000079680,,SPRAS,Inconsistent Language,Communication language 'AR' does not fit country 'IN'.
+LFA1,0000079760,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000079764,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000079959,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000079971,,SPRAS,Inconsistent Language,Communication language 'AR' does not fit country 'DE'.
+LFA1,0000100393,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000100620,,NAME1,Encoding Corruption,Name contains mojibake from a bad UTF-8 conversion: 'HochstÃ¤tt Handels GmbH & Co. KG'.
+LFA1,0000101189,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000101940,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000101991,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000102437,,STCD1,Placeholder Tax Number,'TBD' is a placeholder rather than a real tax registration number.
+LFA1,0000102802,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000104548,,PSTLZ,Missing Address,Postal code is empty.
+LFA1,0000104818,,STRAS,Missing Address,Street address is empty.
+LFA1,0000104905,,ORT01,Whitespace Issue,City has padding spaces and is upper-cased.
+LFA1,0000104905,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000105912,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000105912,,STCD1,Invalid Tax Number Format,Tax number 'DE580366' does not match the DE format (was 'DE580366503').
+LFA1,0000106098,,SORTL,Missing Search Term,Search term is empty.
+LFA1,0000106702,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000106952,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000108175,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000108175,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000108472,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000108478,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000108929,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000109102,,SMTP_ADDR,Invalid Email Format,'sales@@osterbach-sicherheit.de' is not a valid e-mail address.
+LFA1,0000110131,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000110131,,STRAS,Missing Address,Street address is empty.
+LFA1,0000110617,,TELF1,Invalid Phone Number,'+49' is not a usable telephone number.
+LFA1,0000110935,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000111712,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000112484,,ERDAT,Dormant Vendor,Created 2009-03-24 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000112484,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000112659,,NAME1,Duplicate Vendor,Same name and same address entered under two vendor numbers (0000078489 / 0000112659); no tax number on the newer record to link them.
+LFA1,0000113244,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000113879,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000114533,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000114869,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000114869,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000114915,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000114915,,STCD1,Invalid Tax Number Format,Tax number 'de027323181' does not match the DE format (was 'DE027323181').
+LFA1,0000114915,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000115037,,ERDAT,Dormant Vendor,Created 2013-07-17 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000115468,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000116314,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000116336,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000116442,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000117001,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000117332,,STRAS,Missing Address,Street address is empty.
+LFA1,0000117929,,PSTLZ,Missing Address,Postal code is empty.
+LFA1,0000119901,,SPRAS,Inconsistent Language,Communication language 'AR' does not fit country 'DE'.
+LFA1,0000120337,,SPRAS,Inconsistent Language,Communication language 'ZH' does not fit country 'CH'.
+LFA1,0000121534,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000121534,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000121666,,SMTP_ADDR,Duplicate Vendor,"Same vendor entered twice (0000074109 / 0000121666): identical e-mail address and phone number, tax number missing on the newer record."
+LFA1,0000122291,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000123969,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000123969,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000125905,,PSTLZ,Missing Address,Postal code is empty.
+LFA1,0000125965,,ORT01,Missing Address,City is empty.
+LFA1,0000126439,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000126439,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000126652,,ERDAT,Dormant Vendor,Created 2010-09-28 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000126652,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000129113,,SORTL,Missing Search Term,Search term is empty.
+LFA1,0000129531,,TELF1,Invalid Phone Number,'+49' is not a usable telephone number.
+LFA1,0000130885,,NAME1,Encoding Corruption,Name contains mojibake from a bad UTF-8 conversion: 'SchÃ¶nfeld-Vogel Verpackungen GmbH'.
+LFA1,0000131830,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000131962,,LIFNR,Duplicate Vendor,Rebranded/renamed vendor kept as a second master record (0000077302 / 0000131962): different name and tax number but the SAME bank account - payments split across two vendor numbers.
+LFA1,0000132829,,STCD1,Duplicate Vendor,"Three master records for one supplier (0000076970 / 0000132829 / 0000172558): same tax number and bank account, three different spellings of the name."
+LFA1,0000133574,,LAND1,Invalid Country Code,"'XX' is a placeholder, not a real country."
+LFA1,0000133892,,ERDAT,Dormant Vendor,Created 2011-02-05 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000133892,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000133892,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000134389,,STCD1,Invalid Tax Number Format,Tax number 'de499295899' does not match the DE format (was 'DE499295899').
+LFA1,0000134952,,NAME1,Look-alike (not a duplicate),"Independently owned outlets of the same franchise in two cities (0000134952 / 0000150315): same trading name, different tax numbers and bank accounts."
+LFA1,0000135767,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000135767,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000135895,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000135895,,PSTLZ,Invalid Postal Code,Postal code 'N/A' does not match the format used in DE.
+LFA1,0000136046,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000136046,,TELF1,Invalid Phone Number,'-' is not a usable telephone number.
+LFA1,0000136420,,TELF1,Invalid Phone Number,'x' is not a usable telephone number.
+LFA1,0000136948,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000136948,,STCD1,Invalid Tax Number Format,Tax number '198033554' does not match the DE format (was 'DE198033554').
+LFA1,0000136982,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000137019,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000137190,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000137190,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000137528,,STCD1,Duplicate Vendor,Same legal entity entered twice (0000074693 / 0000137528): identical tax number DE725076568 and identical bank account; only the legal-form spelling differs.
+LFA1,0000138396,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000138396,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000140289,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000140376,,ERDAT,Dormant Vendor,Created 2010-11-09 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000140419,,SMTP_ADDR,Invalid Email Format,"'purchasing@lindner-kornblum.de,lindner-kornblum.de' is not a valid e-mail address."
+LFA1,0000140751,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000141156,,KTOKK,Invalid Account Group,Account group '' is not one of the configured vendor account groups.
+LFA1,0000141156,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000142126,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000143565,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000146536,,ERDAT,Dormant Vendor,Created 2010-05-02 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000147105,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000147937,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000147937,,NAME1,Placeholder Name,Vendor name 'XXX' is a placeholder / test record left in production.
+LFA1,0000147937,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000148498,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000149321,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000149782,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000150315,,NAME1,Look-alike (not a duplicate),"Independently owned outlets of the same franchise in two cities (0000134952 / 0000150315): same trading name, different tax numbers and bank accounts."
+LFA1,0000150389,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000150392,,ERDAT,Placeholder Date,"Creation date 1900-01-01 is the SAP initial date, not a real creation date."
+LFA1,0000150906,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000151150,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000152519,,NAME1,Encoding Corruption,Name contains mojibake from a bad UTF-8 conversion: 'SchÃ¶nfeld & Nordwind GmbH'.
+LFA1,0000152519,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000153383,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000153881,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000153885,,NAME1,Duplicate Vendor,Legacy all-caps record and its re-keyed replacement (0000073169 / 0000153885); the tax number differs only by embedded spaces.
+LFA1,0000154065,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000154106,,NAME1,Look-alike (not a duplicate),"Parent and subsidiary at one address (0000154106 / 0000182359): similar names, but separate tax numbers and separate bank accounts - must stay two vendors."
+LFA1,0000154240,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000154454,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000154689,,LAND1,Invalid Country Code,Country code stored in lower case.
+LFA1,0000154806,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000155023,,SMTP_ADDR,Duplicate Vendor,"Same vendor entered twice (0000073298 / 0000155023): identical e-mail address and phone number, tax number missing on the newer record."
+LFA1,0000156174,,SPRAS,Inconsistent Language,Communication language 'PT' does not fit country 'DE'.
+LFA1,0000157898,,TELF1,Invalid Phone Number,'N/A' is not a usable telephone number.
+LFA1,0000160363,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000161147,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000161166,,SMTP_ADDR,Invalid Email Format,'mailto:info@julia-maibach.de' is not a valid e-mail address.
+LFA1,0000162002,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000162002,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000162196,,STRAS,Missing Address,Street address is empty.
+LFA1,0000162598,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000163550,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000164710,,SPRAS,Inconsistent Language,Communication language 'PT' does not fit country 'DE'.
+LFA1,0000164720,,ERDAT,Dormant Vendor,Created 2012-12-06 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000165281,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000165395,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000165805,,STCD1,Invalid Tax Number Format,Tax number 'de241291780' does not match the DE format (was 'DE241291780').
+LFA1,0000165845,,SPRAS,Inconsistent Language,Communication language 'PT' does not fit country 'DE'.
+LFA1,0000166707,,LAND1,Missing Mandatory Field,"Country key is empty, so the address cannot be validated or used for tax determination."
+LFA1,0000168468,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000168468,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000169124,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000171273,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000171900,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000171900,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000172293,,TELF1,Invalid Phone Number,'unknown' is not a usable telephone number.
+LFA1,0000172558,,STCD1,Duplicate Vendor,"Three master records for one supplier (0000076970 / 0000132829 / 0000172558): same tax number and bank account, three different spellings of the name."
+LFA1,0000174718,,ERDAT,Dormant Vendor,Created 2012-05-10 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000175142,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000175142,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000175496,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000176054,,SORTL,Missing Search Term,Search term is empty.
+LFA1,0000176116,,STCD1,Duplicate Vendor,"Same company, two addresses (0000078326 / 0000176116): identical tax number DE500953997 but different city - one record is a branch address kept as a separate vendor."
+LFA1,0000176456,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000178709,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000178889,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000179271,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000179271,,STRAS,Placeholder Address,Street contains the placeholder '-'.
+LFA1,0000181015,,PSTLZ,Missing Address,Postal code is empty.
+LFA1,0000181648,,STRAS,Missing Address,Street address is empty.
+LFA1,0000181941,,NAME1,Duplicate Vendor,Same name and same address entered under two vendor numbers (0000075005 / 0000181941); no tax number on the newer record to link them.
+LFA1,0000182246,,SPRAS,Invalid Language Key,'XX' is not a valid language key.
+LFA1,0000182359,,NAME1,Look-alike (not a duplicate),"Parent and subsidiary at one address (0000154106 / 0000182359): similar names, but separate tax numbers and separate bank accounts - must stay two vendors."
+LFA1,0000182899,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000184566,,ERDAT,Future Date,Creation date 2027-04-20 lies in the future.
+LFA1,0000184566,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000185533,,ORT01,Whitespace Issue,City has padding spaces and is upper-cased.
+LFA1,0000185748,,NAME1,Duplicate Vendor,Same name and same address entered under two vendor numbers (0000079115 / 0000185748); no tax number on the newer record to link them.
+LFA1,0000186445,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000186703,,STCD1,Placeholder Tax Number,'XXXXXXXXX' is a placeholder rather than a real tax registration number.
+LFA1,0000187397,,PSTLZ,Invalid Postal Code,Postal code 'X4135' does not match the format used in DE.
+LFA1,0000187409,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000187409,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000188985,,ERDAT,Dormant Vendor,Created 2010-05-18 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000189112,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000189112,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000189994,,SMTP_ADDR,Invalid Email Format,'muhlbach-reinigung.ch' is not a valid e-mail address.
+LFA1,0000189998,,STRAS,Missing Address,Street address is empty.
+LFA1,0000190065,,SPRAS,Inconsistent Language,Communication language 'PT' does not fit country 'DE'.
+LFA1,0000190225,,ERDAT,Dormant Vendor,Created 2013-08-23 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000190342,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000190793,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000191267,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000191267,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000191267,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000191267,,STCD1,Invalid Tax Number Format,Tax number 'DE12273335900' does not match the DE format (was 'DE122733359').
+LFA1,0000191960,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000191960,,SPRAS,Inconsistent Language,Communication language 'PT' does not fit country 'DE'.
+LFA1,0000192076,,NAME1,Duplicate Vendor,Legacy all-caps record and its re-keyed replacement (0000077254 / 0000192076); the tax number differs only by embedded spaces.
+LFA1,0000193863,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000193956,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000194056,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000195052,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000195744,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000195932,,ERDAT,Dormant Vendor,Created 2010-01-01 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000196266,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000197011,,PSTLZ,Missing Address,Postal code is empty.
+LFA1,0000197011,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000197052,,ORT01,Whitespace Issue,City has padding spaces and is upper-cased.
+LFA1,0000197292,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000197292,,STCD1,Invalid Tax Number Format,Tax number 'DE78646819700' does not match the DE format (was 'DE786468197').
+LFA1,0000198161,,LAND1,Invalid Country Code,"'EU' is a region, not a country."
+LFA1,0000198792,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000199132,,STCD1,Duplicate Vendor,"Same company, two addresses (0000079303 / 0000199132): identical tax number DE490905822 but different city - one record is a branch address kept as a separate vendor."
+LFA1,0000199933,,SMTP_ADDR,Invalid Email Format,'mailto:info@kaltenbach-ladenbau.de' is not a valid e-mail address.
+LFA1,0000199933,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000200250,,LIFNR,Duplicate Vendor,Rebranded/renamed vendor kept as a second master record (0000078282 / 0000200250): different name and tax number but the SAME bank account - payments split across two vendor numbers.
+LFA1,0000200343,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000201263,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000201263,,SORTL,Missing Search Term,Search term is empty.
+LFA1,0000201690,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000202980,,ERDAT,Dormant Vendor,Created 2010-12-22 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000203025,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000203210,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000204377,,NAME1,Placeholder Name,Vendor name 'ZZZ GESPERRT' is a placeholder / test record left in production.
+LFA1,0000204602,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000204602,,STCD1,Tax Number / Address Mismatch,GSTIN starts with state code '27' but the vendor's address is in New Delhi (state code '07').
+LFA1,0000204695,,LAND1,Missing Mandatory Field,"Country key is empty, so the address cannot be validated or used for tax determination."
+LFA1,0000204907,,STCD1,Placeholder Tax Number,'XXXXXXXXX' is a placeholder rather than a real tax registration number.
+LFA1,0000205005,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000205092,,PSTLZ,Invalid Postal Code,Postal code 'N/A' does not match the format used in TR.
+LFA1,0000205662,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000206174,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000206309,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000207276,,LAND1,Invalid Country Code,'UK' is not an ISO country code; the United Kingdom is 'GB'.
+LFA1,0000207494,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000207760,,ORT01,Missing Address,City is empty.
+LFA1,0000207895,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000208377,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000208999,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000209051,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000209051,,NAME1,Duplicate Vendor,Misspelled re-entry of the same vendor (0000075726 / 0000209051): 'Venturi Stampa & Partner S.p.A.' vs 'Vanturi Stampa & Partner S.p.A.' at the same city and postal code.
+LFA1,0000209285,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000209873,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000209873,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000209925,,PSTLZ,Missing Address,Postal code is empty.
+LFA1,0000210599,,ERDAT,Placeholder Date,"Creation date 1900-01-01 is the SAP initial date, not a real creation date."
+LFA1,0000210785,,STCD1,Placeholder Tax Number,'-' is a placeholder rather than a real tax registration number.
+LFA1,0000210838,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000210838,,STRAS,Missing Address,Street address is empty.
+LFA1,0000210838,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000211711,,PSTLZ,Invalid Postal Code,Postal code '00000' does not match the format used in VN.
+LFA1,0000211711,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000211804,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000212379,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000212867,,STRAS,Placeholder Address,Street contains the placeholder '-'.
+LFA1,0000213003,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000213813,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000213813,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000213813,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000214448,,LAND1,Invalid Country Code,'UAE' is not a 2-character ISO country code.
+LFA1,0000214460,,LIFNR,Duplicate Vendor,Rebranded/renamed vendor kept as a second master record (0000070326 / 0000214460): different name and tax number but the SAME bank account - payments split across two vendor numbers.
+LFA1,0000215464,,NAME1,Missing Mandatory Field,Vendor name is empty.
+LFA1,0000215512,,ERDAT,Dormant Vendor,Created 2010-05-30 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000215966,,ORT01,Whitespace Issue,City has padding spaces and is upper-cased.
+LFA1,0000216112,,NAME1,Look-alike (not a duplicate),"Parent and subsidiary at one address (0000216112 / 0000227787): similar names, but separate tax numbers and separate bank accounts - must stay two vendors."
+LFA1,0000216270,,NAME1,Duplicate Vendor,"Same vendor with and without accents/&-spelling (0000077998 / 0000216270): 'Deverill Technologies Ltd' vs 'Deverill Technologies Ltd', linked by an identical tax number and bank account."
+LFA1,0000216350,,ERDAT,Dormant Vendor,Created 2009-01-22 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000216779,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000217506,,PSTLZ,Missing Address,Postal code is empty.
+LFA1,0000219149,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000219784,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000220008,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000220525,,PSTLZ,Invalid Postal Code,Postal code 'X0-459' does not match the format used in PL.
+LFA1,0000220525,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000222920,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000223023,,SORTL,Missing Search Term,Search term is empty.
+LFA1,0000223023,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000223300,,KTOKK,Invalid Account Group,Account group '' is not one of the configured vendor account groups.
+LFA1,0000223300,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000223421,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000224038,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000224090,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000224133,,NAME1,Duplicate Vendor,"Same vendor with and without accents/&-spelling (0000072410 / 0000224133): 'Vermeer Techniek N.V.' vs 'Vermeer Techniek N.V.', linked by an identical tax number and bank account."
+LFA1,0000224528,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000224528,,STRAS,Missing Address,Street address is empty.
+LFA1,0000224968,,LAND1,Invalid Country Code,'UAE' is not a 2-character ISO country code.
+LFA1,0000225196,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000226389,,NAME1,Missing Mandatory Field,Vendor name is empty.
+LFA1,0000227634,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000227762,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000227787,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000227787,,NAME1,Look-alike (not a duplicate),"Parent and subsidiary at one address (0000216112 / 0000227787): similar names, but separate tax numbers and separate bank accounts - must stay two vendors."
+LFA1,0000228009,,LAND1,Invalid Country Code,"'EU' is a region, not a country."
+LFA1,0000228803,,STCD1,Duplicate Vendor,Same legal entity entered twice (0000070630 / 0000228803): identical tax number FR32199076209 and identical bank account; only the legal-form spelling differs.
+LFA1,0000229182,,PSTLZ,Invalid Postal Code,Postal code 'N/A' does not match the format used in IN.
+LFA1,0000229343,,ORT01,Whitespace Issue,City has padding spaces and is upper-cased.
+LFA1,0000229583,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000229583,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000229834,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000230241,,ERDAT,Dormant Vendor,Created 2010-07-04 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000230468,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000231531,,SPRAS,Inconsistent Language,Communication language 'FR' does not fit country 'VN'.
+LFA1,0000231531,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000231568,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000232058,,ERDAT,Future Date,Creation date 2027-12-08 lies in the future.
+LFA1,0000232543,,TELF1,Invalid Phone Number,'tbd' is not a usable telephone number.
+LFA1,0000234284,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000234312,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000234500,,STCD1,Placeholder Tax Number,'TBD' is a placeholder rather than a real tax registration number.
+LFA1,0000234586,,NAME1,Duplicate Vendor,Same name and same address entered under two vendor numbers (0000079293 / 0000234586); no tax number on the newer record to link them.
+LFA1,0000234761,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000235883,,ORT01,Whitespace Issue,City has padding spaces and is upper-cased.
+LFA1,0000236344,,STCD1,Duplicate Vendor,Same legal entity entered twice (0000074606 / 0000236344): identical tax number PL0339859633 and identical bank account; only the legal-form spelling differs.
+LFA1,0000236606,,SMTP_ADDR,Invalid Email Format,"'purchasing@kingsmere-dunmore.co.uk,kingsmere-dunmore.co.uk' is not a valid e-mail address."
+LFA1,0000237029,,SMTP_ADDR,Invalid Email Format,'mailto:info@delacour-mobilier.fr' is not a valid e-mail address.
+LFA1,0000237780,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000237780,,NAME1,Look-alike (not a duplicate),"Parent and subsidiary at one address (0000243658 / 0000237780): similar names, but separate tax numbers and separate bank accounts - must stay two vendors."
+LFA1,0000237952,,NAME1,Placeholder Name,Vendor name 'XXX' is a placeholder / test record left in production.
+LFA1,0000238779,,SPRAS,Inconsistent Language,Communication language 'AR' does not fit country 'TR'.
+LFA1,0000238910,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000239239,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000240253,,SMTP_ADDR,Invalid Email Format,'@ferraro-servizi.it' is not a valid e-mail address.
+LFA1,0000240781,,PSTLZ,Invalid Postal Code,Postal code '80-6' does not match the format used in PL.
+LFA1,0000241460,,SMTP_ADDR,Invalid Email Format,'escaut-cosmetiques.fr' is not a valid e-mail address.
+LFA1,0000241688,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000241789,,SMTP_ADDR,Invalid Email Format,'oostergo-zandvliet.nl' is not a valid e-mail address.
+LFA1,0000242409,,NAME1,Look-alike (not a duplicate),"Independently owned outlets of the same franchise in two cities (0000242409 / 0000272594): same trading name, different tax numbers and bank accounts."
+LFA1,0000243658,,NAME1,Look-alike (not a duplicate),"Parent and subsidiary at one address (0000243658 / 0000237780): similar names, but separate tax numbers and separate bank accounts - must stay two vendors."
+LFA1,0000244115,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000244289,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000244853,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000244963,,STCD1,Duplicate Vendor,Same legal entity entered twice (0000073608 / 0000244963): identical tax number GB276132001 and identical bank account; only the legal-form spelling differs.
+LFA1,0000245238,,ERDAT,Dormant Vendor,Created 2012-12-07 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000245733,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000245773,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000245962,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000246009,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000246410,,LAND1,Invalid Country Code,'UAE' is not a 2-character ISO country code.
+LFA1,0000247133,,NAME1,Duplicate Vendor,Same name and same address entered under two vendor numbers (0000075456 / 0000247133); no tax number on the newer record to link them.
+LFA1,0000247209,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000247209,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000247734,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000248032,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000248756,,SORTL,Missing Search Term,Search term is empty.
+LFA1,0000249479,,PSTLZ,Invalid Postal Code,Postal code '00000' does not match the format used in IT.
+LFA1,0000250791,,LIFNR,Duplicate Vendor,Rebranded/renamed vendor kept as a second master record (0000078492 / 0000250791): different name and tax number but the SAME bank account - payments split across two vendor numbers.
+LFA1,0000250798,,STRAS,Missing Address,Street address is empty.
+LFA1,0000250866,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000250866,,TELF1,Invalid Phone Number,'tbd' is not a usable telephone number.
+LFA1,0000251045,,SMTP_ADDR,Invalid Email Format,'ap@peter-westbrook.com.' is not a valid e-mail address.
+LFA1,0000251392,,LAND1,Invalid Country Code,"'XX' is a placeholder, not a real country."
+LFA1,0000253840,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000254278,,ORT01,Missing Address,City is empty.
+LFA1,0000254754,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000254754,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000254779,,LIFNR,Duplicate Vendor,Rebranded/renamed vendor kept as a second master record (0000079556 / 0000254779): different name and tax number but the SAME bank account - payments split across two vendor numbers.
+LFA1,0000255112,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000255451,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000255909,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000255975,,NAME1,Placeholder Name,Vendor name 'XXX' is a placeholder / test record left in production.
+LFA1,0000256666,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000257325,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000257605,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000259205,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000259262,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000259262,,SORTL,Missing Search Term,Search term is empty.
+LFA1,0000259440,,NAME1,Placeholder Name,Vendor name 'DUMMY' is a placeholder / test record left in production.
+LFA1,0000260151,,ERDAT,Dormant Vendor,Created 2009-08-17 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000260254,,STRAS,Placeholder Address,Street contains the placeholder '-'.
+LFA1,0000261094,,STRAS,Missing Address,Street address is empty.
+LFA1,0000261463,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000261596,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000261596,,TELF1,Invalid Phone Number,'1234' is not a usable telephone number.
+LFA1,0000261917,,PSTLZ,Missing Address,Postal code is empty.
+LFA1,0000263591,,SMTP_ADDR,Duplicate Vendor,"Same vendor entered twice (0000074952 / 0000263591): identical e-mail address and phone number, tax number missing on the newer record."
+LFA1,0000263700,,PSTLZ,Invalid Postal Code,Postal code '90-4' does not match the format used in PL.
+LFA1,0000263700,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000263753,,NAME1,Look-alike (not a duplicate),"Two plants of one supplier deliberately kept apart (0000263753 / 0000293446): names differ only by the plant number, same tax number and bank account."
+LFA1,0000263779,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000263993,,ERDAT,Dormant Vendor,Created 2010-05-11 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000263993,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000264268,,STRAS,Missing Address,Street address is empty.
+LFA1,0000264328,,SPRAS,Invalid Language Key,'XX' is not a valid language key.
+LFA1,0000264847,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000265023,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000266236,,STCD1,Duplicate Vendor,Same legal entity entered twice (0000077886 / 0000266236): identical tax number GB272974420 and identical bank account; only the legal-form spelling differs.
+LFA1,0000266322,,NAME1,Duplicate Vendor,Legacy all-caps record and its re-keyed replacement (0000076221 / 0000266322); the tax number differs only by embedded spaces.
+LFA1,0000266360,,NAME1,Duplicate Vendor,Same name and same address entered under two vendor numbers (0000070976 / 0000266360); no tax number on the newer record to link them.
+LFA1,0000267038,,NAME1,Encoding Corruption,Name contains mojibake from a bad UTF-8 conversion: 'FiruzkÃ¶y & Uludağ A.Åž.'.
+LFA1,0000267311,,ERDAT,Future Date,Creation date 2027-08-25 lies in the future.
+LFA1,0000268122,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000268122,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000268415,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000268415,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000269825,,LAND1,Invalid Country Code,"'EU' is a region, not a country."
+LFA1,0000270068,,STCD1,Duplicate Vendor,Same legal entity entered twice (0000077985 / 0000270068): identical tax number 8339084703 and identical bank account; only the legal-form spelling differs.
+LFA1,0000270415,,STCD1,Duplicate Vendor,Same legal entity entered twice (0000073760 / 0000270415): identical tax number GB869826997 and identical bank account; only the legal-form spelling differs.
+LFA1,0000270808,,NAME1,Missing Mandatory Field,Vendor name is empty.
+LFA1,0000270808,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000271647,,STCD1,Tax Number / Address Mismatch,GSTIN starts with state code '09' but the vendor's address is in Bengaluru (state code '29').
+LFA1,0000272092,,PSTLZ,Invalid Postal Code,Postal code '4000' does not match the format used in IN.
+LFA1,0000272185,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000272594,,NAME1,Look-alike (not a duplicate),"Independently owned outlets of the same franchise in two cities (0000242409 / 0000272594): same trading name, different tax numbers and bank accounts."
+LFA1,0000273639,,ERDAT,Dormant Vendor,Created 2012-03-21 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000274023,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000274299,,ORT01,Missing Address,City is empty.
+LFA1,0000274299,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000274633,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000274732,,SPRAS,Inconsistent Language,Communication language 'AR' does not fit country 'GB'.
+LFA1,0000275177,,PSTLZ,Missing Address,Postal code is empty.
+LFA1,0000275792,,ERDAT,Dormant Vendor,Created 2012-02-12 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000275883,,SMTP_ADDR,Invalid Email Format,'n/a' is not a valid e-mail address.
+LFA1,0000276084,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000276390,,STCD1,Tax Number / Address Mismatch,GSTIN starts with state code '03' but the vendor's address is in Tiruppur (state code '33').
+LFA1,0000276475,,KTOKK,Invalid Account Group,Account group '' is not one of the configured vendor account groups.
+LFA1,0000276475,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000276475,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000276809,,TELF1,Invalid Phone Number,'000' is not a usable telephone number.
+LFA1,0000276999,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000279047,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000279047,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000279660,,ERDAT,Invalid Date,'0000-00-00' is not a valid date.
+LFA1,0000280245,,ERDAT,Dormant Vendor,Created 2011-12-13 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000280334,,ERDAT,Dormant Vendor,Created 2012-11-08 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000281437,,STCD1,Duplicate Vendor,"Three master records for one supplier (0000074526 / 0000293539 / 0000281437): same tax number and bank account, three different spellings of the name."
+LFA1,0000281975,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000282616,,ERDAT,Dormant Vendor,Created 2013-05-22 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000282904,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000283819,,NAME1,Duplicate Vendor,"Misspelled re-entry of the same vendor (0000078284 / 0000283819): 'Kim Son & Bao Tin Co., Ltd' vs 'Kim Son & Bao Tin Co., Ltd' at the same city and postal code."
+LFA1,0000283875,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000283978,,NAME1,Duplicate Vendor,Misspelled re-entry of the same vendor (0000073917 / 0000283978): 'Kuipers Handel B.V.' vs 'Kuipars Handel B.V.' at the same city and postal code.
+LFA1,0000284018,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000284210,,SORTL,Missing Search Term,Search term is empty.
+LFA1,0000285117,,STCD1,Placeholder Tax Number,'000000000' is a placeholder rather than a real tax registration number.
+LFA1,0000285160,,PSTLZ,Invalid Postal Code,Postal code '00000' does not match the format used in FR.
+LFA1,0000287241,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000287418,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000287615,,SMTP_ADDR,Invalid Email Format,'ap@kaczmarek.pl.' is not a valid e-mail address.
+LFA1,0000288410,,STRAS,Missing Address,Street address is empty.
+LFA1,0000288468,,NAME1,Placeholder Name,Vendor name 'Testlieferant' is a placeholder / test record left in production.
+LFA1,0000289730,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000289730,,SMTP_ADDR,Invalid Email Format,'zandvliet-van.nl' is not a valid e-mail address.
+LFA1,0000289872,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000290765,,STCD1,Placeholder Tax Number,'TBD' is a placeholder rather than a real tax registration number.
+LFA1,0000290797,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000290881,,STCD1,Placeholder Tax Number,'000000000' is a placeholder rather than a real tax registration number.
+LFA1,0000291793,,STRAS,Missing Address,Street address is empty.
+LFA1,0000291793,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000292269,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000292520,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000292567,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000292567,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000293051,,LAND1,Invalid Country Code,'UAE' is not a 2-character ISO country code.
+LFA1,0000293051,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000293323,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000293446,,NAME1,Look-alike (not a duplicate),"Two plants of one supplier deliberately kept apart (0000263753 / 0000293446): names differ only by the plant number, same tax number and bank account."
+LFA1,0000293539,,STCD1,Duplicate Vendor,"Three master records for one supplier (0000074526 / 0000293539 / 0000281437): same tax number and bank account, three different spellings of the name."
+LFA1,0000293551,,TELF1,Invalid Phone Number,'000' is not a usable telephone number.
+LFA1,0000294571,,PSTLZ,Missing Address,Postal code is empty.
+LFA1,0000294667,,NAME1,Duplicate Vendor,Same name and same address entered under two vendor numbers (0000078435 / 0000294667); no tax number on the newer record to link them.
+LFA1,0000295158,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000296714,,ERDAT,Dormant Vendor,Created 2012-08-15 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000297299,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000297611,,LIFNR,Duplicate Vendor,Rebranded/renamed vendor kept as a second master record (0000071846 / 0000297611): different name and tax number but the SAME bank account - payments split across two vendor numbers.
+LFA1,0000297611,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000297779,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000298224,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000298224,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000298327,,LAND1,Missing Mandatory Field,"Country key is empty, so the address cannot be validated or used for tax determination."
+LFA1,0000298679,,NAME1,Encoding Corruption,Name contains mojibake from a bad UTF-8 conversion: 'Oliveira-Matosinhos ComÃ©rcio Lda.'.
+LFA1,0000298809,,ERDAT,Dormant Vendor,Created 2011-04-04 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000298809,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000299765,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000299765,,ORT01,Missing Address,City is empty.
+LFA1,0000299996,,LAND1,Missing Mandatory Field,"Country key is empty, so the address cannot be validated or used for tax determination."
+LFA1,0000337019,,NAME1,Look-alike (not a duplicate),"Collective one-time-vendor account: 'Einmalkreditor Inland' is a generic name shared by design, so records matching on it are not duplicates."
+LFA1,0000354676,,NAME1,Look-alike (not a duplicate),"Collective one-time-vendor account: 'One-time vendor - services' is a generic name shared by design, so records matching on it are not duplicates."
+LFA1,0000370227,,NAME1,Look-alike (not a duplicate),"Collective one-time-vendor account: 'Einmalkreditor Inland' is a generic name shared by design, so records matching on it are not duplicates."
+LFA1,0000374725,,NAME1,Look-alike (not a duplicate),"Collective one-time-vendor account: 'Einmalkreditor Ausland' is a generic name shared by design, so records matching on it are not duplicates."
+LFA1,0000377318,,NAME1,Look-alike (not a duplicate),"Collective one-time-vendor account: 'One-time vendor - services' is a generic name shared by design, so records matching on it are not duplicates."
+LFA1,0000398574,,NAME1,Look-alike (not a duplicate),"Collective one-time-vendor account: 'Einmalkreditor Ausland' is a generic name shared by design, so records matching on it are not duplicates."
+LFA1,0000403760,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000403760,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000403982,,LAND1,Missing Mandatory Field,"Country key is empty, so the address cannot be validated or used for tax determination."
+LFA1,0000404393,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000404393,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000405048,,SPRAS,Inconsistent Language,Communication language 'AR' does not fit country 'DE'.
+LFA1,0000406870,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000407527,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000408596,,NAME1,Look-alike (not a duplicate),"Parent and subsidiary at one address (0000477928 / 0000408596): similar names, but separate tax numbers and separate bank accounts - must stay two vendors."
+LFA1,0000409000,,PSTLZ,Invalid Postal Code,Postal code '00000' does not match the format used in DE.
+LFA1,0000409196,,NAME1,Look-alike (not a duplicate),"Two plants of one supplier deliberately kept apart (0000442683 / 0000409196): names differ only by the plant number, same tax number and bank account."
+LFA1,0000410029,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000410029,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000410029,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000410205,,STRAS,Missing Address,Street address is empty.
+LFA1,0000412888,,PSTLZ,Invalid Postal Code,Postal code 'X9135' does not match the format used in IT.
+LFA1,0000412888,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000415333,,STCD1,Placeholder Tax Number,'XXXXXXXXX' is a placeholder rather than a real tax registration number.
+LFA1,0000416996,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000416996,,SPRAS,Inconsistent Language,Communication language 'ZH' does not fit country 'ES'.
+LFA1,0000417281,,ERDAT,Placeholder Date,"Creation date 1900-01-01 is the SAP initial date, not a real creation date."
+LFA1,0000418180,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000418180,,STRAS,Placeholder Address,Street contains the placeholder '-'.
+LFA1,0000418895,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000418895,,NAME1,Duplicate Vendor,Misspelled re-entry of the same vendor (0000071334 / 0000418895): 'Terlouw & Meulenbelt N.V.' vs 'Tarlouw & Meulenbelt N.V.' at the same city and postal code.
+LFA1,0000419681,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000419681,,STRAS,Missing Address,Street address is empty.
+LFA1,0000420802,,STCD1,Duplicate Vendor,"Three master records for one supplier (0000078947 / 0000469457 / 0000420802): same tax number and bank account, three different spellings of the name."
+LFA1,0000421249,,PSTLZ,Missing Address,Postal code is empty.
+LFA1,0000423460,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000425220,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000425561,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000427738,,NAME1,Duplicate Vendor,Misspelled re-entry of the same vendor (0000075777 / 0000427738): 'Sancerre SAS' vs 'Sancarre SAS' at the same city and postal code.
+LFA1,0000431198,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000431198,,STCD1,Invalid Tax Number Format,Tax number 'de887603983' does not match the DE format (was 'DE887603983').
+LFA1,0000431709,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000431709,,NAME1,Look-alike (not a duplicate),"Independently owned outlets of the same franchise in two cities (0000450160 / 0000431709): same trading name, different tax numbers and bank accounts."
+LFA1,0000434074,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000436048,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000436048,,SMTP_ADDR,Duplicate Vendor,"Same vendor entered twice (0000078491 / 0000436048): identical e-mail address and phone number, tax number missing on the newer record."
+LFA1,0000439976,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000439976,,ORT01,Whitespace Issue,City has padding spaces and is upper-cased.
+LFA1,0000439976,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000440584,,PSTLZ,Invalid Postal Code,Postal code '5600480' does not match the format used in IN.
+LFA1,0000440584,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000441382,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000441382,,SPRAS,Inconsistent Language,Communication language 'RU' does not fit country 'DE'.
+LFA1,0000441866,,STCD1,Duplicate Vendor,"Same company, two addresses (0000078630 / 0000441866): identical tax number FR06642387614 but different city - one record is a branch address kept as a separate vendor."
+LFA1,0000442461,,ERDAT,Dormant Vendor,Created 2011-03-05 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000442683,,NAME1,Look-alike (not a duplicate),"Two plants of one supplier deliberately kept apart (0000442683 / 0000409196): names differ only by the plant number, same tax number and bank account."
+LFA1,0000443700,,NAME1,Duplicate Vendor,Misspelled re-entry of the same vendor (0000078304 / 0000443700): 'Falkenstein Textil AG' vs 'Falkensteni Textil AG' at the same city and postal code.
+LFA1,0000447462,,NAME1,Placeholder Name,Vendor name 'XXX' is a placeholder / test record left in production.
+LFA1,0000449575,,NAME1,Encoding Corruption,Name contains mojibake from a bad UTF-8 conversion: 'Eichberg-HochstÃ¤tt Elektronik GmbH'.
+LFA1,0000449923,,ORT01,Missing Address,City is empty.
+LFA1,0000450030,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000450160,,NAME1,Look-alike (not a duplicate),"Independently owned outlets of the same franchise in two cities (0000450160 / 0000431709): same trading name, different tax numbers and bank accounts."
+LFA1,0000453745,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000454342,,ORT01,Missing Address,City is empty.
+LFA1,0000459238,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000462137,,STCD1,Duplicate Vendor,Same legal entity entered twice (0000074850 / 0000462137): identical tax number NL280198342B83 and identical bank account; only the legal-form spelling differs.
+LFA1,0000462277,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000462277,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000464404,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000464800,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000464800,,ORT01,Whitespace Issue,City has padding spaces and is upper-cased.
+LFA1,0000465117,,PSTLZ,Missing Address,Postal code is empty.
+LFA1,0000465117,,SPERM,Central Purchasing Block,Vendor carries a central purchasing block.
+LFA1,0000465673,,STCD1,Duplicate Vendor,"Same company, two addresses (0000075764 / 0000465673): identical tax number DE339873020 but different city - one record is a branch address kept as a separate vendor."
+LFA1,0000466855,,NAME1,Missing Mandatory Field,Vendor name is empty.
+LFA1,0000467256,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000467256,,SMTP_ADDR,Invalid Email Format,'n/a' is not a valid e-mail address.
+LFA1,0000467707,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000468300,,ERDAT,Dormant Vendor,Created 2011-08-03 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000469038,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000469038,,STCD1,Invalid Tax Number Format,Tax number '09VYOPL5498U1ZH' does not match the IN format (was '09VYOPL5498U1ZH').
+LFA1,0000469457,,STCD1,Duplicate Vendor,"Three master records for one supplier (0000078947 / 0000469457 / 0000420802): same tax number and bank account, three different spellings of the name."
+LFA1,0000473182,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000473182,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000473592,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000473762,,ERDAT,Dormant Vendor,Created 2009-07-18 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000475210,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000475210,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000476019,,SORTL,Missing Search Term,Search term is empty.
+LFA1,0000476019,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000477928,,NAME1,Look-alike (not a duplicate),"Parent and subsidiary at one address (0000477928 / 0000408596): similar names, but separate tax numbers and separate bank accounts - must stay two vendors."
+LFA1,0000478044,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000479499,,NAME1,Placeholder Name,Vendor name 'ZZZ GESPERRT' is a placeholder / test record left in production.
+LFA1,0000479610,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000480953,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000480953,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000480953,,SMTP_ADDR,Invalid Email Format,'mailto:info@herrera-s.es' is not a valid e-mail address.
+LFA1,0000482314,,SMTP_ADDR,Missing Contact Data,No e-mail address - remittance advices cannot be sent electronically.
+LFA1,0000482335,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000482489,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000483860,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000484180,,LOEVM,Deletion Flag Set,Vendor is flagged for deletion in the general data.
+LFA1,0000484180,,ORT01,Whitespace Issue,City has padding spaces and is upper-cased.
+LFA1,0000486113,,TELF1,Missing Contact Data,No telephone number.
+LFA1,0000486312,,SPRAS,Inconsistent Language,Communication language 'ZH' does not fit country 'DE'.
+LFA1,0000489654,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000489654,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000494008,,STCD1,Missing Tax Number,No tax/VAT number on a trading vendor - blocks tax reporting and makes duplicate matching harder.
+LFA1,0000494282,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000494282,,STRAS,Placeholder Address,Street contains the placeholder 'N/A'.
+LFA1,0000494473,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000494473,,STRAS,Missing Address,Street address is empty.
+LFA1,0000495926,,PSTLZ,Missing Address,Postal code is empty.
+LFA1,0000497608,,NAME1,Duplicate Vendor,Same name and same address entered under two vendor numbers (0000075534 / 0000497608); no tax number on the newer record to link them.
+LFA1,0000497716,,PSTLZ,Missing Address,Postal code is empty.
+LFA1,0000504244,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000516107,,LAND1,Invalid Country Code,"'XX' is a placeholder, not a real country."
+LFA1,0000523241,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000530883,,NAME1,Whitespace Issue,Vendor name has leading/trailing and doubled internal spaces.
+LFA1,0000536137,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000544807,,ORT01,Missing Address,City is empty.
+LFA1,0000558000,,NAME1,Duplicate Vendor,"One employee has two vendor accounts (0000579987 / 0000558000): same name, same private bank account and the same internal e-mail address - expense payments are split over two vendor numbers."
+LFA1,0000574949,,ERDAT,Dormant Vendor,Created 2010-02-13 and never extended to a company code or purchasing organisation - dormant master data.
+LFA1,0000579987,,LIFNR,Missing Bank Details,Active vendor with no bank details in LFBK.
+LFA1,0000579987,,NAME1,Duplicate Vendor,"One employee has two vendor accounts (0000579987 / 0000558000): same name, same private bank account and the same internal e-mail address - expense payments are split over two vendor numbers."
+LFA1,0000589666,,PSTLZ,Invalid Postal Code,Postal code 'X1143' does not match the format used in DE.
+LFA1,0000590938,,NAME1,Inconsistent Casing,Record migrated from the legacy system in all upper case; the rest of the table is mixed case.
+LFA1,0000590938,,SMTP_ADDR,Invalid Email Format,'info@sonnenfeld-druck.de ' is not a valid e-mail address.
+LFA1,0000595491,,STRAS,Missing Address,Street address is empty.
+LFB1,0000070061,1000,ZWELS,Payment Method Without Bank Details,Payment method 'TU' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000070405,3000,ZWELS,Payment Method Without Bank Details,Payment method 'U' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000071334,1000,HBKID,House Bank Mismatch,House bank 'HSBC1' does not belong to company code 1000.
+LFB1,0000071543,1000,ZWELS,Payment Method Without Bank Details,Payment method 'T' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000071795,3000,SPERR,Company Code Posting Block,Posting block set in company code 3000.
+LFB1,0000072214,2000,ZTERM,Invalid Payment Terms,Payment terms key 'XXXX' does not exist in customizing.
+LFB1,0000073172,1000,ZTERM,Missing Payment Terms,No payment terms maintained; invoices default to immediate payment.
+LFB1,0000073760,2000,AKONT,Invalid Reconciliation Account,'0000999999' is not a valid vendor reconciliation account.
+LFB1,0000073917,2000,ZWELS,Payment Method Without Bank Details,Payment method 'T' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000074590,1000,HBKID,House Bank Mismatch,House bank 'HSBC1' does not belong to company code 1000.
+LFB1,0000074926,1000,HBKID,House Bank Mismatch,House bank 'JPM01' does not belong to company code 1000.
+LFB1,0000075038,2000,,Duplicate Key,Two rows exist for vendor 0000075038 in company code 2000 with different payment terms; LIFNR + BUKRS must be unique.
+LFB1,0000075235,1000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 1000; invoices for this vendor cannot be posted.
+LFB1,0000075447,2000,ZWELS,Payment Method Without Bank Details,Payment method 'TU' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000075902,2000,SPERR,Company Code Posting Block,Posting block set in company code 2000.
+LFB1,0000075991,3000,HBKID,House Bank Mismatch,House bank 'BARC1' does not belong to company code 3000.
+LFB1,0000076620,3000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 3000; invoices for this vendor cannot be posted.
+LFB1,0000077503,1000,ZWELS,Payment Method Without Bank Details,Payment method 'T' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000077750,1000,ZWELS,Payment Method Without Bank Details,Payment method 'T' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000078359,2000,ZWELS,Payment Method Without Bank Details,Payment method 'T' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000078489,2000,ZTERM,Missing Payment Terms,No payment terms maintained; invoices default to immediate payment.
+LFB1,0000078548,1000,ZWELS,Payment Method Without Bank Details,Payment method 'U' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000079432,2000,ZWELS,Payment Method Without Bank Details,Payment method 'TU' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000079496,1000,ZWELS,Payment Method Without Bank Details,Payment method 'TU' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000079946,2000,ZTERM,Missing Payment Terms,No payment terms maintained; invoices default to immediate payment.
+LFB1,0000101991,1000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 1000; invoices for this vendor cannot be posted.
+LFB1,0000103092,3000,ZTERM,Missing Payment Terms,No payment terms maintained; invoices default to immediate payment.
+LFB1,0000104818,3000,,Duplicate Key,Two rows exist for vendor 0000104818 in company code 3000 with different payment terms; LIFNR + BUKRS must be unique.
+LFB1,0000108413,1000,,Duplicate Key,Two rows exist for vendor 0000108413 in company code 1000 with different payment terms; LIFNR + BUKRS must be unique.
+LFB1,0000108979,1000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 1000; invoices for this vendor cannot be posted.
+LFB1,0000110935,1000,ZWELS,Payment Method Without Bank Details,Payment method 'U' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000120342,3000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 3000; invoices for this vendor cannot be posted.
+LFB1,0000121666,1000,ZTERM,Invalid Payment Terms,Payment terms key 'XXXX' does not exist in customizing.
+LFB1,0000130731,3000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 3000; invoices for this vendor cannot be posted.
+LFB1,0000135895,1000,ZWELS,Payment Method Without Bank Details,Payment method 'TU' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000136948,1000,,Duplicate Key,Two rows exist for vendor 0000136948 in company code 1000 with different payment terms; LIFNR + BUKRS must be unique.
+LFB1,0000145724,3000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 3000; invoices for this vendor cannot be posted.
+LFB1,0000154106,1000,ZTERM,Missing Payment Terms,No payment terms maintained; invoices default to immediate payment.
+LFB1,0000160363,1000,ZWELS,Payment Method Without Bank Details,Payment method 'T' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000162002,1000,ZWELS,Payment Method Without Bank Details,Payment method 'TU' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000164710,1000,HBKID,House Bank Mismatch,House bank 'JPM01' does not belong to company code 1000.
+LFB1,0000176173,1000,SPERR,Company Code Posting Block,Posting block set in company code 1000.
+LFB1,0000176893,1000,SPERR,Company Code Posting Block,Posting block set in company code 1000.
+LFB1,0000181648,1000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 1000; invoices for this vendor cannot be posted.
+LFB1,0000189112,1000,ZWELS,Payment Method Without Bank Details,Payment method 'TU' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000197052,1000,ZTERM,Invalid Payment Terms,Payment terms key 'XXXX' does not exist in customizing.
+LFB1,0000197292,1000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 1000; invoices for this vendor cannot be posted.
+LFB1,0000200250,1000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 1000; invoices for this vendor cannot be posted.
+LFB1,0000204907,1000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 1000; invoices for this vendor cannot be posted.
+LFB1,0000207494,1000,ZTERM,Invalid Payment Terms,Payment terms key 'ZZZZ' does not exist in customizing.
+LFB1,0000207494,1000,ZWELS,Payment Method Without Bank Details,Payment method 'U' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000207542,1000,ZTERM,Missing Payment Terms,No payment terms maintained; invoices default to immediate payment.
+LFB1,0000209051,1000,ZWELS,Payment Method Without Bank Details,Payment method 'TU' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000212379,1000,ZWELS,Payment Method Without Bank Details,Payment method 'T' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000215852,1000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 1000; invoices for this vendor cannot be posted.
+LFB1,0000219784,1000,SPERR,Company Code Posting Block,Posting block set in company code 1000.
+LFB1,0000223421,3000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 3000; invoices for this vendor cannot be posted.
+LFB1,0000223421,1000,ZTERM,Missing Payment Terms,No payment terms maintained; invoices default to immediate payment.
+LFB1,0000226389,2000,SPERR,Company Code Posting Block,Posting block set in company code 2000.
+LFB1,0000227787,3000,SPERR,Company Code Posting Block,Posting block set in company code 3000.
+LFB1,0000229343,2000,ZTERM,Missing Payment Terms,No payment terms maintained; invoices default to immediate payment.
+LFB1,0000229467,1000,HBKID,House Bank Mismatch,House bank 'BARC1' does not belong to company code 1000.
+LFB1,0000229834,1000,ZWELS,Payment Method Without Bank Details,Payment method 'U' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000230468,1000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 1000; invoices for this vendor cannot be posted.
+LFB1,0000230468,2000,ZTERM,Invalid Payment Terms,Payment terms key '9999' does not exist in customizing.
+LFB1,0000230468,2000,ZWELS,Payment Method Without Bank Details,Payment method 'U' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000237201,1000,SPERR,Company Code Posting Block,Posting block set in company code 1000.
+LFB1,0000237780,2000,ZWELS,Payment Method Without Bank Details,Payment method 'U' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000238910,1000,ZTERM,Missing Payment Terms,No payment terms maintained; invoices default to immediate payment.
+LFB1,0000239239,1000,ZWELS,Payment Method Without Bank Details,Payment method 'U' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000241151,2000,SPERR,Company Code Posting Block,Posting block set in company code 2000.
+LFB1,0000245733,1000,ZWELS,Payment Method Without Bank Details,Payment method 'U' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000246009,1000,ZWELS,Payment Method Without Bank Details,Payment method 'U' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000246244,3000,AKONT,Invalid Reconciliation Account,'0000123456' is not a valid vendor reconciliation account.
+LFB1,0000249250,1000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 1000; invoices for this vendor cannot be posted.
+LFB1,0000250866,1000,AKONT,Invalid Reconciliation Account,'0000123456' is not a valid vendor reconciliation account.
+LFB1,0000254779,1000,ZTERM,Missing Payment Terms,No payment terms maintained; invoices default to immediate payment.
+LFB1,0000256228,1000,ZTERM,Missing Payment Terms,No payment terms maintained; invoices default to immediate payment.
+LFB1,0000260808,1000,ZTERM,Missing Payment Terms,No payment terms maintained; invoices default to immediate payment.
+LFB1,0000263263,1000,,Duplicate Key,Two rows exist for vendor 0000263263 in company code 1000 with different payment terms; LIFNR + BUKRS must be unique.
+LFB1,0000265023,1000,ZTERM,Missing Payment Terms,No payment terms maintained; invoices default to immediate payment.
+LFB1,0000268415,1000,ZWELS,Payment Method Without Bank Details,Payment method 'TU' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000275754,2000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 2000; invoices for this vendor cannot be posted.
+LFB1,0000279615,1000,AKONT,Invalid Reconciliation Account,'0000123456' is not a valid vendor reconciliation account.
+LFB1,0000287418,1000,ZTERM,Missing Payment Terms,No payment terms maintained; invoices default to immediate payment.
+LFB1,0000289080,1000,SPERR,Company Code Posting Block,Posting block set in company code 1000.
+LFB1,0000290797,1000,ZWELS,Payment Method Without Bank Details,Payment method 'TU' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000293051,2000,SPERR,Company Code Posting Block,Posting block set in company code 2000.
+LFB1,0000293323,2000,ZWELS,Payment Method Without Bank Details,Payment method 'U' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000299428,3000,SPERR,Company Code Posting Block,Posting block set in company code 3000.
+LFB1,0000337019,1000,ZWELS,Payment Method Without Bank Details,Payment method 'T' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000370227,1000,ZWELS,Payment Method Without Bank Details,Payment method 'U' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000407527,1000,ZWELS,Payment Method Without Bank Details,Payment method 'T' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000410029,1000,ZWELS,Payment Method Without Bank Details,Payment method 'TU' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000415333,3000,HBKID,House Bank Mismatch,House bank 'BARC1' does not belong to company code 3000.
+LFB1,0000418180,1000,ZWELS,Payment Method Without Bank Details,Payment method 'U' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000427738,1000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 1000; invoices for this vendor cannot be posted.
+LFB1,0000428350,1000,SPERR,Company Code Posting Block,Posting block set in company code 1000.
+LFB1,0000431709,1000,ZWELS,Payment Method Without Bank Details,Payment method 'T' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000436048,1000,HBKID,House Bank Mismatch,House bank 'JPM01' does not belong to company code 1000.
+LFB1,0000436048,1000,ZWELS,Payment Method Without Bank Details,Payment method 'U' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000453034,1000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 1000; invoices for this vendor cannot be posted.
+LFB1,0000453981,1000,AKONT,Invalid Reconciliation Account,'0000123456' is not a valid vendor reconciliation account.
+LFB1,0000454342,1000,ZTERM,Missing Payment Terms,No payment terms maintained; invoices default to immediate payment.
+LFB1,0000462679,2000,,Duplicate Key,Two rows exist for vendor 0000462679 in company code 2000 with different payment terms; LIFNR + BUKRS must be unique.
+LFB1,0000462679,1000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 1000; invoices for this vendor cannot be posted.
+LFB1,0000464800,1000,ZWELS,Payment Method Without Bank Details,Payment method 'T' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000467707,1000,ZWELS,Payment Method Without Bank Details,Payment method 'TU' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000467707,3000,ZWELS,Payment Method Without Bank Details,Payment method 'TU' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000475210,3000,ZWELS,Payment Method Without Bank Details,Payment method 'U' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000476019,3000,SPERR,Company Code Posting Block,Posting block set in company code 3000.
+LFB1,0000478592,3000,AKONT,Missing Reconciliation Account,No reconciliation account maintained for company code 3000; invoices for this vendor cannot be posted.
+LFB1,0000480953,1000,ZWELS,Payment Method Without Bank Details,Payment method 'TU' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000494473,1000,ZWELS,Payment Method Without Bank Details,Payment method 'U' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000504244,2000,ZWELS,Payment Method Without Bank Details,Payment method 'T' is a bank transfer but the vendor has no bank details in LFBK.
+LFB1,0000572903,1000,ZTERM,Invalid Payment Terms,Payment terms key '9999' does not exist in customizing.
+LFB1,0000909466,,LIFNR,Orphan Record,Company code data exists for a vendor number that does not exist in LFA1.
+LFB1,0000916641,,LIFNR,Orphan Record,Company code data exists for a vendor number that does not exist in LFA1.
+LFB1,0000921371,,LIFNR,Orphan Record,Company code data exists for a vendor number that does not exist in LFA1.
+LFB1,0000928275,,LIFNR,Orphan Record,Company code data exists for a vendor number that does not exist in LFA1.
+LFB1,0000932556,,LIFNR,Orphan Record,Company code data exists for a vendor number that does not exist in LFA1.
+LFB1,0000933020,,LIFNR,Orphan Record,Company code data exists for a vendor number that does not exist in LFA1.
+LFB1,0000938163,,LIFNR,Orphan Record,Company code data exists for a vendor number that does not exist in LFA1.
+LFB1,0000942679,,LIFNR,Orphan Record,Company code data exists for a vendor number that does not exist in LFA1.
+LFB1,0000949655,,LIFNR,Orphan Record,Company code data exists for a vendor number that does not exist in LFA1.
+LFB1,0000963201,,LIFNR,Orphan Record,Company code data exists for a vendor number that does not exist in LFA1.
+LFB1,0000968394,,LIFNR,Orphan Record,Company code data exists for a vendor number that does not exist in LFA1.
+LFB1,0000975886,,LIFNR,Orphan Record,Company code data exists for a vendor number that does not exist in LFA1.
+LFBK,0000070553,31772619,BANKN,Invalid Bank Account Number,"Bank account number '-' is free text, not an account number."
+LFBK,0000071920,78772120,KOINH,Account Holder Mismatch,Account holder 'Andreas Schmidt' differs from the vendor name - verify before paying (payment-diversion risk).
+LFBK,0000075750,2190726542,KOINH,Account Holder Mismatch,Account holder 'J. Dubois' differs from the vendor name - verify before paying (payment-diversion risk).
+LFBK,0000075991,78619557,BANKN,Invalid Bank Account Number,"Bank account number '0000000000' is free text, not an account number."
+LFBK,0000077024,85098564,,Bank Data on Deleted Vendor,Active bank details remain on a vendor that is flagged for deletion.
+LFBK,0000077556,857490,IBAN,Invalid IBAN Checksum,IBAN 'GB04NWBK85749075322475' fails the ISO 13616 mod-97 check.
+LFBK,0000101189,83126538,BANKN,Fraud risk,"Employee vendor 0000578970 (Schmidt, Andreas) is paid to the same bank account as supplier 0000101189 (Nordwind-Bühler Handels e.K.) - a classic conflict-of-interest / payment-diversion pattern."
+LFBK,0000101991,53873832,IBAN,Invalid IBAN Checksum,IBAN 'DE92538738326964622673' fails the ISO 13616 mod-97 check.
+LFBK,0000101991,74897115,KOINH,Account Holder Mismatch,Account holder 'T. Yilmaz' differs from the vendor name - verify before paying (payment-diversion risk).
+LFBK,0000105912,26877111,KOINH,Account Holder Mismatch,Account holder 'M. Keller' differs from the vendor name - verify before paying (payment-diversion risk).
+LFBK,0000112486,82079335,KOINH,Account Holder Mismatch,Account holder 'T. Yilmaz' differs from the vendor name - verify before paying (payment-diversion risk).
+LFBK,0000114869,87390984,IBAN,Invalid IBAN Checksum,IBAN 'DE63873909844254107786' fails the ISO 13616 mod-97 check.
+LFBK,0000116336,64231047,IBAN,Invalid IBAN Checksum,IBAN 'DE95642310479187293015' fails the ISO 13616 mod-97 check.
+LFBK,0000129113,52480,IBAN,Invalid IBAN Checksum,IBAN 'AT005248048882741914' fails the ISO 13616 mod-97 check.
+LFBK,0000130885,28894543,,Identical Duplicate Row,The complete bank-details row exists twice for this vendor.
+LFBK,0000137190,40666554,,Bank Data on Deleted Vendor,Active bank details remain on a vendor that is flagged for deletion.
+LFBK,0000141682,131551,,Identical Duplicate Row,The complete bank-details row exists twice for this vendor.
+LFBK,0000149782,36816882,BANKN,Duplicate Bank Row,"The same account is stored twice for this vendor, once with and once without a leading zero ('6102584392' / '06102584392')."
+LFBK,0000149782,88478842,IBAN,IBAN / Bank Country Mismatch,IBAN starts with 'IT' but the bank country is 'DE'.
+LFBK,0000150336,40312974,IBAN,IBAN / Bank Country Mismatch,IBAN starts with 'ES' but the bank country is 'DE'.
+LFBK,0000166707,43952705,,Identical Duplicate Row,The complete bank-details row exists twice for this vendor.
+LFBK,0000174818,21041192,BANKN,Shared bank account (explainable),"Two unrelated suppliers (0000174818 / 0000187325) are paid to the same factoring company's account; the account holder is the factor, not the vendor."
+LFBK,0000176054,26841009,KOINH,Account Holder Mismatch,Account holder 'J. Dubois' differs from the vendor name - verify before paying (payment-diversion risk).
+LFBK,0000179271,28231677,,Bank Data on Deleted Vendor,Active bank details remain on a vendor that is flagged for deletion.
+LFBK,0000181648,13296904,IBAN,IBAN / Bank Country Mismatch,IBAN starts with 'ES' but the bank country is 'DE'.
+LFBK,0000187325,21041192,BANKN,Shared bank account (explainable),"Two unrelated suppliers (0000174818 / 0000187325) are paid to the same factoring company's account; the account holder is the factor, not the vendor."
+LFBK,0000190342,10083517,KOINH,Account Holder Mismatch,Account holder 'R. Verma' differs from the vendor name - verify before paying (payment-diversion risk).
+LFBK,0000197011,30726204,KOINH,Account Holder Mismatch,Account holder 'J. Dubois' differs from the vendor name - verify before paying (payment-diversion risk).
+LFBK,0000198792,65757021,IBAN,IBAN / Bank Country Mismatch,IBAN starts with 'ES' but the bank country is 'DE'.
+LFBK,0000199933,24920327,IBAN,Invalid IBAN Checksum,IBAN 'DE75249203272136390688' fails the ISO 13616 mod-97 check.
+LFBK,0000202614,84246788,KOINH,Account Holder Mismatch,Account holder 'R. Verma' differs from the vendor name - verify before paying (payment-diversion risk).
+LFBK,0000205662,52317760,BANKN,Invalid Bank Account Number,"Bank account number 'ACCOUNT PENDING' is free text, not an account number."
+LFBK,0000211804,906768224,KOINH,Account Holder Mismatch,Account holder 'T. Yilmaz' differs from the vendor name - verify before paying (payment-diversion risk).
+LFBK,0000212867,768706,BANKN,Duplicate Bank Row,"The same account is stored twice for this vendor, once with and once without a leading zero ('59415801' / '059415801')."
+LFBK,0000216718,4373793553,BANKN,Duplicate Bank Row,"The same account is stored twice for this vendor, once with and once without a leading zero ('RHKU079707TT' / '0RHKU079707TT')."
+LFBK,0000221966,729,IBAN,Invalid IBAN Checksum,IBAN 'SE7272992819283872687169' fails the ISO 13616 mod-97 check.
+LFBK,0000229182,JARE0UH6PEE,IBAN,Invalid IBAN,'NOIBAN' is not an IBAN; IN does not use IBANs at all.
+LFBK,0000235883,83485480,IBAN,IBAN / Bank Country Mismatch,IBAN starts with 'ES' but the bank country is 'PT'.
+LFBK,0000244289,798718503803,IBAN,Invalid IBAN,'SEE ATTACHMENT' is not an IBAN; CN does not use IBANs at all.
+LFBK,0000245159,172256,IBAN,Invalid IBAN Checksum,IBAN 'GB04LOYD17225676101839' fails the ISO 13616 mod-97 check.
+LFBK,0000246244,924338852,BANKN,Duplicate Bank Row,"The same account is stored twice for this vendor, once with and once without a leading zero ('5907638857' / '05907638857')."
+LFBK,0000247193,53302723,BANKN,Shared bank account (explainable),"Two unrelated suppliers (0000461990 / 0000247193) are paid to the same factoring company's account; the account holder is the factor, not the vendor."
+LFBK,0000249250,9508081180,BANKN,Duplicate Bank Row,"The same account is stored twice for this vendor, once with and once without a leading zero ('W3FWW9TCXD7N' / '0W3FWW9TCXD7N')."
+LFBK,0000251045,790746495,,Identical Duplicate Row,The complete bank-details row exists twice for this vendor.
+LFBK,0000251392,4911069708,,Identical Duplicate Row,The complete bank-details row exists twice for this vendor.
+LFBK,0000253613,5505729316,BANKN,Fraud risk,"Employee vendor 0000513350 (Weber, Thomas) is paid to the same bank account as supplier 0000253613 (Toscani-Ortolani Distribuzione S.p.A.) - a classic conflict-of-interest / payment-diversion pattern."
+LFBK,0000254278,DPWG0XQXV5X,IBAN,Invalid IBAN,'N/A' is not an IBAN; IN does not use IBANs at all.
+LFBK,0000272185,JFML0TOXLL0,IBAN,Invalid IBAN,'NOIBAN' is not an IBAN; IN does not use IBANs at all.
+LFBK,0000278850,10552891,BANKN,Invalid Bank Account Number,"Bank account number 'SIEHE ANLAGE' is free text, not an account number."
+LFBK,0000281975,582318,,Bank Data on Deleted Vendor,Active bank details remain on a vendor that is flagged for deletion.
+LFBK,0000283822,625918067,BANKN,Invalid Bank Account Number,"Bank account number '0000000000' is free text, not an account number."
+LFBK,0000284018,392256680,,Bank Data on Deleted Vendor,Active bank details remain on a vendor that is flagged for deletion.
+LFBK,0000438431,16119340,IBAN,Invalid IBAN Checksum,IBAN 'DE78161193405974975845' fails the ISO 13616 mod-97 check.
+LFBK,0000453034,02239263,IBAN,IBAN / Bank Country Mismatch,IBAN starts with 'DE' but the bank country is 'PL'.
+LFBK,0000453981,32127373,KOINH,Account Holder Mismatch,Account holder 'T. Yilmaz' differs from the vendor name - verify before paying (payment-diversion risk).
+LFBK,0000461990,53302723,BANKN,Shared bank account (explainable),"Two unrelated suppliers (0000461990 / 0000247193) are paid to the same factoring company's account; the account holder is the factor, not the vendor."
+LFBK,0000467256,13383918,,Bank Data on Deleted Vendor,Active bank details remain on a vendor that is flagged for deletion.
+LFBK,0000495244,1240903569,BANKN,Invalid Bank Account Number,"Bank account number 'ACCOUNT PENDING' is free text, not an account number."
+LFBK,0000513350,5505729316,BANKN,Fraud risk,"Employee vendor 0000513350 (Weber, Thomas) is paid to the same bank account as supplier 0000253613 (Toscani-Ortolani Distribuzione S.p.A.) - a classic conflict-of-interest / payment-diversion pattern."
+LFBK,0000572903,51075668,KOINH,Account Holder Mismatch,Account holder 'J. Dubois' differs from the vendor name - verify before paying (payment-diversion risk).
+LFBK,0000578970,83126538,BANKN,Fraud risk,"Employee vendor 0000578970 (Schmidt, Andreas) is paid to the same bank account as supplier 0000101189 (Nordwind-Bühler Handels e.K.) - a classic conflict-of-interest / payment-diversion pattern."
+LFBK,0000595491,51436621,BANKN,Invalid Bank Account Number,"Bank account number '0000000000' is free text, not an account number."
+LFBK,0000902566,68182671,LIFNR,Orphan Record,Bank details exist for a vendor number that does not exist in LFA1.
+LFBK,0000919335,83843029,LIFNR,Orphan Record,Bank details exist for a vendor number that does not exist in LFA1.
+LFBK,0000920871,954333256774,LIFNR,Orphan Record,Bank details exist for a vendor number that does not exist in LFA1.
+LFBK,0000931369,514862,LIFNR,Orphan Record,Bank details exist for a vendor number that does not exist in LFA1.
+LFBK,0000938691,19381865,LIFNR,Orphan Record,Bank details exist for a vendor number that does not exist in LFA1.
+LFBK,0000944595,03373,LIFNR,Orphan Record,Bank details exist for a vendor number that does not exist in LFA1.
+LFBK,0000966018,21880549,LIFNR,Orphan Record,Bank details exist for a vendor number that does not exist in LFA1.
+LFBK,0000976869,66437155,LIFNR,Orphan Record,Bank details exist for a vendor number that does not exist in LFA1.
+LFBK,0000981997,81374437,LIFNR,Orphan Record,Bank details exist for a vendor number that does not exist in LFA1.
+LFM1,0000070630,P100,INCO1,Invalid Incoterms,Incoterms '---' is not a valid Incoterms code.
+LFM1,0000071396,P200,SPERM,Purchasing Block Not Propagated,Vendor carries a central purchasing block in LFA1 but the purchasing organisation data is not blocked.
+LFM1,0000071396,P300,SPERM,Purchasing Block Not Propagated,Vendor carries a central purchasing block in LFA1 but the purchasing organisation data is not blocked.
+LFM1,0000071795,P100,WAERS,Implausible Currency,Order currency 'SEK' does not match the vendor's country 'CN'.
+LFM1,0000071944,P100,WAERS,Missing Order Currency,No order currency maintained for the purchasing organisation.
+LFM1,0000072992,P300,WAERS,Invalid Currency Key,'XXX' is not a valid ISO currency key.
+LFM1,0000073203,P200,WAERS,Invalid Currency Key,'GBP ' is not a valid ISO currency key.
+LFM1,0000073298,P300,WAERS,Implausible Currency,Order currency 'TRY' does not match the vendor's country 'DE'.
+LFM1,0000073890,P300,WAERS,Implausible Currency,Order currency 'BRL' does not match the vendor's country 'DE'.
+LFM1,0000074446,P100,SPERM,Purchasing Block Not Propagated,Vendor carries a central purchasing block in LFA1 but the purchasing organisation data is not blocked.
+LFM1,0000075714,P100,WAERS,Implausible Currency,Order currency 'CNY' does not match the vendor's country 'PL'.
+LFM1,0000075726,P100,WAERS,Invalid Currency Key,'XXX' is not a valid ISO currency key.
+LFM1,0000076460,P100,MINBW,Outlier Minimum Order Value,Minimum order value 99999999 is orders of magnitude above every other vendor.
+LFM1,0000077024,P100,LOEVM,Active Purchasing Data on Deleted Vendor,Vendor is flagged for deletion in LFA1 but its purchasing data is still active.
+LFM1,0000077033,P200,SPERM,Purchasing Block Not Propagated,Vendor carries a central purchasing block in LFA1 but the purchasing organisation data is not blocked.
+LFM1,0000077074,P300,,Identical Duplicate Row,Purchasing data for vendor 0000077074 / P300 exists twice (identical row).
+LFM1,0000077556,P200,WAERS,Missing Order Currency,No order currency maintained for the purchasing organisation.
+LFM1,0000078196,P100,LOEVM,Active Purchasing Data on Deleted Vendor,Vendor is flagged for deletion in LFA1 but its purchasing data is still active.
+LFM1,0000078196,P300,LOEVM,Active Purchasing Data on Deleted Vendor,Vendor is flagged for deletion in LFA1 but its purchasing data is still active.
+LFM1,0000078214,P100,WAERS,Missing Order Currency,No order currency maintained for the purchasing organisation.
+LFM1,0000078683,P300,MINBW,Outlier Minimum Order Value,Minimum order value 9999999 is orders of magnitude above every other vendor.
+LFM1,0000079303,P100,,Identical Duplicate Row,Purchasing data for vendor 0000079303 / P100 exists twice (identical row).
+LFM1,0000079432,P100,WAERS,Implausible Currency,Order currency 'BRL' does not match the vendor's country 'DE'.
+LFM1,0000109104,P100,WAERS,Implausible Currency,Order currency 'TRY' does not match the vendor's country 'DE'.
+LFM1,0000114915,P100,WAERS,Missing Order Currency,No order currency maintained for the purchasing organisation.
+LFM1,0000144719,P100,WAERS,Implausible Currency,Order currency 'BRL' does not match the vendor's country 'DE'.
+LFM1,0000147937,P100,LOEVM,Active Purchasing Data on Deleted Vendor,Vendor is flagged for deletion in LFA1 but its purchasing data is still active.
+LFM1,0000154240,P100,MINBW,Negative Minimum Order Value,Minimum order value -100 is negative.
+LFM1,0000155023,P100,,Identical Duplicate Row,Purchasing data for vendor 0000155023 / P100 exists twice (identical row).
+LFM1,0000155724,P300,MINBW,Negative Minimum Order Value,Minimum order value -500 is negative.
+LFM1,0000162850,P100,MINBW,Negative Minimum Order Value,Minimum order value -250 is negative.
+LFM1,0000179271,P100,LOEVM,Active Purchasing Data on Deleted Vendor,Vendor is flagged for deletion in LFA1 but its purchasing data is still active.
+LFM1,0000182388,P100,WAERS,Missing Order Currency,No order currency maintained for the purchasing organisation.
+LFM1,0000182899,P100,WAERS,Invalid Currency Key,'EURO' is not a valid ISO currency key.
+LFM1,0000193956,P100,,Identical Duplicate Row,Purchasing data for vendor 0000193956 / P100 exists twice (identical row).
+LFM1,0000196266,P100,SPERM,Purchasing Block Not Propagated,Vendor carries a central purchasing block in LFA1 but the purchasing organisation data is not blocked.
+LFM1,0000203118,P200,WAERS,Implausible Currency,Order currency 'SEK' does not match the vendor's country 'FR'.
+LFM1,0000207494,P100,WAERS,Implausible Currency,Order currency 'CNY' does not match the vendor's country 'IT'.
+LFM1,0000209051,P100,MINBW,Outlier Minimum Order Value,Minimum order value 9999999 is orders of magnitude above every other vendor.
+LFM1,0000209925,P100,WAERS,Implausible Currency,Order currency 'TRY' does not match the vendor's country 'CN'.
+LFM1,0000213813,P100,LOEVM,Active Purchasing Data on Deleted Vendor,Vendor is flagged for deletion in LFA1 but its purchasing data is still active.
+LFM1,0000216779,P100,WAERS,Invalid Currency Key,'GBP ' is not a valid ISO currency key.
+LFM1,0000224090,P100,SPERM,Purchasing Block Not Propagated,Vendor carries a central purchasing block in LFA1 but the purchasing organisation data is not blocked.
+LFM1,0000229911,P100,INCO1,Invalid Incoterms,Incoterms 'XX' is not a valid Incoterms code.
+LFM1,0000230581,P100,WAERS,Implausible Currency,Order currency 'BRL' does not match the vendor's country 'IN'.
+LFM1,0000241151,P300,WAERS,Implausible Currency,Order currency 'SEK' does not match the vendor's country 'GB'.
+LFM1,0000257325,P100,,Identical Duplicate Row,Purchasing data for vendor 0000257325 / P100 exists twice (identical row).
+LFM1,0000259262,P300,LOEVM,Active Purchasing Data on Deleted Vendor,Vendor is flagged for deletion in LFA1 but its purchasing data is still active.
+LFM1,0000261596,P100,WAERS,Invalid Currency Key,'XXX' is not a valid ISO currency key.
+LFM1,0000270415,P200,WAERS,Implausible Currency,Order currency 'TRY' does not match the vendor's country 'GB'.
+LFM1,0000276475,P100,LOEVM,Active Purchasing Data on Deleted Vendor,Vendor is flagged for deletion in LFA1 but its purchasing data is still active.
+LFM1,0000279047,P200,SPERM,Purchasing Block Not Propagated,Vendor carries a central purchasing block in LFA1 but the purchasing organisation data is not blocked.
+LFM1,0000281975,P100,LOEVM,Active Purchasing Data on Deleted Vendor,Vendor is flagged for deletion in LFA1 but its purchasing data is still active.
+LFM1,0000286207,P200,INCO1,Invalid Incoterms,Incoterms 'XX' is not a valid Incoterms code.
+LFM1,0000287418,P100,MINBW,Negative Minimum Order Value,Minimum order value -500 is negative.
+LFM1,0000289201,P100,WAERS,Invalid Currency Key,'usd' is not a valid ISO currency key.
+LFM1,0000293323,P200,INCO1,Invalid Incoterms,Incoterms '' is not a valid Incoterms code.
+LFM1,0000295158,P100,LOEVM,Active Purchasing Data on Deleted Vendor,Vendor is flagged for deletion in LFA1 but its purchasing data is still active.
+LFM1,0000299428,P300,WAERS,Missing Order Currency,No order currency maintained for the purchasing organisation.
+LFM1,0000433561,P100,INCO1,Invalid Incoterms,Incoterms '---' is not a valid Incoterms code.
+LFM1,0000439604,P100,WAERS,Implausible Currency,Order currency 'SEK' does not match the vendor's country 'GB'.
+LFM1,0000453745,P100,SPERM,Purchasing Block Not Propagated,Vendor carries a central purchasing block in LFA1 but the purchasing organisation data is not blocked.
+LFM1,0000465117,P100,SPERM,Purchasing Block Not Propagated,Vendor carries a central purchasing block in LFA1 but the purchasing organisation data is not blocked.
+LFM1,0000467256,P100,LOEVM,Active Purchasing Data on Deleted Vendor,Vendor is flagged for deletion in LFA1 but its purchasing data is still active.
+LFM1,0000905171,,LIFNR,Orphan Record,Purchasing organisation data exists for a vendor number that does not exist in LFA1.
+LFM1,0000906218,,LIFNR,Orphan Record,Purchasing organisation data exists for a vendor number that does not exist in LFA1.
+LFM1,0000939169,,LIFNR,Orphan Record,Purchasing organisation data exists for a vendor number that does not exist in LFA1.
+LFM1,0000942691,,LIFNR,Orphan Record,Purchasing organisation data exists for a vendor number that does not exist in LFA1.
+LFM1,0000943446,,LIFNR,Orphan Record,Purchasing organisation data exists for a vendor number that does not exist in LFA1.
+LFM1,0000969309,,LIFNR,Orphan Record,Purchasing organisation data exists for a vendor number that does not exist in LFA1.
+LFM1,0000979376,,LIFNR,Orphan Record,Purchasing organisation data exists for a vendor number that does not exist in LFA1.
+LFM1,0000979639,,LIFNR,Orphan Record,Purchasing organisation data exists for a vendor number that does not exist in LFA1.

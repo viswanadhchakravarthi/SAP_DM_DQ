@@ -191,7 +191,7 @@ episodic_memory.backup-*.db
 *.db-shm
 memory_store/
 # per-client uploaded data (raw client CSVs) - data.client_data_dir in config.yaml
-client_data/
+# client_data/
 logs/
 
 # my local testing environment

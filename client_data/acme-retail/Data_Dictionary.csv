@@ -1,0 +1,40 @@
+Table,Field,Description,Data_Type,Notes
+LFA1,LIFNR,Vendor Account Number,CHAR10,Primary key
+LFA1,KTOKK,Account Group,CHAR4,Vendor account group
+LFA1,NAME1,Vendor Name 1,CHAR35,Vendor legal/trading name
+LFA1,NAME2,Vendor Name 2,CHAR35,Additional name
+LFA1,SORTL,Search Term,CHAR10,Search term for matching
+LFA1,STRAS,Street Address,CHAR35,Street and house number
+LFA1,ORT01,City,CHAR35,City
+LFA1,PSTLZ,Postal Code,CHAR10,Postal code
+LFA1,LAND1,Country Key,CHAR3,ISO-like country code
+LFA1,SPRAS,Language,CHAR2,Communication language
+LFA1,TELF1,Telephone,CHAR20,Main phone number
+LFA1,SMTP_ADDR,Email Address,CHAR50,Email
+LFA1,STCD1,Tax Number,CHAR20,Tax/VAT identifier
+LFA1,LOEVM,Deletion Flag,CHAR1,Marked for deletion
+LFA1,SPERM,Posting Block,CHAR1,Central posting block
+LFA1,ERDAT,Created On,DATE,Record creation date
+LFB1,LIFNR,Vendor Account Number,CHAR10,Foreign key to LFA1
+LFB1,BUKRS,Company Code,CHAR4,FI organizational unit
+LFB1,AKONT,Reconciliation Account,CHAR10,GL reconciliation account
+LFB1,ZTERM,Payment Terms,CHAR4,Default payment terms
+LFB1,ZWELS,Payment Methods,CHAR10,Allowed payment methods
+LFB1,HBKID,House Bank,CHAR5,Default house bank
+LFB1,SPERR,Company Code Posting Block,CHAR1,Company code level block
+LFB1,LOEVM,Deletion Flag,CHAR1,Marked for deletion
+LFM1,LIFNR,Vendor Account Number,CHAR10,Foreign key to LFA1
+LFM1,EKORG,Purchasing Organization,CHAR4,Purchasing org
+LFM1,WAERS,Order Currency,CUKY5,Procurement currency
+LFM1,ZTERM,Payment Terms,CHAR4,Purchasing payment terms
+LFM1,INCO1,Incoterms,CHAR3,Incoterms part 1
+LFM1,MINBW,Minimum Order Value,DEC,Minimum order value
+LFM1,SPERM,Purchasing Block,CHAR1,Purchasing block
+LFM1,LOEVM,Deletion Flag,CHAR1,Marked for deletion
+LFBK,LIFNR,Vendor Account Number,CHAR10,Foreign key to LFA1
+LFBK,BANKS,Bank Country,CHAR3,Country of bank
+LFBK,BANKL,Bank Key,CHAR15,Routing/bank key
+LFBK,BANKN,Bank Account,CHAR20,Bank account number
+LFBK,BKONT,Bank Control Key,CHAR2,Bank sequence/control key
+LFBK,KOINH,Account Holder,CHAR35,Account holder name
+LFBK,IBAN,IBAN,CHAR34,International bank account number
