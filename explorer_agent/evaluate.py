@@ -1,6 +1,7 @@
 """Score a run's findings against a synthetic client's answer key.
 
     python -m explorer_agent.evaluate --client danawsiv [--run-id <id>] [--source rules|duplicates|llm|all]
+                                      [--answer-key <path>]
 
 A minimal harness (see "POC vs production" -> Evaluation in CLAUDE.md), not a
 benchmark: matching is by table + object key + field, so it measures whether
@@ -116,9 +117,11 @@ def main() -> None:
     parser.add_argument("--client", required=True, help="client_id, e.g. danawsiv")
     parser.add_argument("--run-id", default=None, help="default: the client's latest run")
     parser.add_argument("--source", choices=["rules", "duplicates", "llm", "all"], default="all")
+    parser.add_argument("--answer-key", default=None, help="path to the key CSV (default: found next to "
+                                                           "client_data/<client>)")
     args = parser.parse_args()
 
-    key = load_answer_key(find_answer_key(args.client))
+    key = load_answer_key(Path(args.answer_key) if args.answer_key else find_answer_key(args.client))
     run_id, items = load_run(args.run_id, args.client)
     if args.source != "all":
         items = items[items["source"] == args.source]

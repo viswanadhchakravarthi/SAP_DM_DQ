@@ -217,6 +217,26 @@ class Config:
     SAP_RULES_DISABLED = _env_list("EXPLORER_SAP_RULES_DISABLED", _get("sap_rules.disabled_rules", []))
     SAP_RULES_CLIENT_OVERRIDES = _get("sap_rules.client_overrides", {}) or {}
 
+    # Statistical and formatting anomalies (explorer_agent/anomaly_rules.py) - zero LLM calls.
+    ANOMALIES_ENABLED = _env_bool("EXPLORER_ANOMALIES_ENABLED", _get("anomalies.enabled", True))
+    ANOMALY_OUTLIER_IQR_MULTIPLIER = _env_float(
+        "EXPLORER_ANOMALY_IQR_MULTIPLIER", _get("anomalies.outlier_iqr_multiplier", 3.0))
+    ANOMALY_OUTLIER_MIN_FENCE_DECADES = _env_float(
+        "EXPLORER_ANOMALY_MIN_FENCE_DECADES", _get("anomalies.outlier_min_fence_decades", 1.0))
+    ANOMALY_OUTLIER_FLAG_LOW = _env_bool("EXPLORER_ANOMALY_FLAG_LOW", _get("anomalies.outlier_flag_low", False))
+    ANOMALY_OUTLIER_MIN_SAMPLES = _env_int(
+        "EXPLORER_ANOMALY_MIN_SAMPLES", _get("anomalies.outlier_min_samples", 20))
+    ANOMALY_RARE_CODE_MAX_COUNT = _env_int(
+        "EXPLORER_ANOMALY_RARE_MAX_COUNT", _get("anomalies.rare_code_max_count", 2))
+    ANOMALY_RARE_CODE_MAX_SHARE = _env_float(
+        "EXPLORER_ANOMALY_RARE_MAX_SHARE", _get("anomalies.rare_code_max_share", 0.005))
+    ANOMALY_RARE_CODE_MAX_DISTINCT = _env_int(
+        "EXPLORER_ANOMALY_RARE_MAX_DISTINCT", _get("anomalies.rare_code_max_distinct", 50))
+    ANOMALY_RARE_CODE_MIN_TYPICAL_COUNT = _env_int(
+        "EXPLORER_ANOMALY_RARE_MIN_TYPICAL", _get("anomalies.rare_code_min_typical_count", 10))
+    ANOMALY_RARE_CODE_MIN_ROWS = _env_int(
+        "EXPLORER_ANOMALY_RARE_MIN_ROWS", _get("anomalies.rare_code_min_rows", 50))
+
     # Sandbox settings
     SANDBOX_TIMEOUT_SECONDS = _env_int("EXPLORER_SANDBOX_TIMEOUT", _get("sandbox.timeout_seconds", 10))
     SANDBOX_MEM_LIMIT_MB = _env_int("EXPLORER_SANDBOX_MEM_MB", _get("sandbox.mem_limit_mb", 512))

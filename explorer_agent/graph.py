@@ -61,8 +61,10 @@ Structure checks across the FOUR MAJOR DATA PROFILING PILLARS:
 
 4. CORRECTNESS & STATISTICAL ANOMALIES:
    - Format validation, invalid country codes (ISO length != 2), invalid special characters in names (e.g. '#', '$').
-   - STATISTICAL ANOMALY DETECTION: Distribution outliers (e.g. payment terms ZTERM where 95% are <= 60 days but some are 365 days).
-     You can use the built-in helper `detect_distribution_outliers(df['ZTERM'])` or compute IQR/percentile fences.
+   - Built-in rules already check amount/quantity outliers and negatives, rare codes, currency keys, name/text
+     hygiene and e-mail/phone formats. Codes such as payment terms (ZTERM) are KEYS, not numbers of days - never
+     compute numeric statistics on them. Look for anomalies the built-in rules cannot see (cross-field logic,
+     client-specific conventions).
    - Tag category="CORRECTNESS", and set is_anomaly=True if it is a statistical distribution outlier.
    - Also set `sub_type` for every CORRECTNESS check:
      * sub_type="VALUE_ERROR" for a single-field format/value/outlier problem (a "corrected value" makes sense here).

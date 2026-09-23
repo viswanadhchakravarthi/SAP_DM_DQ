@@ -17,6 +17,7 @@ from .cache_runner import run_cached_skills
 from .duplicate_detector import detect_table_duplicates
 from .duplicate_rule_planner import RulePlanner
 from .sap_rules import RuleCoverage, load_pack, run_sap_rules
+from . import column_mapping
 from . import client_knowledge
 from .memory.retriever import SkillRetriever
 from . import episodic_store as store
@@ -122,12 +123,13 @@ Propose roughly 1-2 checks per notable column (skip clean-looking columns). Do n
     return cached_findings + fresh_findings
 
 
-def _rule_chain_factory(model, temperature):
-    """Builds the rule-drafting chain on demand (see RulePlanner) - nothing is
-    constructed, and no local model loaded, until a table needs new rules."""
+def _rule_chain_factory(model, temperature, chain="duplicate_rules_structured"):
+    """Builds a structured chain on demand (see RulePlanner) - nothing is
+    constructed, and no local model loaded, until a table needs new rules
+    (``chain`` picks duplicate-rule drafting or column mapping)."""
     def build():
         bundle = build_llms(model, temperature)
-        return bundle.duplicate_rules_structured, bundle.chain_label
+        return getattr(bundle, chain), bundle.chain_label
     return build
 
 
@@ -220,9 +222,11 @@ def main():
         # been seen for this client still needs one call to draft its rules, so the
         # chain is built lazily - only if such a table actually turns up, and only
         # when the primary provider is configured.
-        rule_planner = None
+        rule_planner = mapping_planner = None
         if not Config.provider_missing_settings(Config.LLM_PROVIDER):
             rule_planner = RulePlanner(_rule_chain_factory(args.model, args.temperature))
+            mapping_planner = RulePlanner(_rule_chain_factory(args.model, args.temperature,
+                                                              "column_mapping_structured"))
         else:
             logger.warning("No LLM credentials configured: tables without saved duplicate rules "
                            "will only be checked for identical rows.")
@@ -234,6 +238,17 @@ def main():
         run_label = llms.chain_label
         rule_planner = RulePlanner(lambda: (llms.duplicate_rules_structured, llms.chain_label),
                                    label=llms.chain_label)
+        mapping_planner = RulePlanner(lambda: (llms.column_mapping_structured, llms.chain_label),
+                                      label=llms.chain_label)
+
+    # What every column means, for the deterministic rules - resolved for ALL tables
+    # first, because a rule on one table reads the mapping of others (orphans,
+    # dormancy). SAP-standard layouts and saved mappings cost nothing; a new
+    # non-standard layout costs one LLM call per table, once per client.
+    mappings = {}
+    if Config.SAP_RULES_ENABLED and not args.duplicates_only:
+        mappings = column_mapping.resolve_mappings(tables, load_pack(), dictionary, client_id=client["client_id"],
+                                                   client_name=client["name"], planner=mapping_planner)
 
     run_id = store.create_run(model=run_label, table_names=list(tables.keys()),
                               client_id=client["client_id"], client_name=client["name"])
@@ -255,7 +270,7 @@ def main():
         rule_coverage = RuleCoverage()
         if not args.duplicates_only:
             rule_findings, rule_coverage = run_sap_rules(table_name, df, tables, dictionary,
-                                                         client_id=client["client_id"])
+                                                         client_id=client["client_id"], mappings=mappings)
             findings += rule_findings
         if not no_planner:
             try:
@@ -300,8 +315,12 @@ def main():
     print(f"Duplicate rules - Reused from memory: {metrics.duplicate_rule_hits} | "
           f"Drafted for a new schema: {metrics.duplicate_rule_misses}")
     print(f"SAP rules (no LLM) - Rule groups run: {metrics.sap_rules_evaluated} | "
-          f"Findings: {metrics.sap_rule_findings} | Rows flagged: {metrics.sap_rule_rows} | "
+          f"Findings: {metrics.sap_rule_findings} (anomalies: {metrics.anomaly_findings}) | "
+          f"Rows flagged: {metrics.sap_rule_rows} | "
           f"Planner checks dropped as already covered: {metrics.planner_checks_covered_by_rules}")
+    print(f"Column mapping - SAP standard (free): {metrics.column_mapping_standard} | Reused from memory: "
+          f"{metrics.column_mapping_hits} | Mapped by LLM: {metrics.column_mapping_llm_calls} | "
+          f"Failed: {metrics.column_mapping_failures}")
     print(f"Cache - Hits: {metrics.cache_hits} | Misses: {metrics.cache_misses}")
     print(f"LLM fallbacks - Failed attempts: {metrics.llm_call_failures} | "
           f"Served by fallback: {metrics.llm_fallback_calls}")

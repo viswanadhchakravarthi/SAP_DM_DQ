@@ -1,149 +1,273 @@
-# Deterministic SAP master-data rules, executed by explorer_agent/sap_rules.py.
+# Deterministic SAP master-data knowledge, executed by explorer_agent/sap_rules.py
+# (Priority 1: domain rules) and explorer_agent/anomaly_rules.py (Priority 2:
+# statistical and formatting anomalies).
 #
-# These are known SAP standards, so they are written down once here instead of
-# being re-invented by the planner LLM on every run. Every rule is skipped when a
-# column or table it needs is not in the upload, and it can be switched off per
-# client in config.yaml (sap_rules.client_overrides) - a standard field can mean
-# something else at one company, and that belongs in configuration, not in code.
+# The rules are written against business CONCEPTS (KEY, DELETION_FLAG, COUNTRY,
+# POSTAL_CODE, TAX_ID, AMOUNT, ...), never against column names. Which column
+# plays which concept is the COLUMN MAPPING (explorer_agent/column_mapping.py):
+#   * for SAP-standard layouts it comes from `standard_columns` below - free;
+#   * for anything else one LLM call maps the table once per client+schema from
+#     metadata only, and the result is saved under memory_store/clients/<client>/.
+# Every rule is skipped when the concepts it needs are not mapped, and can be
+# switched off per client in config.yaml (sap_rules.client_overrides).
 #
-# Rule ids are built from the section and table, e.g. mandatory.LFA1.NAME1,
-# flag.LFA1.LOEVM, tax.LFA1, postal.LFA1, country.LFA1, orphan.LFB1.LFA1,
-# dormant.LFA1, propagation.<id>.
+# Rule ids: flag.<T>.<C>, dormant.<T>, mandatory.<T>.<C>, country.<T>.<C>,
+# postal.<T>.<C>, tax.<T>.missing, tax.<T>.format, orphan.<T>.<PARENT>,
+# propagation.<T>.<C>, anomaly.<check>.<T>.<C>, text.<check>.<T>.<C>.
 
-version: 1
-
-# ---------------------------------------------------------------------------
-# Business keys, used to label offending rows in the review app. The first
-# column is the object key; the rest are organisational levels.
-# ---------------------------------------------------------------------------
-keys:
-  LFA1: [LIFNR]
-  LFB1: [LIFNR, BUKRS]
-  LFBK: [LIFNR, BANKS, BANKL, BANKN]
-  LFM1: [LIFNR, EKORG]
-  KNA1: [KUNNR]
-  KNB1: [KUNNR, BUKRS]
-  KNVV: [KUNNR, VKORG]
-  MARA: [MATNR]
-  MARC: [MATNR, WERKS]
-  MARD: [MATNR, WERKS, LGORT]
-  MBEW: [MATNR, BWKEY]
-  MVKE: [MATNR, VKORG, VTWEG]
-  MAKT: [MATNR, SPRAS]
-  ASMD: [ASNUM]
-  ASMDT: [ASNUM, SPRAS]
-  BUT000: [PARTNER]
-  BUT020: [PARTNER, ADDRNUMBER]
-  BUT0ID: [PARTNER, IDTYPE]
-  BUT100: [PARTNER, RLTYP]
-  ADRC: [ADDRNUMBER]
-  CVI_VEND_LINK: [PARTNER, LIFNR]
-  CVI_CUST_LINK: [PARTNER, KUNNR]
+version: 2
 
 # ---------------------------------------------------------------------------
-# ACTIVENESS - status flags. A set flag is a fact to act on during migration
-# scoping (exclude, confirm, unblock), not a data error, hence the low severity.
-# The client's data-dictionary description of the column is quoted in each row.
+# COLUMN MAPPING for SAP-standard tables. A table is mapped from here only when
+# EVERY uploaded column of it is listed (a Z-field or repurposed layout goes to
+# the LLM instead, which sees the whole table). Attributes, same as the LLM's
+# ColumnBinding (schemas.py):
+#   concept          business meaning (see schemas.ColumnConcept)
+#   part_of_key      the columns that together identify one row
+#   references       TABLE.COLUMN this column must exist in (orphan checks)
+#   related_column   COUNTRY for a POSTAL_CODE/TAX_ID, CURRENCY for an AMOUNT
+#   required         mandatory; `required_group` = any one of the group is enough.
+#                    Only SAP-standard mandatory fields - client requirements go
+#                    in client_overrides.<client>.mandatory (KOINH is optional in SAP).
+#                    For TAX_ID, required means "at least one tax field filled".
+#   block_type       POSTING / PURCHASING / SALES / GENERAL, for BLOCK_FLAG
+#   cascades         a master flag that standard SAP also sets on the org-level
+#                    rows (central deletion flag XK06/XD06 -> LFB1/LFM1) - so a
+#                    blank child flag is legacy data. Not MARA-LVORM: the client
+#                    level already covers every plant.
+#   dictionary_override  regex on the client's dictionary text -> attributes to
+#                    change: a field documented differently follows the client.
 # ---------------------------------------------------------------------------
-flags:
-  - {table: LFA1, column: LOEVM, label: Deletion flag set}
-  - {table: LFA1, column: SPERM, label: Central block set}
-  - {table: LFB1, column: LOEVM, label: Deletion flag set (company code)}
-  - {table: LFB1, column: SPERR, label: Posting block set (company code)}
-  - {table: LFM1, column: LOEVM, label: Deletion flag set (purchasing org)}
-  - {table: LFM1, column: SPERM, label: Purchasing block set (purchasing org)}
-  - {table: KNA1, column: LOEVM, label: Deletion flag set}
-  - {table: KNA1, column: SPERM, label: Central block set}
-  - {table: KNB1, column: LOEVM, label: Deletion flag set (company code)}
-  - {table: KNB1, column: SPERR, label: Posting block set (company code)}
-  - {table: KNVV, column: LOEVM, label: Deletion flag set (sales area)}
-  - {table: KNVV, column: SPERM, label: Block set (sales area)}
-  - {table: MARA, column: LVORM, label: Deletion flag set}
-  - {table: MARC, column: LVORM, label: Deletion flag set (plant)}
-  - {table: MARD, column: LVORM, label: Deletion flag set (storage location)}
-  - {table: MVKE, column: LVORM, label: Deletion flag set (sales org)}
-  - {table: ASMD, column: LOEKZ, label: Deletion flag set}
-  - {table: BUT000, column: XDELE, label: Deletion flag set}
-  - {table: BUT000, column: XBLCK, label: Central block set}
+standard_columns:
+  LFA1:
+    LIFNR: {concept: KEY, part_of_key: true}
+    KTOKK: {concept: CODE, required: true}
+    NAME1: {concept: LEGAL_NAME, required: true}
+    NAME2: {concept: LEGAL_NAME}
+    SORTL: {concept: SEARCH_TERM, required: true}
+    STRAS: {concept: STREET}
+    ORT01: {concept: CITY, required: true}
+    PSTLZ: {concept: POSTAL_CODE, related_column: LAND1, required: true}
+    LAND1: {concept: COUNTRY, required: true}
+    SPRAS: {concept: CODE}
+    TELF1: {concept: PHONE}
+    SMTP_ADDR: {concept: EMAIL}
+    STCD1: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCD2: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCD3: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCD4: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCD5: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCEG: {concept: TAX_ID, related_column: LAND1, required: true}
+    LOEVM: {concept: DELETION_FLAG, cascades: true}
+    ERDAT: {concept: CREATED_DATE}
+    SPERM: {concept: BLOCK_FLAG, block_type: PURCHASING, cascades: true, dictionary_override: [{regex: posting, set: {block_type: POSTING}}]}
+    SPERR: {concept: BLOCK_FLAG, block_type: POSTING, cascades: true}
+  KNA1:
+    KUNNR: {concept: KEY, part_of_key: true}
+    KTOKD: {concept: CODE, required: true}
+    NAME1: {concept: LEGAL_NAME, required: true}
+    NAME2: {concept: LEGAL_NAME}
+    SORTL: {concept: SEARCH_TERM, required: true}
+    STRAS: {concept: STREET}
+    ORT01: {concept: CITY, required: true}
+    PSTLZ: {concept: POSTAL_CODE, related_column: LAND1, required: true}
+    LAND1: {concept: COUNTRY, required: true}
+    SPRAS: {concept: CODE}
+    TELF1: {concept: PHONE}
+    SMTP_ADDR: {concept: EMAIL}
+    STCD1: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCD2: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCD3: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCD4: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCD5: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCEG: {concept: TAX_ID, related_column: LAND1, required: true}
+    LOEVM: {concept: DELETION_FLAG, cascades: true}
+    ERDAT: {concept: CREATED_DATE}
+    SPERM: {concept: BLOCK_FLAG, block_type: PURCHASING, cascades: true, dictionary_override: [{regex: posting, set: {block_type: POSTING}}]}
+    SPERR: {concept: BLOCK_FLAG, block_type: POSTING, cascades: true}
+  LFB1:
+    LIFNR: {concept: KEY, part_of_key: true, references: LFA1.LIFNR}
+    BUKRS: {concept: ORG_UNIT, part_of_key: true, required: true}
+    AKONT: {concept: CODE, required: true}
+    ZTERM: {concept: CODE, required: true}
+    ZWELS: {concept: CODE}
+    HBKID: {concept: CODE}
+    SPERR: {concept: BLOCK_FLAG, block_type: POSTING}
+    LOEVM: {concept: DELETION_FLAG}
+  KNB1:
+    KUNNR: {concept: KEY, part_of_key: true, references: KNA1.KUNNR}
+    BUKRS: {concept: ORG_UNIT, part_of_key: true, required: true}
+    AKONT: {concept: CODE, required: true}
+    ZTERM: {concept: CODE, required: true}
+    ZWELS: {concept: CODE}
+    HBKID: {concept: CODE}
+    SPERR: {concept: BLOCK_FLAG, block_type: POSTING}
+    LOEVM: {concept: DELETION_FLAG}
+  LFM1:
+    LIFNR: {concept: KEY, part_of_key: true, references: LFA1.LIFNR}
+    EKORG: {concept: ORG_UNIT, part_of_key: true, required: true}
+    WAERS: {concept: CURRENCY, required: true}
+    ZTERM: {concept: CODE}
+    INCO1: {concept: CODE}
+    MINBW: {concept: AMOUNT, related_column: WAERS}
+    SPERM: {concept: BLOCK_FLAG, block_type: PURCHASING, dictionary_override: [{regex: purchas, set: {block_type: PURCHASING}}]}
+    LOEVM: {concept: DELETION_FLAG}
+  KNVV:
+    KUNNR: {concept: KEY, part_of_key: true, references: KNA1.KUNNR}
+    VKORG: {concept: ORG_UNIT, part_of_key: true, required: true}
+    WAERS: {concept: CURRENCY, required: true}
+    ZTERM: {concept: CODE}
+    INCO1: {concept: CODE}
+    MINBW: {concept: AMOUNT, related_column: WAERS}
+    SPERM: {concept: BLOCK_FLAG, block_type: SALES, dictionary_override: [{regex: purchas, set: {block_type: PURCHASING}}]}
+    LOEVM: {concept: DELETION_FLAG}
+  LFBK:
+    LIFNR: {concept: KEY, part_of_key: true, references: LFA1.LIFNR}
+    BANKS: {concept: COUNTRY, part_of_key: true, required: true}
+    BANKL: {concept: OTHER, part_of_key: true, required: true}
+    BANKN: {concept: OTHER, part_of_key: true, required: true, required_group: account}
+    BKONT: {concept: OTHER}
+    KOINH: {concept: LEGAL_NAME}
+    IBAN: {concept: OTHER, required: true, required_group: account}
+  MARA:
+    MATNR: {concept: KEY, part_of_key: true}
+    MTART: {concept: CODE, required: true}
+    MBRSH: {concept: CODE}
+    MATKL: {concept: CODE, required: true}
+    MEINS: {concept: CODE, required: true}
+    BISMT: {concept: OTHER}
+    EAN11: {concept: OTHER}
+    NUMTP: {concept: CODE}
+    BRGEW: {concept: QUANTITY}
+    NTGEW: {concept: QUANTITY}
+    GEWEI: {concept: CODE}
+    MSTAE: {concept: CODE}
+    LVORM: {concept: DELETION_FLAG, cascades: false}
+    ERSDA: {concept: CREATED_DATE}
+    ERNAM: {concept: OTHER}
+  MARC:
+    MATNR: {concept: KEY, part_of_key: true, references: MARA.MATNR}
+    WERKS: {concept: ORG_UNIT, part_of_key: true, required: true}
+    EKGRP: {concept: CODE}
+    DISPO: {concept: CODE}
+    DISMM: {concept: CODE}
+    BESKZ: {concept: CODE}
+    PLIFZ: {concept: QUANTITY}
+    EISBE: {concept: QUANTITY}
+    MINBE: {concept: QUANTITY}
+    MAABC: {concept: CODE}
+    MMSTA: {concept: CODE}
+    LVORM: {concept: DELETION_FLAG}
+  MARD:
+    MATNR: {concept: KEY, part_of_key: true, references: MARC.MATNR}
+    WERKS: {concept: ORG_UNIT, part_of_key: true, references: MARC.WERKS}
+    LGORT: {concept: ORG_UNIT, part_of_key: true}
+    LABST: {concept: QUANTITY}
+    INSME: {concept: QUANTITY}
+    SPEME: {concept: QUANTITY}
+    LGPBE: {concept: OTHER}
+    LVORM: {concept: DELETION_FLAG}
+  MBEW:
+    MATNR: {concept: KEY, part_of_key: true, references: MARA.MATNR}
+    BWKEY: {concept: ORG_UNIT, part_of_key: true}
+    VPRSV: {concept: CODE}
+    BKLAS: {concept: CODE}
+    VERPR: {concept: AMOUNT}
+    STPRS: {concept: AMOUNT}
+    PEINH: {concept: QUANTITY}
+    LBKUM: {concept: QUANTITY}
+    SALK3: {concept: AMOUNT}
+  MVKE:
+    MATNR: {concept: KEY, part_of_key: true, references: MARA.MATNR}
+    VKORG: {concept: ORG_UNIT, part_of_key: true}
+    VTWEG: {concept: ORG_UNIT, part_of_key: true}
+    DWERK: {concept: CODE}
+    VERSG: {concept: CODE}
+    KONDM: {concept: CODE}
+    KTGRM: {concept: CODE}
+    MTPOS: {concept: CODE}
+    MVGR1: {concept: CODE}
+    LVORM: {concept: DELETION_FLAG}
+  MAKT:
+    MATNR: {concept: KEY, part_of_key: true, references: MARA.MATNR}
+    SPRAS: {concept: CODE, part_of_key: true}
+    MAKTX: {concept: TEXT}
+  ASMD:
+    ASNUM: {concept: KEY, part_of_key: true}
+    ASTYP: {concept: CODE}
+    MATKL: {concept: CODE, required: true}
+    MEINS: {concept: CODE, required: true}
+    BKLAS: {concept: CODE}
+    TAXIM: {concept: CODE}
+    LOEKZ: {concept: DELETION_FLAG}
+    ERNAM: {concept: OTHER}
+    ERDAT: {concept: CREATED_DATE}
+  ASMDT:
+    ASNUM: {concept: KEY, part_of_key: true, references: ASMD.ASNUM}
+    SPRAS: {concept: CODE, part_of_key: true}
+    ASKTX: {concept: TEXT}
+  BUT000:
+    PARTNER: {concept: KEY, part_of_key: true}
+    TYPE: {concept: CODE}
+    BU_GROUP: {concept: CODE}
+    BPKIND: {concept: CODE}
+    NAME_ORG1: {concept: LEGAL_NAME}
+    NAME_ORG2: {concept: LEGAL_NAME}
+    NAME_FIRST: {concept: LEGAL_NAME}
+    NAME_LAST: {concept: LEGAL_NAME}
+    BU_SORT1: {concept: SEARCH_TERM}
+    XBLCK: {concept: BLOCK_FLAG, block_type: GENERAL}
+    XDELE: {concept: DELETION_FLAG}
+    CRDAT: {concept: CREATED_DATE}
+    CRNAM: {concept: OTHER}
+  BUT020:
+    PARTNER: {concept: KEY, part_of_key: true, references: BUT000.PARTNER}
+    ADDRNUMBER: {concept: KEY, part_of_key: true, references: ADRC.ADDRNUMBER}
+    XDFADR: {concept: OTHER}
+  BUT0ID:
+    PARTNER: {concept: KEY, part_of_key: true, references: BUT000.PARTNER}
+    IDTYPE: {concept: CODE, part_of_key: true}
+    IDNUMBER: {concept: OTHER}
+    COUNTRY: {concept: COUNTRY}
+  BUT100:
+    PARTNER: {concept: KEY, part_of_key: true, references: BUT000.PARTNER}
+    RLTYP: {concept: CODE, part_of_key: true}
+    VALID_FROM: {concept: DATE}
+    VALID_TO: {concept: DATE}
+  ADRC:
+    ADDRNUMBER: {concept: KEY, part_of_key: true}
+    NAME1: {concept: LEGAL_NAME}
+    STREET: {concept: STREET}
+    HOUSE_NUM1: {concept: OTHER}
+    CITY1: {concept: CITY}
+    POST_CODE1: {concept: POSTAL_CODE, related_column: COUNTRY, required: true}
+    COUNTRY: {concept: COUNTRY, required: true}
+    REGION: {concept: CODE}
+    TEL_NUMBER: {concept: PHONE}
+    SMTP_ADDR: {concept: EMAIL}
+  CVI_VEND_LINK:
+    PARTNER: {concept: KEY, part_of_key: true, references: BUT000.PARTNER}
+    LIFNR: {concept: KEY, part_of_key: true, references: LFA1.LIFNR}
+  CVI_CUST_LINK:
+    PARTNER: {concept: KEY, part_of_key: true, references: BUT000.PARTNER}
+    KUNNR: {concept: KEY, part_of_key: true, references: KNA1.KUNNR}
 
+# ---------------------------------------------------------------------------
+# ACTIVENESS
+# ---------------------------------------------------------------------------
+# Values meaning "set" for a flag whose mapping gives none.
 flag_values: ["X"]
 
-# ---------------------------------------------------------------------------
-# ACTIVENESS - dormancy. ERDAT is a CREATION date, not a last-activity date, so
-# age alone says nothing about use. A master record counts as dormant when it
-# is older than `older_than_years` AND was never extended to any of its
-# organisational-level tables. Without transaction data (BSIK/BSAK/EKKO) this
-# is the strongest evidence available. Skipped when no child table is loaded.
-# ---------------------------------------------------------------------------
-dormancy:
-  - {table: LFA1, date_column: ERDAT, children: [LFB1, LFM1], noun: vendor, older_than_years: 3}
-  - {table: KNA1, date_column: ERDAT, children: [KNB1, KNVV], noun: customer, older_than_years: 3}
+# Dormancy: CREATED_DATE older than this AND no row in any child table that
+# extends the record to an organisational level (a table with an ORG_UNIT key
+# column that references it). ERDAT is a creation date, so age alone says
+# nothing; without transaction data (BSIK/BSAK/EKKO) this is the best evidence.
+dormant_after_years: 3
 
 # ---------------------------------------------------------------------------
-# COMPLETENESS - mandatory fields per table. Every default here is MANUAL_FIX:
-# the value has to come from the business (a reconciliation account or a
-# currency is not guessable). A client can agree on a default and make a field
-# AUTO_FIXABLE in config.yaml -> sap_rules.client_overrides.<client>.auto_fix,
-# and add client-specific mandatory fields there (client_overrides.<client>.mandatory).
-# `any_of` lists alternatives: the row is complete when one of them is filled.
+# CORRECTNESS - country keys (ISO 3166-1 alpha-2). Postal and tax formats
+# depend on a valid country, so an invalid one is reported and skipped there.
 # ---------------------------------------------------------------------------
-mandatory:
-  LFA1:
-    NAME1: {severity: HIGH, label: Vendor name}
-    LAND1: {severity: HIGH, label: Country key}
-    KTOKK: {severity: HIGH, label: Account group}
-    ORT01: {severity: MEDIUM, label: City}
-    PSTLZ: {severity: MEDIUM, label: Postal code}
-    SORTL: {severity: LOW, label: Search term}
-  LFB1:
-    BUKRS: {severity: HIGH, label: Company code}
-    AKONT: {severity: HIGH, label: Reconciliation account}
-    ZTERM: {severity: MEDIUM, label: Payment terms}
-  LFBK:
-    BANKS: {severity: HIGH, label: Bank country}
-    BANKL: {severity: HIGH, label: Bank key}
-    BANKN: {severity: HIGH, label: Bank account number or IBAN, any_of: [BANKN, IBAN]}
-    # KOINH (account holder) is optional in standard SAP - it defaults to the vendor
-    # name. Clients that require it add it via client_overrides.<client>.mandatory.
-  LFM1:
-    EKORG: {severity: HIGH, label: Purchasing organization}
-    WAERS: {severity: HIGH, label: Order currency}
-  KNA1:
-    NAME1: {severity: HIGH, label: Customer name}
-    LAND1: {severity: HIGH, label: Country key}
-    KTOKD: {severity: HIGH, label: Account group}
-    ORT01: {severity: MEDIUM, label: City}
-    PSTLZ: {severity: MEDIUM, label: Postal code}
-    SORTL: {severity: LOW, label: Search term}
-  KNB1:
-    BUKRS: {severity: HIGH, label: Company code}
-    AKONT: {severity: HIGH, label: Reconciliation account}
-    ZTERM: {severity: MEDIUM, label: Payment terms}
-  KNVV:
-    VKORG: {severity: HIGH, label: Sales organization}
-    WAERS: {severity: HIGH, label: Currency}
-  MARA:
-    MTART: {severity: HIGH, label: Material type}
-    MEINS: {severity: HIGH, label: Base unit of measure}
-    MATKL: {severity: MEDIUM, label: Material group}
-  ASMD:
-    MEINS: {severity: HIGH, label: Base unit of measure}
-    MATKL: {severity: MEDIUM, label: Service group}
-  ADRC:
-    COUNTRY: {severity: HIGH, label: Country}
-    POST_CODE1: {severity: MEDIUM, label: Postal code}
-
-# ---------------------------------------------------------------------------
-# CORRECTNESS - country keys (ISO 3166-1 alpha-2). Postal and tax formats depend
-# on a valid country, so an invalid one is reported here and skipped there.
-# ---------------------------------------------------------------------------
-country_columns:
-  LFA1: LAND1
-  KNA1: LAND1
-  LFBK: BANKS
-  ADRC: COUNTRY
-  BUT0ID: COUNTRY
-
 # Common legacy mistakes -> the ISO code, used only to suggest a correction.
 country_aliases: {UK: GB, GER: DE, DEU: DE, USA: US, IND: IN, MEX: MX, SWI: CH, CHE: CH, UAE: AE, EL: GR}
 
@@ -159,15 +283,10 @@ iso_countries: >-
   VN VU WF WS YE YT ZA ZM ZW
 
 # ---------------------------------------------------------------------------
-# CORRECTNESS - postal code format by country (full match, upper-cased, trimmed).
-# Countries not listed are skipped, never failed. Blank codes are left to the
-# mandatory-field rule.
+# CORRECTNESS - postal code format by country (full match, upper-cased,
+# trimmed). Countries not listed are skipped, never failed.
 # ---------------------------------------------------------------------------
 postal:
-  tables:
-    LFA1: {column: PSTLZ, country: LAND1}
-    KNA1: {column: PSTLZ, country: LAND1}
-    ADRC: {column: POST_CODE1, country: COUNTRY}
   formats:
     DE: {regex: '\d{5}', example: '10115'}
     AT: {regex: '\d{4}', example: '1010'}
@@ -208,20 +327,14 @@ postal:
     ZA: {regex: '\d{4}', example: '0001'}
 
 # ---------------------------------------------------------------------------
-# CORRECTNESS - tax numbers, evaluated across ALL tax fields of a row together.
-# SAP keeps a country's number in different fields (India: GSTIN in STCD3; EU:
-# VAT in STCEG; US: EIN in STCD2), and legacy data often has it in STCD1 anyway.
-# So a row is:
-#   * missing     - when none of its tax fields holds a real value
-#   * invalid     - per filled value that matches none of its country's formats
-#                   (countries without formats here are only checked for presence)
-# A blank STCD1 is never an error on its own.
+# CORRECTNESS - tax numbers, evaluated across ALL TAX_ID columns of a row
+# together. SAP keeps a country's number in different fields (India: GSTIN in
+# STCD3; EU: VAT in STCEG; US: EIN in STCD2), and legacy data often has it in
+# STCD1 anyway. So a row is missing a tax number only when none of its TAX_ID
+# columns holds a real value, and each filled value must match one of its
+# country's formats. A blank STCD1 is never an error on its own.
 # ---------------------------------------------------------------------------
 tax:
-  tables:
-    LFA1: {country: LAND1, noun: vendor}
-    KNA1: {country: LAND1, noun: customer}
-  fields: [STCD1, STCD2, STCD3, STCD4, STCD5, STCEG]
   # Where SAP expects the number, used only to word the finding.
   expected_field: {IN: STCD3 (GSTIN), US: STCD2 (EIN), EU: STCEG (VAT registration number)}
   placeholder_regex: '(TBD|TBA|N/?A|NONE|NULL|NIL|UNKNOWN|PENDING|TEST.*|DUMMY.*|X+|0+|9+|1234.*|-+|\.+|\?+)'
@@ -285,68 +398,31 @@ tax:
     SG: {UEN: '\d{8,9}[A-Z]|[TSR]\d{2}[A-Z]{2}\d{4}[A-Z]'}
 
 # ---------------------------------------------------------------------------
-# CORRECTNESS / RELATIONSHIP_INTEGRITY - orphan child records: a child row whose
-# key does not exist in its parent table. Skipped when the parent is not loaded
-# (e.g. a --tables LFB1 run), since every row would look orphaned.
-# `join` maps child column -> parent column.
+# PRIORITY 2 - formatting anomalies on text concepts (anomaly_rules.py).
 # ---------------------------------------------------------------------------
-relationships:
-  - {child: LFB1, parent: LFA1, join: {LIFNR: LIFNR}}
-  - {child: LFBK, parent: LFA1, join: {LIFNR: LIFNR}}
-  - {child: LFM1, parent: LFA1, join: {LIFNR: LIFNR}}
-  - {child: KNB1, parent: KNA1, join: {KUNNR: KUNNR}}
-  - {child: KNVV, parent: KNA1, join: {KUNNR: KUNNR}}
-  - {child: MAKT, parent: MARA, join: {MATNR: MATNR}}
-  - {child: MARC, parent: MARA, join: {MATNR: MATNR}}
-  - {child: MARD, parent: MARC, join: {MATNR: MATNR, WERKS: WERKS}}
-  - {child: MBEW, parent: MARA, join: {MATNR: MATNR}}
-  - {child: MVKE, parent: MARA, join: {MATNR: MATNR}}
-  - {child: ASMDT, parent: ASMD, join: {ASNUM: ASNUM}}
-  - {child: BUT020, parent: BUT000, join: {PARTNER: PARTNER}}
-  - {child: BUT020, parent: ADRC, join: {ADDRNUMBER: ADDRNUMBER}}
-  - {child: BUT0ID, parent: BUT000, join: {PARTNER: PARTNER}}
-  - {child: BUT100, parent: BUT000, join: {PARTNER: PARTNER}}
-  - {child: CVI_VEND_LINK, parent: BUT000, join: {PARTNER: PARTNER}}
-  - {child: CVI_VEND_LINK, parent: LFA1, join: {LIFNR: LIFNR}}
-  - {child: CVI_CUST_LINK, parent: BUT000, join: {PARTNER: PARTNER}}
-  - {child: CVI_CUST_LINK, parent: KNA1, join: {KUNNR: KUNNR}}
+text:
+  # Not allowed in a legal name. `& . , - / ' ( ) +` are normal ("Procter & Gamble").
+  illegal_name_chars: '^*#$~|<>{}[]\=_!?%;@'
+  # Left behind by a wrong UTF-8 / Latin-1 conversion (e.g. 'HochstÃ¤tt'), or the
+  # replacement character for bytes that could not be decoded.
+  mojibake_markers: ['Ã', 'Â', 'â€', 'Ð', 'Å', '\ufffd']
+  html_entity_regex: '&(amp|lt|gt|quot|apos|nbsp|#\d+|#x[0-9a-fA-F]+);'
+  placeholder_regex: '(X{2,}|TEST.*|DUMMY.*|N/?A|TBD|TBA|UNKNOWN|NONE|NULL|DO NOT USE.*|DELETE.*|\.+|-+|\?+|0+)'
+  # A value written entirely in capitals is flagged only when at least this share of
+  # the column is mixed case - an all-caps column is a convention, not an anomaly.
+  mixed_case_share: 0.7
+  # \w is Unicode-aware: internationalised domains ('bäckerei-brandes.de') are valid
+  # (RFC 6531); empty labels ('food..com') are not.
+  email_regex: '[\w.%+\-'']+@[\w\-]+(\.[\w\-]+)*\.[^\W\d_]{2,}'
+  # A phone number: digits and + ( ) - / . spaces, optionally an extension.
+  phone_regex: '\+?[\d\s()\-/.]{6,}((ext\.?|x)\s*\d{1,5})?'
+  phone_min_digits: 6
 
-# ---------------------------------------------------------------------------
-# CORRECTNESS / RELATIONSHIP_INTEGRITY - a flag set on the master record but not
-# on its organisational-level rows (e.g. vendor deleted in LFA1, company code in
-# LFB1 still active). `child_flag: null` means the child row existing at all is
-# the inconsistency.
-#
-# Only pairs where standard SAP sets both levels together belong here: the
-# central deletion flag (XK06/XD06) marks LFB1/LFM1 (KNB1/KNVV) as well, so a
-# blank org-level flag under a deleted master comes from legacy data. Not
-# listed on purpose: MARA-LVORM (the client-level flag already covers every
-# plant) and bank details on a deleted vendor (deletion never removes them).
-#
-# `guard` protects against a field meaning something else at this client: the
-# rule runs only when the client's data dictionary describes the column the
-# way the regex says. `if_undocumented` decides when the dictionary has no entry.
-# Standard SAP: LFA1-SPERM is the central PURCHASING block (-> LFM1-SPERM) and
-# LFA1-SPERR the central POSTING block (-> LFB1-SPERR); some legacy extracts
-# document SPERM as a posting block, and then the LFB1 rule applies instead.
-# ---------------------------------------------------------------------------
-propagation:
-  - {id: lfa1_deleted_lfb1, parent: LFA1, parent_flag: LOEVM, child: LFB1, child_flag: LOEVM, join: {LIFNR: LIFNR},
-     text: "vendor is flagged for deletion in LFA1 but its company code data is still active"}
-  - {id: lfa1_deleted_lfm1, parent: LFA1, parent_flag: LOEVM, child: LFM1, child_flag: LOEVM, join: {LIFNR: LIFNR},
-     text: "vendor is flagged for deletion in LFA1 but its purchasing data is still active"}
-  - {id: lfa1_posting_block_lfb1, parent: LFA1, parent_flag: SPERM, child: LFB1, child_flag: SPERR, join: {LIFNR: LIFNR},
-     guard: {column: SPERM, regex: 'posting', if_undocumented: false},
-     text: "vendor has a central posting block in LFA1 but the company code posting block is not set"}
-  - {id: lfa1_posting_block_lfb1_sperr, parent: LFA1, parent_flag: SPERR, child: LFB1, child_flag: SPERR, join: {LIFNR: LIFNR},
-     text: "vendor has a central posting block in LFA1 but the company code posting block is not set"}
-  - {id: lfa1_purchasing_block_lfm1, parent: LFA1, parent_flag: SPERM, child: LFM1, child_flag: SPERM, join: {LIFNR: LIFNR},
-     guard: {column: SPERM, regex: 'purchas', if_undocumented: true},
-     text: "vendor has a central purchasing block in LFA1 but the purchasing organization is not blocked"}
-  - {id: kna1_deleted_knb1, parent: KNA1, parent_flag: LOEVM, child: KNB1, child_flag: LOEVM, join: {KUNNR: KUNNR},
-     text: "customer is flagged for deletion in KNA1 but its company code data is still active"}
-  - {id: kna1_deleted_knvv, parent: KNA1, parent_flag: LOEVM, child: KNVV, child_flag: LOEVM, join: {KUNNR: KUNNR},
-     text: "customer is flagged for deletion in KNA1 but its sales area data is still active"}
-  - {id: kna1_posting_block_knb1, parent: KNA1, parent_flag: SPERM, child: KNB1, child_flag: SPERR, join: {KUNNR: KUNNR},
-     guard: {column: SPERM, regex: 'posting', if_undocumented: false},
-     text: "customer has a central posting block in KNA1 but the company code posting block is not set"}
+# ISO 4217 currency codes in circulation (no X-codes: XXX means "no currency").
+iso_currencies: >-
+  AED AFN ALL AMD ANG AOA ARS AUD AWG AZN BAM BBD BDT BGN BHD BIF BMD BND BOB BRL BSD BTN BWP BYN BZD CAD CDF CHF CLP CNY
+  COP CRC CUP CVE CZK DJF DKK DOP DZD EGP ERN ETB EUR FJD FKP GBP GEL GHS GIP GMD GNF GTQ GYD HKD HNL HTG HUF IDR ILS INR
+  IQD IRR ISK JMD JOD JPY KES KGS KHR KMF KPW KRW KWD KYD KZT LAK LBP LKR LRD LSL LYD MAD MDL MGA MKD MMK MNT MOP MRU MUR
+  MVR MWK MXN MYR MZN NAD NGN NIO NOK NPR NZD OMR PAB PEN PGK PHP PKR PLN PYG QAR RON RSD RUB RWF SAR SBD SCR SDG SEK SGD
+  SHP SLE SOS SRD SSP STN SYP SZL THB TJS TMT TND TOP TRY TTD TWD TZS UAH UGX USD UYU UZS VES VND VUV WST XAF XCD XOF XPF
+  YER ZAR ZMW ZWL

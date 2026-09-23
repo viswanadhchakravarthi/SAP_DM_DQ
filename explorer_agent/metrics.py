@@ -27,6 +27,12 @@ class RunMetrics:
     sap_rule_findings: int = 0
     sap_rule_rows: int = 0
     planner_checks_covered_by_rules: int = 0  # planner checks dropped because a rule already ran them
+    anomaly_findings: int = 0          # of sap_rule_findings, from anomaly_rules.py
+    # Column mapping (column_mapping.py): what each column means, for the rule engines.
+    column_mapping_standard: int = 0   # tables mapped from the SAP-standard pack (free)
+    column_mapping_hits: int = 0       # tables whose saved mapping was reused (free)
+    column_mapping_llm_calls: int = 0  # tables mapped by an LLM call (first sight of a schema)
+    column_mapping_failures: int = 0   # tables the LLM could not map (partial/no mapping used)
 
     def log_summary(self, logger):
         logger.info(
@@ -34,13 +40,16 @@ class RunMetrics:
             "duplicate_rule_llm_calls=%d duplicate_rule_hits=%d duplicate_rule_misses=%d "
             "sandbox_executions=%d cache_hits=%d cache_misses=%d "
             "llm_call_failures=%d llm_fallback_calls=%d "
-            "sap_rules_evaluated=%d sap_rule_findings=%d sap_rule_rows=%d planner_checks_covered_by_rules=%d",
+            "sap_rules_evaluated=%d sap_rule_findings=%d sap_rule_rows=%d planner_checks_covered_by_rules=%d "
+            "anomaly_findings=%d column_mapping_standard=%d column_mapping_hits=%d column_mapping_llm_calls=%d "
+            "column_mapping_failures=%d",
             self.planner_llm_calls, self.reflector_llm_calls,
             self.duplicate_rule_llm_calls, self.duplicate_rule_hits, self.duplicate_rule_misses,
             self.sandbox_executions, self.cache_hits, self.cache_misses,
             self.llm_call_failures, self.llm_fallback_calls,
             self.sap_rules_evaluated, self.sap_rule_findings, self.sap_rule_rows,
-            self.planner_checks_covered_by_rules,
+            self.planner_checks_covered_by_rules, self.anomaly_findings, self.column_mapping_standard,
+            self.column_mapping_hits, self.column_mapping_llm_calls, self.column_mapping_failures,
         )
 
     def reset(self):
@@ -59,6 +68,11 @@ class RunMetrics:
         self.sap_rule_findings = 0
         self.sap_rule_rows = 0
         self.planner_checks_covered_by_rules = 0
+        self.anomaly_findings = 0
+        self.column_mapping_standard = 0
+        self.column_mapping_hits = 0
+        self.column_mapping_llm_calls = 0
+        self.column_mapping_failures = 0
 
 
 metrics = RunMetrics()  # single shared instance, imported wherever needed

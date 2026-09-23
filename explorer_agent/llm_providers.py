@@ -35,7 +35,7 @@ from .config import Config
 from .local_llms import QwenCoderGGUFChatModel
 from .logging_config import get_logger
 from .metrics import metrics
-from .schemas import CheckPlan, DuplicateRulePlan, Reflection, ReflectionBatch
+from .schemas import CheckPlan, ColumnMappingPlan, DuplicateRulePlan, Reflection, ReflectionBatch
 
 logger = get_logger("llm_providers")
 
@@ -64,6 +64,7 @@ class LLMBundle(NamedTuple):
     reflector_structured: Runnable
     reflector_single: Runnable
     duplicate_rules_structured: Runnable   # drafts duplicate-matching rules (once per client+schema)
+    column_mapping_structured: Runnable    # maps columns to business concepts (once per client+schema)
     chain_label: str              # e.g. "google:gemini-3.6-flash -> groq:openai/gpt-oss-20b"
 
 
@@ -290,5 +291,6 @@ def build_llms(model: Optional[str] = None, temperature: Optional[float] = None)
         reflector_structured=_structured_chain(candidates, ReflectionBatch),
         reflector_single=_structured_chain(candidates, Reflection),  # used by cache_runner
         duplicate_rules_structured=_structured_chain(candidates, DuplicateRulePlan),
+        column_mapping_structured=_structured_chain(candidates, ColumnMappingPlan),
         chain_label=chain_label,
     )

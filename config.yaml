@@ -155,7 +155,11 @@ sap_rules:
   # blocks, dormancy, mandatory fields, country-aware tax and postal-code formats,
   # orphan child records and flags not carried from a master to its org-level rows.
   # They run before the planner with zero LLM calls, and the planner is told which
-  # checks they already cover so it does not re-invent them. EXPLORER_SAP_RULES_ENABLED
+  # checks they already cover so it does not re-invent them. They are written
+  # against the column MAPPING (explorer_agent/column_mapping.py), not column names:
+  # SAP-standard tables are mapped from the pack for free, any other layout by one
+  # LLM call per client+schema (saved under memory_store/clients/<client>/
+  # column_mappings.json - edit that file to correct a mapping). EXPLORER_SAP_RULES_ENABLED
   enabled: true
   # The rules themselves are data, not code - edit the pack to add a table, field,
   # country format or relationship. EXPLORER_SAP_RULES_PACK
@@ -171,13 +175,40 @@ sap_rules:
   # where that is recorded, not in code. Example:
   #   client_overrides:
   #     acme-retail:
-  #       disabled_rules: [propagation.kna1_deleted_knvv]
+  #       disabled_rules: [propagation.KNVV.LOEVM, text.casing]
   #       mandatory:
   #         LFBK:
   #           KOINH: {severity: MEDIUM, label: Account holder}
   #       auto_fix:
   #         LFB1.ZTERM: "0001"
   client_overrides: {}
+
+anomalies:
+  # Statistical and formatting anomalies (explorer_agent/anomaly_rules.py), run with
+  # the SAP rules on every table, zero LLM calls. They read the column mapping, so
+  # they work on any schema: amounts/quantities, codes, currencies, names, e-mail
+  # and phone columns are found by meaning, not by name. EXPLORER_ANOMALIES_ENABLED
+  enabled: true
+  # Outliers on AMOUNT/QUANTITY columns: an IQR fence on log10 of the positive values
+  # (business amounts are skewed - a linear 1.5 x IQR flags every large-but-normal
+  # order), per currency when the amount has one. The fence is at least
+  # outlier_min_fence_decades wide (1.0 = 10x beyond the quartile).
+  outlier_iqr_multiplier: 3.0 # EXPLORER_ANOMALY_IQR_MULTIPLIER
+  outlier_min_fence_decades: 1.0 # EXPLORER_ANOMALY_MIN_FENCE_DECADES
+  outlier_min_samples: 20 # per currency group; EXPLORER_ANOMALY_MIN_SAMPLES
+  # Also flag values far BELOW the range. Off: small weights and stock levels are
+  # normal, while the defects seen are typing errors on the high side. EXPLORER_ANOMALY_FLAG_LOW
+  outlier_flag_low: false
+  # Rare codes in CODE columns (payment terms, incoterms, account groups, ...): a code
+  # used at most rare_code_max_count times (and <= rare_code_max_share of rows) in a
+  # column of <= rare_code_max_distinct codes whose typical code covers at least
+  # rare_code_min_typical_count rows. Codes cannot be validated without the
+  # customizing tables, so rarity is the evidence.
+  rare_code_max_count: 2 # EXPLORER_ANOMALY_RARE_MAX_COUNT
+  rare_code_max_share: 0.005 # EXPLORER_ANOMALY_RARE_MAX_SHARE
+  rare_code_max_distinct: 50 # EXPLORER_ANOMALY_RARE_MAX_DISTINCT
+  rare_code_min_typical_count: 10 # EXPLORER_ANOMALY_RARE_MIN_TYPICAL
+  rare_code_min_rows: 50 # EXPLORER_ANOMALY_RARE_MIN_ROWS
 
 profiling:
   top_n_frequent: 10
