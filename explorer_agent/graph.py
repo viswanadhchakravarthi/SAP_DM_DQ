@@ -34,10 +34,17 @@ PLANNER_SYSTEM_PROMPT = """You are an expert data quality exploration agent for 
 and governance projects. You are given a statistical profile of an ENTIRE table (aggregated stats and \
 masked top-values only - never raw data). Propose a batch of pandas checks covering columns likely to have issues.
 
+BUILT-IN SAP RULES: a deterministic rule engine has already run the standard SAP checks listed in the user \
+message (deletion flags/blocks, dormancy, mandatory fields, country keys, postal-code and tax-number formats by \
+country, orphan records, flags not carried to org-level rows). Never propose a check that repeats one of them. \
+Use your checks for what fixed rules cannot know: client-specific value sets and conventions, distribution \
+anomalies, text hygiene, placeholder values, and cross-field or cross-table logic not already covered.
+
 Structure checks across the FOUR MAJOR DATA PROFILING PILLARS:
 1. ACTIVENESS:
    - Check if records are actively used or dormant/obsolete.
-   - Look at creation date (ERDAT) aging, deletion flags (LOEVM == 'X'), posting blocks (SPERM/SPERR == 'X'), purchasing blocks.
+   - Deletion flags, blocks and dormancy (old ERDAT with no org-level extension) are built-in rules - only propose
+     activeness checks they do not cover.
    - Tag category="ACTIVENESS".
 
 2. DUPLICATE:
@@ -45,10 +52,11 @@ Structure checks across the FOUR MAJOR DATA PROFILING PILLARS:
      deterministic matching engine; any DUPLICATE check you propose is discarded.
 
 3. COMPLETENESS:
-   - Identify missing or blank mandatory fields (e.g. Payment Method ZWELS, Reconciliation Account AKONT, Tax Number STCD1, Company Code BUKRS).
+   - Standard SAP mandatory fields and tax numbers are built-in rules; look for blanks in other fields that matter here.
    - Classify each completeness issue as either:
-     * fix_type="AUTO_FIXABLE" with auto_fix_value (e.g. missing payment method defaults to 'NEFT' or 'T')
-     * fix_type="MANUAL_FIX" (e.g. missing Tax Number, Bank Account - requires business research)
+     * fix_type="AUTO_FIXABLE" with auto_fix_value, ONLY for a harmless single default (e.g. a missing language key)
+     * fix_type="MANUAL_FIX" for anything financial or identifying (reconciliation account, payment terms/methods,
+       bank data, tax numbers) - these must come from the business, never from a guessed default
    - Tag category="COMPLETENESS".
 
 4. CORRECTNESS & STATISTICAL ANOMALIES:
@@ -117,6 +125,7 @@ class TableExplorerState(TypedDict):
     proposed_checks: List[Any]
     check_results: List[Dict[str, Any]]
     findings: List[Dict[str, Any]]
+    rule_coverage: Any  # sap_rules.RuleCoverage - what the deterministic SAP rules already checked
 
 
 def build_explorer_graph(planner_structured, reflector_structured):
@@ -138,6 +147,17 @@ def build_explorer_graph(planner_structured, reflector_structured):
         if len(checks) < len(plan.checks):
             logger.info("Discarded %d planner DUPLICATE check(s) for table %s (handled by duplicate_detector)",
                         len(plan.checks) - len(checks), state["table_name"])
+        # Same for checks that repeat a built-in SAP rule on the same column and
+        # pillar: the prompt asks the planner not to, but models ignore it.
+        coverage = state.get("rule_coverage")
+        if coverage is not None:
+            kept = [c for c in checks if not coverage.covers(c.column.upper(), c.category, c.sub_type)]
+            if len(kept) < len(checks):
+                dropped = [f"{c.column}/{c.category}" for c in checks if c not in kept]
+                logger.info("Discarded %d planner check(s) for table %s already covered by SAP rules: %s",
+                            len(dropped), state["table_name"], ", ".join(dropped))
+                metrics.planner_checks_covered_by_rules += len(dropped)
+            checks = kept
         checks = checks[:Config.MAX_TOTAL_CHECKS_PER_TABLE]
 
         logger.info("Planner proposed %d check(s) for table %s", len(checks), state["table_name"])

@@ -16,6 +16,7 @@ from .table_profiler import profile_table
 from .cache_runner import run_cached_skills
 from .duplicate_detector import detect_table_duplicates
 from .duplicate_rule_planner import RulePlanner
+from .sap_rules import RuleCoverage, load_pack, run_sap_rules
 from . import client_knowledge
 from .memory.retriever import SkillRetriever
 from . import episodic_store as store
@@ -28,7 +29,8 @@ from .llm_providers import LLMChainExhaustedError, build_llms, close_local_llm
 logger = get_logger("main")
 
 
-def explore_table(graph, table_name, df, dictionary, all_tables, skill_retriever, reflector_single) -> list:
+def explore_table(graph, table_name, df, dictionary, all_tables, skill_retriever, reflector_single,
+                  rule_coverage=None) -> list:
     logger.info("=== Exploring table %s (batch mode) ===", table_name)
     columns = list(df.columns)
 
@@ -74,6 +76,22 @@ def explore_table(graph, table_name, df, dictionary, all_tables, skill_retriever
         if len(all_tables) > 1 else "No other tables registered."
     )
 
+    # Rule descriptions only (no data) - so the planner does not re-invent them.
+    # Naming the untouched columns too: told only what NOT to do, a model can
+    # return an empty plan.
+    if rule_coverage and rule_coverage.lines:
+        touched = {col for col, _, _ in rule_coverage.pairs}
+        untouched = [c for c in columns if c.upper() not in touched]
+        rules_note = (
+            "Checks ALREADY RUN by the built-in SAP rule engine on this table - do NOT propose these again:\n"
+            + "\n".join(f"- {line}" for line in rule_coverage.lines)
+            + f"\nColumns no built-in rule checks at all: {untouched}. Covered columns can still have other "
+              "problems (e.g. text hygiene in a name, a client-specific value set), so a check on them is fine "
+              "as long as it tests something the rules above do not. Propose checks as usual otherwise."
+        )
+    else:
+        rules_note = "No built-in SAP rules apply to this table."
+
     cache_note = (f"Columns with EXISTING approved checks (deprioritize unless new insight): "
                   f"{sorted(columns_with_cache)}" if columns_with_cache else "No cached checks exist yet.")
 
@@ -83,6 +101,7 @@ Row count: {profile['table']['n_rows']}
 Column profiles (statistical, privacy-sanitized):
 {json.dumps(profile['variables'], indent=2, default=str)}
 
+{rules_note}
 {cache_note}
 {hints_text}
 {other_tables_note}
@@ -94,6 +113,7 @@ Propose roughly 1-2 checks per notable column (skip clean-looking columns). Do n
     initial_state = {
         "table_name": table_name, "seed_prompt": seed_prompt, "df": df,
         "all_tables": all_tables, "proposed_checks": [], "check_results": [], "findings": [],
+        "rule_coverage": rule_coverage or RuleCoverage(),
     }
     final_state = graph.invoke(initial_state)
     fresh_findings = final_state["findings"]
@@ -138,6 +158,12 @@ def main():
              "(and is limited to identical rows if no LLM is configured).",
     )
     parser.add_argument(
+        "--deterministic-only", action="store_true",
+        help="Run only the LLM-free engines: duplicate matching plus the built-in SAP rule pack "
+             "(sap_rules.py). No planner or reflector call; duplicate rules for a schema never seen "
+             "before still cost one call, as with --duplicates-only.",
+    )
+    parser.add_argument(
         "--llm-provider", default=Config.LLM_PROVIDER, choices=Config.SUPPORTED_LLM_PROVIDERS,
         help="Primary LLM backend (overrides config.yaml/EXPLORER_LLM_PROVIDER).",
     )
@@ -154,17 +180,23 @@ def main():
     if args.fallback_providers is not None:
         Config.LLM_FALLBACK_PROVIDERS = args.fallback_providers
 
-    if not args.duplicates_only:
+    if args.duplicates_only and args.deterministic_only:
+        parser.error("--duplicates-only and --deterministic-only are mutually exclusive")
+    no_planner = args.duplicates_only or args.deterministic_only
+    if not no_planner:
         Config.validate()
+    if Config.SAP_RULES_ENABLED and not args.duplicates_only:
+        load_pack()  # fail fast on a broken rule pack, before any table is processed
     try:
         client = client_knowledge.ensure_client(args.client)
     except ValueError as exc:
         parser.error(str(exc))
 
     logger.info(
-        "Starting run | client=%s provider=%s fallbacks=%s tables=%s cache_enabled=%s duplicates_only=%s",
+        "Starting run | client=%s provider=%s fallbacks=%s tables=%s cache_enabled=%s duplicates_only=%s "
+        "deterministic_only=%s sap_rules=%s",
         client["name"], Config.LLM_PROVIDER, Config.LLM_FALLBACK_PROVIDERS, args.tables,
-        Config.ENABLE_CACHE_FAST_PATH, args.duplicates_only,
+        Config.ENABLE_CACHE_FAST_PATH, args.duplicates_only, args.deterministic_only, Config.SAP_RULES_ENABLED,
     )
 
     dictionary_path = str(Path(args.data_dir) / args.dictionary_file)
@@ -180,9 +212,9 @@ def main():
                      + (f" matching --tables {' '.join(args.tables)}" if args.tables else ""))
     tables = load_all_tables(args.data_dir, table_files, column_types)
 
-    if args.duplicates_only:
+    if no_planner:
         llms = graph = reflector_single = skill_retriever = None
-        run_label = "duplicate-detector (no LLM)"
+        run_label = "duplicate-detector (no LLM)" if args.duplicates_only else "deterministic rules (no LLM)"
         # Matching rules already saved for this client are reused as they are, so a
         # duplicates-only run normally stays free. A table whose schema has never
         # been seen for this client still needs one call to draft its rules, so the
@@ -219,9 +251,16 @@ def main():
                                                     rule_planner=rule_planner)
         if duplicate_finding:
             findings.append(duplicate_finding)
+        # Known SAP standards next - also zero LLM cost, also kept if the LLM fails.
+        rule_coverage = RuleCoverage()
         if not args.duplicates_only:
+            rule_findings, rule_coverage = run_sap_rules(table_name, df, tables, dictionary,
+                                                         client_id=client["client_id"])
+            findings += rule_findings
+        if not no_planner:
             try:
-                findings += explore_table(graph, table_name, df, dictionary, tables, skill_retriever, reflector_single)
+                findings += explore_table(graph, table_name, df, dictionary, tables, skill_retriever,
+                                          reflector_single, rule_coverage=rule_coverage)
             except LLMChainExhaustedError as exc:
                 # One table's LLM outage shouldn't discard the rest of the run.
                 logger.error("[%s] LLM exploration skipped - %s", table_name, exc)
@@ -260,6 +299,9 @@ def main():
           f"Duplicate rules: {metrics.duplicate_rule_llm_calls}")
     print(f"Duplicate rules - Reused from memory: {metrics.duplicate_rule_hits} | "
           f"Drafted for a new schema: {metrics.duplicate_rule_misses}")
+    print(f"SAP rules (no LLM) - Rule groups run: {metrics.sap_rules_evaluated} | "
+          f"Findings: {metrics.sap_rule_findings} | Rows flagged: {metrics.sap_rule_rows} | "
+          f"Planner checks dropped as already covered: {metrics.planner_checks_covered_by_rules}")
     print(f"Cache - Hits: {metrics.cache_hits} | Misses: {metrics.cache_misses}")
     print(f"LLM fallbacks - Failed attempts: {metrics.llm_call_failures} | "
           f"Served by fallback: {metrics.llm_fallback_calls}")

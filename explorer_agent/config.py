@@ -208,6 +208,15 @@ class Config:
     DUPLICATE_MAX_BLOCK_SIZE = _env_int("EXPLORER_DUPLICATE_MAX_BLOCK", _get("duplicates.max_block_size", 500))
     DUPLICATE_MAX_GROUPS = _env_int("EXPLORER_DUPLICATE_MAX_GROUPS", _get("duplicates.max_groups", 500))
 
+    # Deterministic SAP domain rules (explorer_agent/sap_rules.py) - zero LLM calls.
+    SAP_RULES_ENABLED = _env_bool("EXPLORER_SAP_RULES_ENABLED", _get("sap_rules.enabled", True))
+    SAP_RULES_PACK_FILE = _resolve_path(_env_str(
+        "EXPLORER_SAP_RULES_PACK", _get("sap_rules.pack_file", "explorer_agent/rule_packs/sap_master_data.yaml")
+    ))
+    SAP_RULES_MAX_ROWS = _env_int("EXPLORER_SAP_RULES_MAX_ROWS", _get("sap_rules.max_rows_per_finding", 1000))
+    SAP_RULES_DISABLED = _env_list("EXPLORER_SAP_RULES_DISABLED", _get("sap_rules.disabled_rules", []))
+    SAP_RULES_CLIENT_OVERRIDES = _get("sap_rules.client_overrides", {}) or {}
+
     # Sandbox settings
     SANDBOX_TIMEOUT_SECONDS = _env_int("EXPLORER_SANDBOX_TIMEOUT", _get("sandbox.timeout_seconds", 10))
     SANDBOX_MEM_LIMIT_MB = _env_int("EXPLORER_SANDBOX_MEM_MB", _get("sandbox.mem_limit_mb", 512))

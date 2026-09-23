@@ -150,6 +150,35 @@ duplicates:
   #       display: [KOINH, BANKS, BANKL, BANKN, IBAN]  # columns shown in the review app
   tables: {}
 
+sap_rules:
+  # Deterministic SAP domain rules (explorer_agent/sap_rules.py): deletion flags,
+  # blocks, dormancy, mandatory fields, country-aware tax and postal-code formats,
+  # orphan child records and flags not carried from a master to its org-level rows.
+  # They run before the planner with zero LLM calls, and the planner is told which
+  # checks they already cover so it does not re-invent them. EXPLORER_SAP_RULES_ENABLED
+  enabled: true
+  # The rules themselves are data, not code - edit the pack to add a table, field,
+  # country format or relationship. EXPLORER_SAP_RULES_PACK
+  pack_file: explorer_agent/rule_packs/sap_master_data.yaml
+  # Offending rows stored per finding (all of them go to the local store only,
+  # never to an LLM). EXPLORER_SAP_RULES_MAX_ROWS
+  max_rows_per_finding: 1000
+  # Rule ids to switch off everywhere (comma-separated in EXPLORER_SAP_RULES_DISABLED).
+  disabled_rules: []
+  # Per client: switch rules off (an id or a prefix such as "flag" or "tax.LFA1"),
+  # require extra fields, or make a mandatory field AUTO_FIXABLE with an agreed
+  # default. A standard SAP field can mean something else at one client - this is
+  # where that is recorded, not in code. Example:
+  #   client_overrides:
+  #     acme-retail:
+  #       disabled_rules: [propagation.kna1_deleted_knvv]
+  #       mandatory:
+  #         LFBK:
+  #           KOINH: {severity: MEDIUM, label: Account holder}
+  #       auto_fix:
+  #         LFB1.ZTERM: "0001"
+  client_overrides: {}
+
 profiling:
   top_n_frequent: 10
   max_checks_per_table: 25

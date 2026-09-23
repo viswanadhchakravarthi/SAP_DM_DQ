@@ -22,17 +22,25 @@ class RunMetrics:
     duplicate_rule_llm_calls: int = 0
     duplicate_rule_hits: int = 0    # tables whose rules came from saved memory
     duplicate_rule_misses: int = 0  # tables with no saved rules for this schema
+    # Deterministic SAP rule pack (sap_rules.py) - zero LLM calls by design.
+    sap_rules_evaluated: int = 0  # rule groups that ran (table/column present, not disabled)
+    sap_rule_findings: int = 0
+    sap_rule_rows: int = 0
+    planner_checks_covered_by_rules: int = 0  # planner checks dropped because a rule already ran them
 
     def log_summary(self, logger):
         logger.info(
             "RUN METRICS SUMMARY | planner_llm_calls=%d reflector_llm_calls=%d "
             "duplicate_rule_llm_calls=%d duplicate_rule_hits=%d duplicate_rule_misses=%d "
             "sandbox_executions=%d cache_hits=%d cache_misses=%d "
-            "llm_call_failures=%d llm_fallback_calls=%d",
+            "llm_call_failures=%d llm_fallback_calls=%d "
+            "sap_rules_evaluated=%d sap_rule_findings=%d sap_rule_rows=%d planner_checks_covered_by_rules=%d",
             self.planner_llm_calls, self.reflector_llm_calls,
             self.duplicate_rule_llm_calls, self.duplicate_rule_hits, self.duplicate_rule_misses,
             self.sandbox_executions, self.cache_hits, self.cache_misses,
             self.llm_call_failures, self.llm_fallback_calls,
+            self.sap_rules_evaluated, self.sap_rule_findings, self.sap_rule_rows,
+            self.planner_checks_covered_by_rules,
         )
 
     def reset(self):
@@ -47,6 +55,10 @@ class RunMetrics:
         self.duplicate_rule_llm_calls = 0
         self.duplicate_rule_hits = 0
         self.duplicate_rule_misses = 0
+        self.sap_rules_evaluated = 0
+        self.sap_rule_findings = 0
+        self.sap_rule_rows = 0
+        self.planner_checks_covered_by_rules = 0
 
 
 metrics = RunMetrics()  # single shared instance, imported wherever needed
