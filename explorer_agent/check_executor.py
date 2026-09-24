@@ -12,6 +12,7 @@ import pandas as pd
 from .config import Config
 from .logging_config import get_logger
 from .metrics import metrics
+from .preflight import preflight
 from .privacy_guard import sanitize_result_for_llm
 from .sandbox import SandboxExecutor
 from .schemas import ProposedCheck
@@ -41,11 +42,31 @@ def execute_checks(
     if not checks:
         return results
 
-    with sandbox_session(df, all_tables) as box:
-        executed = [box.run(check.code) for check in checks]
+    # Free static checks first: code that can't run is rejected with a precise reason instead of
+    # crashing in the sandbox. Only `code` blocks; a detail_code problem just loses row detail later.
+    executed: List[Dict[str, Any]] = [{}] * len(checks)
+    runnable = []
+    for index, check in enumerate(checks):
+        problems = preflight(check.code, df, all_tables)
+        if problems:
+            metrics.preflight_rejected += 1
+            executed[index] = {"success": False, "result": None, "error": "Pre-flight: " + "; ".join(problems),
+                               "preflight": True}
+        else:
+            runnable.append(index)
+        if check.detail_code:
+            detail_problems = preflight(check.detail_code, df, all_tables)
+            if detail_problems:
+                logger.warning("Check #%d on column %s: detail_code will probably fail - %s",
+                               index, check.column, "; ".join(detail_problems))
+    if runnable:
+        with sandbox_session(df, all_tables) as box:
+            for index in runnable:
+                executed[index] = box.run(checks[index].code)
 
     for index, (check, exec_result) in enumerate(zip(checks, executed)):
-        metrics.sandbox_executions += 1
+        if not exec_result.get("preflight"):
+            metrics.sandbox_executions += 1
 
         raw_result = exec_result.get("result")
         sanitized = (
@@ -63,6 +84,7 @@ def execute_checks(
                 "success": exec_result.get("success"),
                 "result": sanitized,
                 "error": exec_result.get("error"),
+                "preflight_rejected": bool(exec_result.get("preflight")),
             }
         )
 

@@ -175,13 +175,13 @@ D:\GitHub\SAP_DM_DQ\.venv\Lib\site-packages\llama_cpp\__init__.py
 * `explorer_agent/` — the profiling pipeline (CLI: `python -m explorer_agent.main`)
   * `main.py` — entry point; runs the per-table pipeline. `graph.py` — LangGraph plan → execute → reflect flow.
   * `config.py` + `config.yaml` — all settings; secrets come from the `.env` named by `env_file`.
-  * `llm_providers.py` — builds the single LLM (Gemini or local GGUF); `local_llms.py` — the GGUF chat model.
+  * `llm_providers.py` — builds the single LLM (Gemini or local GGUF); `local_llms.py` — the GGUF chat model; `llm_usage.py` — token counts per LLM request.
   * `duplicate_detector.py`, `duplicate_rule_planner.py`, `duplicate_rules.py` — duplicate matching and its per-client rules.
   * `column_mapping.py`, `sap_rules.py`, `anomaly_rules.py`, `rule_packs/` — column meaning and the deterministic SAP rule engines.
   * `survivorship.py`, `scorecard.py` — golden-record recommendation and the DQ scorecard.
   * `structural_profile.py`, `contracts.py`, `events.py` — pipeline handoff documents and events.
   * `privacy_guard.py` — heuristic scrubbing of check results before they reach an LLM; `table_profiler.py` — allowlisted statistical profile.
-  * `sandbox.py`, `check_executor.py` — isolated execution of LLM-generated checks.
+  * `sandbox.py`, `check_executor.py` — isolated execution of LLM-generated checks; `preflight.py` — free static checks that reject code that can't run.
   * `episodic_store.py` — SQLite run/finding history and human review state; `client_knowledge.py`, `client_workspace.py` — per-client memory and uploaded data.
   * `evaluate.py` — scores a run against a client's answer key.
 * `explorer_agent/memory/` — `base.py` (MemoryStore interface), `chroma_store.py` (Chroma adapter), `__init__.py` (backend factory `get_memory_store`), `skill_registry.py` (procedural JSON source of truth), `retriever.py`, `promotion.py` (episodic → procedural → semantic), `reindex.py` (rebuild the vector index), `duplicate_rule_store.py`.

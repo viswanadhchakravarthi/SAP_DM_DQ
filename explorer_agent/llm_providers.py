@@ -27,6 +27,7 @@ from langchain_core.runnables import Runnable, RunnableLambda
 
 from .config import Config
 from .local_llms import QwenCoderGGUFChatModel
+from .llm_usage import UsageCollector
 from .logging_config import get_logger
 from .metrics import metrics
 from .schemas import CheckPlan, ColumnMappingPlan, DuplicateRulePlan, Reflection, ReflectionBatch
@@ -200,7 +201,8 @@ def _structured_chain(candidates: Sequence[LLMCandidate], schema: type) -> Runna
 
     def call(input_: Any, config: Any) -> Any:
         try:
-            return runnable.invoke(input_, config)
+            # A fresh collector per call records the tokens of every request made inside it.
+            return runnable.with_config(callbacks=[UsageCollector(schema_name, cand.label)]).invoke(input_, config)
         except Exception as exc:
             raise LLMChainExhaustedError(
                 f"{cand.label} failed for {schema_name}: {str(exc).splitlines()[0][:300]}"

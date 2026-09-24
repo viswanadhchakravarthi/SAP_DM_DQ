@@ -24,6 +24,7 @@ from . import client_knowledge
 from .memory.retriever import SkillRetriever
 from . import episodic_store as store
 # from . import profiler_primitives as prim
+from .llm_usage import usage
 from .metrics import metrics
 from .logging_config import get_logger
 
@@ -146,6 +147,7 @@ def _rule_chain_factory(model, temperature, chain="duplicate_rules_structured"):
 def main():
     store.init_db()
     metrics.reset()
+    usage.reset()
     start_time = time.perf_counter()
 
     parser = argparse.ArgumentParser(description="Week 4: Batch table-level Explorer")
@@ -279,12 +281,14 @@ def main():
     run_id = store.create_run(model=run_label, table_names=list(tables.keys()),
                               client_id=client["client_id"], client_name=client["name"])
     logger.info("Run ID: %s", run_id)
+    usage.set_run(run_id)  # stores the calls made so far (column mapping) and every later one
 
     total_findings = 0
     failed_tables = []
     table_scores = []
     for table_name, df in tables.items():
         table_start = time.perf_counter()
+        usage.set_table(table_name)
         # Deterministic duplicate detection first: zero LLM cost, and its
         # findings are kept even if the LLM chain fails for this table.
         findings = []
@@ -342,6 +346,8 @@ def main():
         total_findings += len(findings)
         logger.info("[%s] done in %.2fs - %d finding(s)", table_name, time.perf_counter() - table_start, len(findings))
 
+    usage.set_table(None)
+
     # Composite DQ scorecard per table, migration object and run (deterministic engines only).
     dq = None
     if table_scores:
@@ -386,6 +392,7 @@ def main():
             "dq_index": dq["dq_index"] if dq else None,
             "record_readiness": dq["readiness"]["score"] if dq else None,
             "scorecard_url": f"/api/scorecard?client_id={client['client_id']}&run_id={run_id}" if dq else None,
+            "llm_usage": usage.totals(),
         })
     except Exception as exc:
         logger.error("profiling.completed event could not be published: %s", exc)
@@ -403,12 +410,18 @@ def main():
           f"{metrics.column_mapping_hits} | Mapped by LLM: {metrics.column_mapping_llm_calls} | "
           f"Failed: {metrics.column_mapping_failures}")
     print(f"Cache - Hits: {metrics.cache_hits} | Misses: {metrics.cache_misses}")
+    print(f"Pre-flight - checks rejected before running: {metrics.preflight_rejected}")
     print(f"LLM - Failed calls: {metrics.llm_call_failures}")
+    tokens = usage.totals()
+    print(f"LLM tokens - {tokens['calls']} call(s): in {tokens['input_tokens']:,} | out {tokens['output_tokens']:,}"
+          + (f" (of which thinking {tokens['reasoning_tokens']:,})" if tokens["reasoning_tokens"] else "")
+          + f" | total {tokens['total_tokens']:,}")
     print(f"\nReview at: http://localhost:8000")
 
     # One machine-readable line for the job manager (review_app/job_manager.py).
     print("RESULT_JSON: " + json.dumps({"run_id": run_id, "client_id": client["client_id"], "status": status,
-                                        "structural_profile": str(handoff_path) if handoff_path else None}))
+                                        "structural_profile": str(handoff_path) if handoff_path else None,
+                                        "llm_usage": usage.totals()}))
     if failed_tables:
         print(f"\nTables whose LLM exploration was skipped because every LLM failed: {failed_tables} "
               f"- re-run with --tables {' '.join(failed_tables)}")

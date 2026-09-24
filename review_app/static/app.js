@@ -180,6 +180,23 @@ async function loadRuns() {
       })
       .join("");
   if ([...select.options].some((o) => o.value === previous)) select.value = previous;
+  updateRunUsage();
+}
+
+// Token counts of the selected run (counts only - the server never stores prompts or responses).
+function formatTokens(n) {
+  n = n || 0;
+  return n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k` : String(n);
+}
+
+function updateRunUsage() {
+  const el = document.getElementById("runUsage");
+  const usage = (RUNS_BY_ID[document.getElementById("runSelect").value] || {}).llm_usage;
+  el.classList.toggle("hidden", !usage);
+  if (!usage) return;
+  const thinking = usage.reasoning_tokens ? ` (thinking ${formatTokens(usage.reasoning_tokens)})` : "";
+  el.textContent = `Tokens: ${formatTokens(usage.input_tokens)} in / ${formatTokens(usage.output_tokens)} out${thinking} · ${usage.calls} call${usage.calls === 1 ? "" : "s"}`;
+  el.title = `Input ${usage.input_tokens.toLocaleString()} | Output ${usage.output_tokens.toLocaleString()} | Total ${usage.total_tokens.toLocaleString()} tokens over ${usage.seconds}s. Per-call detail: /api/runs/<run id>/llm-usage`;
 }
 
 let countsRequestSeq = 0;
@@ -1609,7 +1626,7 @@ document.getElementById("closeModal").addEventListener("click", () => {
   }
 });
 
-document.getElementById("runSelect").addEventListener("change", loadFindings);
+document.getElementById("runSelect").addEventListener("change", () => { updateRunUsage(); loadFindings(); });
 document.getElementById("statusFilter").addEventListener("change", loadFindings);
 document.getElementById("scopeFilter").addEventListener("change", loadFindings);
 document.getElementById("refreshBtn").addEventListener("click", loadFindings);

@@ -216,6 +216,65 @@ def _migrate_runs(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE runs ADD COLUMN client_name TEXT")
 
 
+def _migrate_llm_calls(conn: sqlite3.Connection) -> None:
+    """One row per LLM request (explorer_agent/llm_usage.py): counts and timings only, never prompts."""
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS llm_calls (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        run_id TEXT NOT NULL,
+        table_name TEXT,              -- NULL for client-wide calls (column mapping)
+        role TEXT NOT NULL,           -- planner | reflector | duplicate_rules | column_mapping
+        model TEXT,
+        input_tokens INTEGER,
+        output_tokens INTEGER,
+        reasoning_tokens INTEGER,     -- thinking tokens when reported (already part of the output bill)
+        total_tokens INTEGER,
+        seconds REAL,
+        success INTEGER NOT NULL DEFAULT 1,
+        error TEXT,
+        created_at TEXT NOT NULL
+    )""")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_llm_calls_run ON llm_calls(run_id)")
+
+
+def save_llm_call(run_id: str, record: Dict[str, Any]) -> None:
+    with get_connection() as conn:
+        conn.execute(
+            """INSERT INTO llm_calls (run_id, table_name, role, model, input_tokens, output_tokens,
+               reasoning_tokens, total_tokens, seconds, success, error, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (run_id, record.get("table_name"), record["role"], record.get("model"), record.get("input_tokens"),
+             record.get("output_tokens"), record.get("reasoning_tokens"), record.get("total_tokens"),
+             record.get("seconds"), 1 if record.get("success", True) else 0, record.get("error"),
+             datetime.now(timezone.utc).isoformat()))
+
+
+def _usage_totals(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
+    ok = [r for r in rows if r["success"]]
+    total = lambda key: sum(r[key] or 0 for r in ok)  # noqa: E731
+    return {"calls": len(ok), "failed_calls": len(rows) - len(ok), "input_tokens": total("input_tokens"),
+            "output_tokens": total("output_tokens"), "reasoning_tokens": total("reasoning_tokens"),
+            "total_tokens": total("total_tokens"), "seconds": round(sum(r["seconds"] or 0 for r in rows), 1)}
+
+
+def get_run_llm_usage(run_id: str) -> Dict[str, Any]:
+    """Every LLM request of a run, plus totals overall and per role."""
+    with get_connection() as conn:
+        rows = [dict(r) for r in conn.execute("SELECT * FROM llm_calls WHERE run_id = ? ORDER BY id", (run_id,))]
+    by_role = {role: _usage_totals([r for r in rows if r["role"] == role]) for role in sorted({r["role"] for r in rows})}
+    return {"run_id": run_id, "totals": _usage_totals(rows), "by_role": by_role, "calls": rows}
+
+
+def get_llm_usage_by_run() -> Dict[str, Dict[str, Any]]:
+    """Token totals of every run that has any (for the run list)."""
+    with get_connection() as conn:
+        rows = [dict(r) for r in conn.execute("SELECT * FROM llm_calls")]
+    grouped: Dict[str, List[Dict[str, Any]]] = {}
+    for r in rows:
+        grouped.setdefault(r["run_id"], []).append(r)
+    return {run_id: _usage_totals(items) for run_id, items in grouped.items()}
+
+
 def init_db():
     with get_connection() as conn:
         conn.executescript(SCHEMA)
@@ -223,6 +282,7 @@ def init_db():
         _migrate_finding_items(conn)
         _migrate_runs(conn)
         _migrate_scorecards(conn)
+        _migrate_llm_calls(conn)
 
 
 # --- Per-pillar review-verdict vocabulary -----------------------------------
@@ -413,7 +473,11 @@ def get_runs(client_id: Optional[str] = None) -> List[Dict[str, Any]]:
         params.append(client_id)
     with get_connection() as conn:
         rows = conn.execute(query + " ORDER BY started_at DESC", params).fetchall()
-        return [dict(r) for r in rows]
+        runs = [dict(r) for r in rows]
+    usage = get_llm_usage_by_run()
+    for run in runs:
+        run["llm_usage"] = usage.get(run["run_id"])
+    return runs
 
 
 def get_stats(run_id: Optional[str] = None) -> Dict[str, Any]:

@@ -98,6 +98,14 @@ def list_runs(client_id: Optional[str] = None):
     return store.get_runs(client_id=client_id)
 
 
+@app.get("/api/runs/{run_id}/llm-usage")
+def get_run_llm_usage(run_id: str):
+    """Token counts of every LLM request in a run (totals, per role, per call). Counts only, no prompts."""
+    if not store.get_run(run_id):
+        raise HTTPException(status_code=404, detail="Run not found")
+    return store.get_run_llm_usage(run_id)
+
+
 @app.get("/api/clients")
 def list_clients():
     return client_knowledge.list_clients()

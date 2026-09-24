@@ -33,6 +33,15 @@ def _messages_to_openai_format(messages: List[BaseMessage]) -> List[dict]:
     return formatted
 
 
+def _usage_metadata(response: dict) -> Optional[dict]:
+    """llama.cpp's token counts in LangChain's usage_metadata shape (see llm_usage.py)."""
+    usage = response.get("usage") or {}
+    if not usage:
+        return None
+    return {"input_tokens": usage.get("prompt_tokens", 0), "output_tokens": usage.get("completion_tokens", 0),
+            "total_tokens": usage.get("total_tokens", 0)}
+
+
 class QwenCoderGGUFChatModel(BaseChatModel):
     """
     BaseChatModel wrapper around a GGUF Qwen2.5-Coder model via llama-cpp-python.
@@ -78,7 +87,8 @@ class QwenCoderGGUFChatModel(BaseChatModel):
         formatted_messages = _messages_to_openai_format(messages)
         response = self.llm.create_chat_completion(messages=formatted_messages, max_tokens=self.max_tokens)
         text = response["choices"][0]["message"]["content"]
-        return ChatResult(generations=[ChatGeneration(message=AIMessage(content=text))])
+        return ChatResult(generations=[ChatGeneration(
+            message=AIMessage(content=text, usage_metadata=_usage_metadata(response)))])
 
     def _generate_tool_call(self, messages: List[BaseMessage], tools: List[dict]) -> ChatResult:
         if len(tools) != 1:
@@ -129,4 +139,5 @@ class QwenCoderGGUFChatModel(BaseChatModel):
             raise OutputParserException(f"Failed to parse JSON: {e}\nRaw: {raw_text[:500]}") from e
 
         tool_call = {"name": tool_name, "args": args, "id": str(uuid.uuid4()), "type": "tool_call"}
-        return ChatResult(generations=[ChatGeneration(message=AIMessage(content="", tool_calls=[tool_call]))])
+        return ChatResult(generations=[ChatGeneration(
+            message=AIMessage(content="", tool_calls=[tool_call], usage_metadata=_usage_metadata(response)))])

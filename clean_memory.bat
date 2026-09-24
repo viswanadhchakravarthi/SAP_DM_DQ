@@ -29,6 +29,8 @@ echo Credentials confirmed. Deleting target files and directories...
 :: Delete directories
 if exist logs rmdir /s /q logs
 if exist memory_store rmdir /s /q memory_store
+if exist handoff rmdir /s /q handoff
+if exist client_data rmdir /s /q client_data
 
 :: Delete file
 if exist episodic_memory.db del /f /q episodic_memory.db
