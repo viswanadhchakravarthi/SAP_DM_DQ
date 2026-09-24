@@ -199,6 +199,19 @@ function updateRunUsage() {
   el.title = `Input ${usage.input_tokens.toLocaleString()} | Output ${usage.output_tokens.toLocaleString()} | Total ${usage.total_tokens.toLocaleString()} tokens over ${usage.seconds}s. Per-call detail: /api/runs/<run id>/llm-usage`;
 }
 
+// Where a finding came from. A fixed rule can only find what its authors thought of; an LLM check is the agent
+// reading this client's columns and proposing something new, so a reviewer weighs them differently.
+const SOURCE_LABELS = {
+  BUILT_IN: { option: "Built-in rules", badge: "🧱 Built-in rule", tip: "A fixed, deterministic SAP rule from the rule pack. No LLM was involved in finding this." },
+  LLM: { option: "LLM-proposed checks", badge: "🤖 LLM check", tip: "A pandas check the LLM proposed for this client's data and the sandbox ran locally. Read its code before trusting it." },
+  DUPLICATE_ENGINE: { option: "Duplicate engine", badge: "👥 Duplicate engine", tip: "The deterministic duplicate matcher, using matching rules drafted once per client and schema." },
+};
+
+function sourceBadge(finding) {
+  const label = SOURCE_LABELS[finding.source];
+  return label ? `<span class="badge badge-source-${escapeHtml(finding.source)}" title="${escapeHtml(label.tip)}">${label.badge}</span>` : "";
+}
+
 let countsRequestSeq = 0;
 
 // Counts are computed client-side from the light findings list so they follow
@@ -211,8 +224,20 @@ async function loadCounts(runId, status, scope) {
   if (runId) params.append("run_id", runId);
   params.append("client_id", selectedClientId());
   if (scope) params.append("rule_scope", scope);
-  const findings = await fetchJSON(`${API_BASE}/findings?${params.toString()}`);
+  const all = await fetchJSON(`${API_BASE}/findings?${params.toString()}`);
   if (seq !== countsRequestSeq) return; // a newer filter change already won
+
+  // How many findings each source produced (before the Source filter), so the dropdown answers
+  // "how much of this is built-in rules and how much did the LLM add" at a glance.
+  const bySource = { BUILT_IN: 0, LLM: 0, DUPLICATE_ENGINE: 0 };
+  all.forEach((f) => { if (f.source in bySource) bySource[f.source] += 1; });
+  document.querySelectorAll("#sourceFilter option[value]").forEach((opt) => {
+    const base = SOURCE_LABELS[opt.value]?.option;
+    if (base) opt.textContent = `${base} (${bySource[opt.value]})`;
+    else opt.textContent = `All sources (${all.length})`;
+  });
+  const sourceValue = document.getElementById("sourceFilter").value;
+  const findings = sourceValue ? all.filter((f) => f.source === sourceValue) : all;
 
   const byStatus = { PENDING: 0, APPROVED: 0, REJECTED: 0 };
   const byTab = { "": 0, ACTIVENESS: 0, DUPLICATE: 0, COMPLETENESS: 0, CORRECTNESS: 0, ANOMALIES: 0 };
@@ -255,6 +280,8 @@ async function loadFindings() {
   params.append("client_id", selectedClientId());
   if (status) params.append("status", status);
   if (scope) params.append("rule_scope", scope);
+  const source = document.getElementById("sourceFilter").value;
+  if (source) params.append("source", source);
 
   if (activeCategory === "ANOMALIES") {
     params.append("is_anomaly", "true");
@@ -311,6 +338,7 @@ function renderCard(finding) {
       <div class="top-row">
         <div class="table-col">${wrapTableColumnRef(finding.table_name, finding.column_name, finding.hypothesis || "")}</div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          ${sourceBadge(finding)}
           <span class="badge badge-cat-${escapeHtml(finding.category)}">${escapeHtml(categoryLabel)}</span>
           <span class="badge ${scopeClass}">${escapeHtml(scopeLabel)}</span>
           ${finding.is_anomaly ? '<span class="badge badge-anomaly">⚡ Anomaly</span>' : ''}
@@ -405,6 +433,7 @@ async function openDetail(id) {
   document.getElementById("modalBody").innerHTML = `
     <div class="detail-row detail-top-meta">
       <span class="table-col">${wrapTableColumnRef(finding.table_name, finding.column_name, finding.hypothesis || "")}</span>
+      ${sourceBadge(finding)}
       <span class="badge badge-cat-${escapeHtml(finding.category)}">${escapeHtml(categoryLabel)}</span>
       <span class="badge ${escapeHtml(finding.severity)}">${escapeHtml(finding.severity)}</span>
       <span class="badge status-${escapeHtml(finding.status)}">${escapeHtml(finding.status)}</span>
@@ -1815,6 +1844,7 @@ document.getElementById("closeModal").addEventListener("click", () => {
 document.getElementById("runSelect").addEventListener("change", () => { updateRunUsage(); loadFindings(); });
 document.getElementById("statusFilter").addEventListener("change", loadFindings);
 document.getElementById("scopeFilter").addEventListener("change", loadFindings);
+document.getElementById("sourceFilter").addEventListener("change", loadFindings);
 document.getElementById("refreshBtn").addEventListener("click", loadFindings);
 
 document.querySelectorAll("#categoryTabs .tab-btn").forEach((tab) => {

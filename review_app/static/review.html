@@ -56,6 +56,16 @@
       </div>
 
       <div class="control-group">
+        <label for="sourceFilter">Source:</label>
+        <select id="sourceFilter" title="Where a finding came from: a fixed built-in SAP rule, a check the LLM proposed, or the duplicate engine">
+          <option value="">All sources</option>
+          <option value="BUILT_IN">Built-in rules</option>
+          <option value="LLM">LLM-proposed checks</option>
+          <option value="DUPLICATE_ENGINE">Duplicate engine</option>
+        </select>
+      </div>
+
+      <div class="control-group">
         <label for="scopeFilter">Rule Scope:</label>
         <select id="scopeFilter">
           <option value="">All Scopes</option>

@@ -414,10 +414,18 @@ def save_finding(run_id: str, table: str, column: str, hypothesis: str, check_co
     return finding_id
 
 
+# Where a finding came from, derived from what was stored (no extra column): the duplicate engine, a built-in
+# rule (its check_code starts with "# Built-in SAP rule", see rule_context.finding), or a check the LLM proposed
+# (also when it ran from a promoted skill).
+_SOURCE_SQL = ("(CASE WHEN category = 'DUPLICATE' THEN 'DUPLICATE_ENGINE' "
+               "WHEN check_code LIKE '# Built-in SAP rule%' THEN 'BUILT_IN' ELSE 'LLM' END)")
+SOURCES = ("BUILT_IN", "LLM", "DUPLICATE_ENGINE")
+
+
 def _finding_filters(run_id: Optional[str] = None, status: Optional[str] = None,
                      category: Optional[str] = None, rule_scope: Optional[str] = None,
                      industry: Optional[str] = None, is_anomaly: Optional[bool] = None,
-                     client_id: Optional[str] = None) -> Tuple[str, List[Any]]:
+                     client_id: Optional[str] = None, source: Optional[str] = None) -> Tuple[str, List[Any]]:
     """WHERE-clause fragment (starting with ' AND', or empty) + params shared by the findings queries."""
     clauses: List[str] = []
     params: List[Any] = []
@@ -432,15 +440,18 @@ def _finding_filters(run_id: Optional[str] = None, status: Optional[str] = None,
     if client_id:
         clauses.append("run_id IN (SELECT run_id FROM runs WHERE client_id = ?)")
         params.append(client_id)
+    if source:
+        clauses.append(f"{_SOURCE_SQL} = ?")
+        params.append(source)
     return "".join(f" AND {c}" for c in clauses), params
 
 
 def get_findings(run_id: Optional[str] = None, status: Optional[str] = None,
                  category: Optional[str] = None, rule_scope: Optional[str] = None,
                  industry: Optional[str] = None, is_anomaly: Optional[bool] = None,
-                 client_id: Optional[str] = None) -> List[Dict[str, Any]]:
-    where, params = _finding_filters(run_id, status, category, rule_scope, industry, is_anomaly, client_id)
-    query = f"SELECT * FROM findings WHERE 1=1{where} ORDER BY created_at DESC"
+                 client_id: Optional[str] = None, source: Optional[str] = None) -> List[Dict[str, Any]]:
+    where, params = _finding_filters(run_id, status, category, rule_scope, industry, is_anomaly, client_id, source)
+    query = f"SELECT *, {_SOURCE_SQL} AS source FROM findings WHERE 1=1{where} ORDER BY created_at DESC"
 
     with get_connection() as conn:
         rows = conn.execute(query, params).fetchall()
@@ -455,7 +466,7 @@ def get_findings(run_id: Optional[str] = None, status: Optional[str] = None,
 # profile-result/check-code payload over the wire (see CR3: lazy loading).
 _LIGHT_COLUMNS = (
     "id, run_id, table_name, column_name, hypothesis, result_summary, severity, "
-    "confidence, reusable, (CASE WHEN check_code IS NOT NULL AND check_code != '' THEN 1 ELSE 0 END) AS has_check_code, "
+    f"confidence, reusable, {_SOURCE_SQL} AS source, (CASE WHEN check_code IS NOT NULL AND check_code != '' THEN 1 ELSE 0 END) AS has_check_code, "
     "created_at, status, reviewed_at, reviewer_comment, promoted_at, "
     "category, sub_type, rule_scope, industry, fix_type, auto_fix_value, is_anomaly, "
     # Row-level review progress, shown on the finding cards.
@@ -470,9 +481,9 @@ _LIGHT_COLUMNS = (
 def get_findings_light(run_id: Optional[str] = None, status: Optional[str] = None,
                        category: Optional[str] = None, rule_scope: Optional[str] = None,
                        industry: Optional[str] = None, is_anomaly: Optional[bool] = None,
-                       client_id: Optional[str] = None) -> List[Dict[str, Any]]:
+                       client_id: Optional[str] = None, source: Optional[str] = None) -> List[Dict[str, Any]]:
     """Same filters as get_findings(), without the heavy check_code/raw_result columns."""
-    where, params = _finding_filters(run_id, status, category, rule_scope, industry, is_anomaly, client_id)
+    where, params = _finding_filters(run_id, status, category, rule_scope, industry, is_anomaly, client_id, source)
     query = f"SELECT {_LIGHT_COLUMNS} FROM findings WHERE 1=1{where} ORDER BY created_at DESC"
 
     with get_connection() as conn:

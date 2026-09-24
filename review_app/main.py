@@ -264,7 +264,11 @@ def list_findings(
     industry: Optional[str] = None,
     is_anomaly: Optional[bool] = None,
     client_id: Optional[str] = None,
+    source: Optional[str] = None,
 ):
+    """source: BUILT_IN (a built-in SAP rule), LLM (a check the LLM proposed) or DUPLICATE_ENGINE."""
+    if source and source not in store.SOURCES:
+        raise HTTPException(status_code=400, detail=f"source must be one of {', '.join(store.SOURCES)}")
     return store.get_findings_light(
         run_id=run_id,
         status=status,
@@ -273,6 +277,7 @@ def list_findings(
         industry=industry,
         is_anomaly=is_anomaly,
         client_id=client_id,
+        source=source,
     )
 
 
