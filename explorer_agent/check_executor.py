@@ -5,7 +5,7 @@ module runs checks directly through the sandbox. Detail rows remain local: they
 are stored for the review UI and are never passed to an LLM.
 """
 
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Optional
 
 import pandas as pd
 
@@ -20,6 +20,7 @@ logger = get_logger("check_executor")
 _sandbox = SandboxExecutor(
     timeout_seconds=Config.SANDBOX_TIMEOUT_SECONDS,
     mem_limit_mb=Config.SANDBOX_MEM_LIMIT_MB,
+    load_timeout_seconds=Config.SANDBOX_LOAD_TIMEOUT_SECONDS,
 )
 
 
@@ -37,9 +38,13 @@ def execute_checks(
 ) -> List[Dict[str, Any]]:
     """Run each proposed check and sanitize results before LLM consumption."""
     results: List[Dict[str, Any]] = []
+    if not checks:
+        return results
 
-    for index, check in enumerate(checks):
-        exec_result = _sandbox.run(check.code, context={"df": df, "tables": all_tables})
+    with sandbox_session(df, all_tables) as box:
+        executed = [box.run(check.code) for check in checks]
+
+    for index, (check, exec_result) in enumerate(zip(checks, executed)):
         metrics.sandbox_executions += 1
 
         raw_result = exec_result.get("result")
@@ -72,24 +77,30 @@ def execute_checks(
     return results
 
 
+def sandbox_session(df: pd.DataFrame, all_tables: Dict[str, pd.DataFrame]):
+    """One sandbox worker for several checks on this table (the data is sent once)."""
+    return _sandbox.session({"df": df, "tables": all_tables})
+
+
 def extract_detail_rows(
     check: ProposedCheck,
     df: pd.DataFrame,
     all_tables: Dict[str, pd.DataFrame],
     max_rows: int = 50,
+    box: Optional[Any] = None,
 ) -> List[Dict[str, Any]]:
     """Extract local row-level detail for a finding confirmed by the reflector.
 
     ``detail_code`` is intentionally not passed through ``privacy_guard``. Its
     output goes only to the local SQLite store and the human-review UI.
+    ``box`` is an open ``sandbox_session`` to reuse; without one, a worker is
+    started for this check alone.
     """
     if not check.detail_code:
         return []
 
-    exec_result = _sandbox.run(
-        check.detail_code,
-        context={"df": df, "tables": all_tables},
-    )
+    exec_result = (box.run(check.detail_code) if box is not None
+                   else _sandbox.run(check.detail_code, context={"df": df, "tables": all_tables}))
     metrics.sandbox_executions += 1
 
     if not exec_result.get("success"):

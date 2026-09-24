@@ -23,6 +23,7 @@ logger = get_logger("cache_runner")
 sandbox = SandboxExecutor(
     timeout_seconds=Config.SANDBOX_TIMEOUT_SECONDS,
     mem_limit_mb=Config.SANDBOX_MEM_LIMIT_MB,
+    load_timeout_seconds=Config.SANDBOX_LOAD_TIMEOUT_SECONDS,
 )
 
 
@@ -50,11 +51,12 @@ def run_cached_skills(
 
     findings: List[Dict[str, Any]] = []
 
-    for skill in cached_skills:
-        skill_id = skill["skill_id"]
-        logger.debug("Re-executing cached skill %s: %s", skill_id[:8], skill["hypothesis"])
+    with sandbox.session({"df": df}) as box:
+        executed = [(skill, box.run(skill["check_code"])) for skill in cached_skills]
 
-        exec_result = sandbox.run(skill["check_code"], context={"df": df})
+    for skill, exec_result in executed:
+        skill_id = skill["skill_id"]
+        logger.debug("Re-executed cached skill %s: %s", skill_id[:8], skill["hypothesis"])
         metrics.sandbox_executions += 1
 
         if not exec_result.get("success"):

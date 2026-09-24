@@ -98,10 +98,18 @@ def explore_table(graph, table_name, df, dictionary, all_tables, skill_retriever
     cache_note = (f"Columns with EXISTING approved checks (deprioritize unless new insight): "
                   f"{sorted(columns_with_cache)}" if columns_with_cache else "No cached checks exist yet.")
 
+    if profile["table"]["profiled_rows"] < profile["table"]["n_rows"]:
+        profile_note = (f"Column profiles (statistical, privacy-sanitized) - computed on a random sample of "
+                        f"{profile['table']['profiled_rows']} of the {profile['table']['n_rows']} rows: counts "
+                        f"(n, n_missing, n_distinct, top value counts) refer to the sample, p_* ratios estimate the "
+                        f"whole table, and is_unique only means unique within the sample. Your checks run on all rows.")
+    else:
+        profile_note = "Column profiles (statistical, privacy-sanitized):"
+
     seed_prompt = f"""Table: {table_name}
 Row count: {profile['table']['n_rows']}
 
-Column profiles (statistical, privacy-sanitized):
+{profile_note}
 {json.dumps(profile['variables'], indent=2, default=str)}
 
 {rules_note}

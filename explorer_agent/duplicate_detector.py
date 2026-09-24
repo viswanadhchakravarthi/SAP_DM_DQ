@@ -45,12 +45,13 @@ import json
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
+import numpy as np
 import pandas as pd
 
 from . import client_knowledge, duplicate_rules
 from .config import Config
 from .logging_config import get_logger
-from .profiler_primitives import fuzzy_token_similarity, normalize_text
+from .profiler_primitives import fuzzy_token_similarity, normalize_text, normalize_text_series
 
 logger = get_logger("duplicate_detector")
 
@@ -96,6 +97,119 @@ def _numeric_tokens(norm_name: str) -> frozenset:
     return frozenset(re.findall(r"\d+", norm_name))
 
 
+# Column-wide versions of the above: one vectorized pass per column instead of one
+# Python call per cell, with the same result value for value.
+
+def _clean_series(values: pd.Series) -> pd.Series:
+    """_clean for a whole column (positional index, so string ops never realign)."""
+    s = pd.Series(values.to_numpy(dtype=object), dtype=object)
+    return s.where(s.notna(), "").astype(str).str.strip()
+
+
+def _identifier_series(raw: pd.Series) -> pd.Series:
+    """_normalize_identifier for a whole column of _clean_series values."""
+    norm = raw.str.replace(r"[\s\-./()+_]", "", regex=True).str.upper()
+    placeholder = dict(pat=_PLACEHOLDER_RE.pattern, flags=_PLACEHOLDER_RE.flags)
+    bad = ((raw == "") | (norm.str.len() < _MIN_IDENTIFIER_LEN)
+           | raw.str.match(**placeholder) | norm.str.match(**placeholder))
+    return norm.where(~bad, "")
+
+
+def _shared_groups(values: np.ndarray, usable: Optional[np.ndarray] = None,
+                   sort: bool = False) -> List[List[int]]:
+    """Positions of the rows sharing each value that 2+ usable rows hold.
+
+    Groups come in order of first appearance (``sort=True``: in value order) with
+    positions ascending - the order a dict filled row by row gives - without one
+    Python list per row on a million-row table.
+    """
+    pos = np.arange(len(values)) if usable is None else np.flatnonzero(usable)
+    if len(pos) < 2:
+        return []
+    codes, _ = pd.factorize(values[pos], sort=sort)
+    multi = np.bincount(codes)[codes] > 1
+    pos, codes = pos[multi], codes[multi]
+    if not len(pos):
+        return []
+    order = np.argsort(codes, kind="stable")
+    pos, codes = pos[order], codes[order]
+    return [g.tolist() for g in np.split(pos, np.flatnonzero(np.diff(codes)) + 1)]
+
+
+class _Records:
+    """Per-row matching values held as columns; the full record (display values,
+    record id for remembered decisions, ...) is built only for rows that end up in a
+    candidate pair. One dict per row cost more memory than the table itself at 1M rows."""
+
+    def __init__(self, df: pd.DataFrame, key_cols: List[str], name_col: Optional[str],
+                 location_cols: List[str], identifiers: List[List[str]], display_cols: List[str]):
+        n = len(df)
+        self.index = df.index
+        self.display_cols = display_cols
+        self.identifiers = identifiers
+        self.location_cols = location_cols
+        wanted = set(display_cols) | {c for cols in identifiers for c in cols} | ({name_col} if name_col else set())
+        self.raw = {c: df[c].to_numpy(dtype=object) for c in wanted}
+        self.name_col = name_col
+
+        if key_cols:
+            parts = [_clean_series(df[c]) for c in key_cols]
+            keys = parts[0].str.cat([p.to_numpy() for p in parts[1:]], sep=" / ") if len(parts) > 1 else parts[0]
+            keys = keys.to_numpy(dtype=object)
+            for p in np.flatnonzero((pd.Series(keys).str.strip(" /") == "").to_numpy()):
+                keys[p] = f"row {p + 1}"
+        else:
+            keys = np.array([f"row {p + 1}" for p in range(n)], dtype=object)
+        self.keys = keys
+
+        if name_col:
+            norm = normalize_text_series(_clean_series(df[name_col]))
+            self.norm_names = norm.where(norm.str.len() >= _MIN_NAME_LEN, "").to_numpy(dtype=object)
+        else:
+            self.norm_names = np.full(n, "", dtype=object)
+        self.location = {c: normalize_text_series(_clean_series(df[c])).to_numpy(dtype=object)
+                         for c in location_cols}
+        per_col = {c: _identifier_series(_clean_series(df[c]))
+                   for c in {c for cols in identifiers for c in cols}}
+        self.ident: Dict[str, np.ndarray] = {}
+        for cols in identifiers:
+            parts = [per_col[c] for c in cols]
+            joined = parts[0].str.cat([p.to_numpy() for p in parts[1:]], sep="|") if len(parts) > 1 else parts[0]
+            complete = np.logical_and.reduce([(p != "").to_numpy() for p in parts])
+            self.ident[" + ".join(cols)] = joined.where(complete, "").to_numpy(dtype=object)
+        self._numbers: Optional[np.ndarray] = None
+        self._cache: Dict[int, Dict[str, Any]] = {}
+
+    def numbers(self) -> np.ndarray:
+        """One code per row for its name's set of numbers (equal code == equal set)."""
+        if self._numbers is None:
+            sets = pd.Series(self.norm_names).str.findall(r"\d+").map(lambda t: " ".join(sorted(set(t))))
+            self._numbers = pd.factorize(sets.to_numpy())[0]
+        return self._numbers
+
+    def __getitem__(self, p: int) -> Dict[str, Any]:
+        rec = self._cache.get(p)
+        if rec is None:
+            idx = self.index[p]
+            display = {c: _clean(self.raw[c][p]) for c in self.display_cols}
+            norm_name = self.norm_names[p]
+            rec = self._cache[p] = {
+                "pos": p,
+                "row_index": int(idx) if str(idx).lstrip("-").isdigit() else p,
+                "key": self.keys[p],
+                "name": _clean(self.raw[self.name_col][p]) if self.name_col else "",
+                "norm_name": norm_name,
+                "numbers": _numeric_tokens(norm_name),
+                "location": {c: self.location[c][p] for c in self.location_cols},
+                "identifiers": {label: values[p] for label, values in self.ident.items()},
+                "raw_identifiers": {" + ".join(cols): " / ".join(_clean(self.raw[c][p]) for c in cols)
+                                    for cols in self.identifiers},
+                "display": display,
+                "record_id": client_knowledge.record_id(self.keys[p], display),
+            }
+        return rec
+
+
 # ---------------------------------------------------------------------------
 # Detection
 # ---------------------------------------------------------------------------
@@ -138,32 +252,14 @@ def find_duplicate_groups(df: pd.DataFrame, rules: Dict[str, Any],
     fuzzy_threshold = Config.DUPLICATE_FUZZY_NAME_THRESHOLD
     max_block = Config.DUPLICATE_MAX_BLOCK_SIZE
 
-    records = []
-    for pos, (idx, row) in enumerate(df.iterrows()):
-        norm_name = normalize_text(_clean(row[name_col])) if name_col else ""
-        key_value = " / ".join(_clean(row[c]) for c in key_cols) if key_cols else ""
-        records.append({
-            "pos": pos,
-            "row_index": int(idx) if str(idx).lstrip("-").isdigit() else pos,
-            "key": key_value if key_value.strip(" /") else f"row {pos + 1}",
-            "name": _clean(row[name_col]) if name_col else "",
-            "norm_name": norm_name if len(norm_name) >= _MIN_NAME_LEN else "",
-            "numbers": _numeric_tokens(norm_name),
-            "location": {c: _normalize_location(row[c]) for c in location_cols},
-            "identifiers": {
-                " + ".join(cols): "|".join(_normalize_identifier(row[c]) for c in cols)
-                if all(_normalize_identifier(row[c]) for c in cols) else ""
-                for cols in identifiers
-            },
-            "display": {c: _clean(row[c]) for c in display_cols},
-            "raw_identifiers": {" + ".join(cols): " / ".join(_clean(row[c]) for c in cols) for cols in identifiers},
-        })
+    records = _Records(df, key_cols, name_col, location_cols, identifiers, display_cols)
+    keys, norm_names = records.keys, records.norm_names
 
     # pair (i, j) -> evidence
     evidence: Dict[Tuple[int, int], Dict[str, Any]] = {}
 
     def add_pair(i: int, j: int) -> Optional[Dict[str, Any]]:
-        if records[i]["key"] == records[j]["key"]:
+        if keys[i] == keys[j]:
             return None  # same business object (e.g. two bank rows of one vendor)
         pair = (min(i, j), max(i, j))
         return evidence.setdefault(pair, {"identifiers": []})
@@ -171,13 +267,9 @@ def find_duplicate_groups(df: pd.DataFrame, rules: Dict[str, Any],
     skipped_shared: Dict[str, int] = {}
 
     # 1. Shared strong identifiers
-    for label in (" + ".join(cols) for cols in identifiers):
-        index: Dict[str, List[int]] = {}
-        for r in records:
-            if r["identifiers"][label]:
-                index.setdefault(r["identifiers"][label], []).append(r["pos"])
-        for members in index.values():
-            distinct_keys = {records[m]["key"] for m in members}
+    for label, values in records.ident.items():
+        for members in _shared_groups(values, values != ""):
+            distinct_keys = {keys[m] for m in members}
             if len(distinct_keys) < 2:
                 continue
             if len(distinct_keys) > max_share:
@@ -191,12 +283,8 @@ def find_duplicate_groups(df: pd.DataFrame, rules: Dict[str, Any],
 
     # 2. Same normalized name (any row order, no window)
     if name_col:
-        name_index: Dict[str, List[int]] = {}
-        for r in records:
-            if r["norm_name"]:
-                name_index.setdefault(r["norm_name"], []).append(r["pos"])
-        for norm_name, members in name_index.items():
-            distinct_keys = {records[m]["key"] for m in members}
+        for members in _shared_groups(norm_names, norm_names != ""):
+            distinct_keys = {keys[m] for m in members}
             if len(distinct_keys) < 2:
                 continue
             if len(distinct_keys) > max_share:
@@ -210,22 +298,21 @@ def find_duplicate_groups(df: pd.DataFrame, rules: Dict[str, Any],
 
     # 3. Fuzzy names, only within a shared location block
     if name_col and location_cols:
-        blocks: Dict[Tuple[str, str], List[int]] = {}
-        for r in records:
-            if not r["norm_name"]:
-                continue
-            for c in location_cols:
-                if r["location"][c]:
-                    blocks.setdefault((c, r["location"][c]), []).append(r["pos"])
+        # (location column, value) blocks in the order a row-by-row scan meets them
+        has_name = norm_names != ""
+        blocks = sorted(((members[0], ci, members)
+                         for ci, c in enumerate(location_cols)
+                         for members in _shared_groups(records.location[c],
+                                                       has_name & (records.location[c] != ""))),
+                        key=lambda b: (b[0], b[1]))
+        numbers = records.numbers()
         oversized = 0
-        for members in blocks.values():
-            if len(members) < 2:
-                continue
+        for _, _, members in blocks:
             if len(members) > max_block:
                 # Sub-block by first letter of the name to keep comparisons bounded.
                 sub: Dict[str, List[int]] = {}
                 for m in members:
-                    sub.setdefault(records[m]["norm_name"][0], []).append(m)
+                    sub.setdefault(norm_names[m][0], []).append(m)
                 groups = list(sub.values())
             else:
                 groups = [members]
@@ -235,11 +322,11 @@ def find_duplicate_groups(df: pd.DataFrame, rules: Dict[str, Any],
                     continue
                 for a_pos, a in enumerate(group):
                     for b in group[a_pos + 1:]:
-                        if records[a]["numbers"] != records[b]["numbers"]:
+                        if numbers[a] != numbers[b]:
                             continue
                         if (min(a, b), max(a, b)) in evidence:
                             continue
-                        if fuzzy_token_similarity(records[a]["norm_name"], records[b]["norm_name"]) >= fuzzy_threshold:
+                        if fuzzy_token_similarity(norm_names[a], norm_names[b]) >= fuzzy_threshold:
                             add_pair(a, b)
         if oversized:
             logger.warning("Skipped fuzzy name matching in %d oversized location block(s) (> %d rows)",
@@ -248,9 +335,6 @@ def find_duplicate_groups(df: pd.DataFrame, rules: Dict[str, Any],
     for label, count in skipped_shared.items():
         logger.info("Ignored %d %s value(s) shared by more than %d records (treated as placeholders)",
                     count, label, max_share)
-
-    for r in records:
-        r["record_id"] = client_knowledge.record_id(r["key"], r["display"])
 
     # Classify each candidate pair, skipping pairs a reviewer already called unique
     links: Dict[Tuple[int, int], Tuple[str, float, str]] = {}
@@ -274,25 +358,29 @@ def find_duplicate_groups(df: pd.DataFrame, rules: Dict[str, Any],
     # gets them. These bypass the same-key rule on purpose (star-linked to the
     # first row so a large group doesn't create n^2 pairs).
     if rules.get("key_unique") and key_cols:
-        key_groups = df.groupby(key_cols, dropna=True, sort=False).indices
+        # Group only the rows whose key repeats (a groupby of a million unique keys
+        # builds a million index arrays).
+        key_frame = df[key_cols].reset_index(drop=True)
+        repeated = np.flatnonzero((key_frame.notna().all(axis=1) & key_frame.duplicated(keep=False)).to_numpy())
+        key_groups = key_frame.iloc[repeated].groupby(key_cols, dropna=True, sort=False).indices
         for key_value, positions in key_groups.items():
             if len(positions) > 1:
+                positions = repeated[positions]
                 shown = " / ".join(map(str, key_value)) if isinstance(key_value, tuple) else key_value
                 for p in positions[1:]:
                     link(int(positions[0]), int(p),
                          ("EXACT", 100.0, f"same {key_label} '{shown}' - the key should be unique"))
-    row_hashes = pd.util.hash_pandas_object(df, index=False)
-    for positions in pd.Series(range(len(df))).groupby(row_hashes.values).apply(list):
-        if len(positions) > 1:
-            for p in positions[1:]:
-                link(positions[0], p, ("EXACT", 100.0, f"identical rows - all {df.shape[1]} columns are equal"))
+    row_hashes = pd.util.hash_pandas_object(df, index=False).to_numpy()
+    for positions in _shared_groups(row_hashes, sort=True):
+        for p in positions[1:]:
+            link(positions[0], p, ("EXACT", 100.0, f"identical rows - all {df.shape[1]} columns are equal"))
 
     empty_stats = {"groups": 0, "records": 0, "EXACT": 0, "PROBABLE": 0, "SIMILAR": 0,
                    "suppressed_pairs": suppressed, "remembered_records": 0}
     if not links:
         return [], empty_stats
 
-    uf = _UnionFind(len(records))
+    uf = _UnionFind(len(df))
     for i, j in links:
         uf.union(i, j)
     cluster_members: Dict[int, set] = {}
@@ -357,7 +445,7 @@ def find_duplicate_groups(df: pd.DataFrame, rules: Dict[str, Any],
         group_id = f"DUP-{g_num:03d}"
         stats[group_type] += 1
         stats["records"] += len(members)
-        for m in sorted(members, key=lambda p: records[p]["key"]):
+        for m in sorted(members, key=lambda p: keys[p]):
             own = [(pair, link) for pair, link in member_links if m in pair]
             own.sort(key=lambda x: (MATCH_RANK[x[1][0]], x[1][1]), reverse=True)
             m_type, m_score, _ = own[0][1]

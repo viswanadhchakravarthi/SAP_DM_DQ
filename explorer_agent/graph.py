@@ -23,7 +23,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.graph import StateGraph, END
 
 from .schemas import CheckPlan, ReflectionBatch
-from .check_executor import execute_checks, extract_detail_rows
+from .check_executor import execute_checks, extract_detail_rows, sandbox_session
 from .config import Config
 from .metrics import metrics
 from .logging_config import get_logger
@@ -228,15 +228,15 @@ def build_explorer_graph(planner_structured, reflector_structured):
                 "_check_index": r["check_index"],
             })
 
-        # for each confirmed finding, extract row-level detail locally
+        # for each confirmed finding, extract row-level detail locally (one sandbox worker for all)
         for finding in findings:
-            check_idx = finding.get("_check_index")
-            check = checks_by_index.get(check_idx)
-            if check:
-                detail_rows = extract_detail_rows(check, state["df"], state["all_tables"])
-                finding["detail_rows"] = detail_rows
-            else:
-                finding["detail_rows"] = []
+            finding["detail_rows"] = []
+        with_detail = [(f, checks_by_index[f["_check_index"]]) for f in findings
+                       if f.get("_check_index") in checks_by_index and checks_by_index[f["_check_index"]].detail_code]
+        if with_detail:
+            with sandbox_session(state["df"], state["all_tables"]) as box:
+                for finding, check in with_detail:
+                    finding["detail_rows"] = extract_detail_rows(check, state["df"], state["all_tables"], box=box)
 
         logger.info("Reflection complete for table %s - %d finding(s) confirmed",
                     state["table_name"], len(findings))

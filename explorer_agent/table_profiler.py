@@ -58,8 +58,16 @@ def _extract_variable_summary(var_name: str, var_data: Dict[str, Any]) -> Dict[s
 
 
 def profile_table(df: pd.DataFrame, table_name: str) -> Dict[str, Any]:
-    logger.info("Profiling table %s (%d rows, %d columns) via ydata-profiling...",
-                table_name, len(df), len(df.columns))
+    n_rows = len(df)
+    sample_rows = Config.PROFILING_SAMPLE_ROWS
+    sampled = 0 < sample_rows < n_rows
+    if sampled:
+        # ydata's cost and memory grow with rows (2.5 GB at 1M); a random sample keeps the
+        # shape of every column. Plain random, not stratified: the rare values that
+        # stratification would protect are the deterministic engines' job, on all rows.
+        df = df.sample(n=sample_rows, random_state=Config.PROFILING_SAMPLE_SEED).sort_index()
+    logger.info("Profiling table %s (%d rows%s, %d columns) via ydata-profiling...", table_name, n_rows,
+                f", random sample of {len(df)}" if sampled else "", len(df.columns))
 
     profile = ProfileReport(
         df, sensitive=True, title=f"{table_name} Data Quality Profile",
@@ -72,8 +80,9 @@ def profile_table(df: pd.DataFrame, table_name: str) -> Dict[str, Any]:
     distilled_variables = [_extract_variable_summary(name, data) for name, data in variables_raw.items()]
 
     table_summary = {
-        "n_rows": raw.get("table", {}).get("n", len(df)),
+        "n_rows": n_rows,
         "n_columns": raw.get("table", {}).get("n_var", len(df.columns)),
+        "profiled_rows": len(df),  # < n_rows when the column stats come from a sample
     }
 
     logger.info("Profiling complete for %s - %d variable summaries extracted (allowlisted fields only)",

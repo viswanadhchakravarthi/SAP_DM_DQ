@@ -146,6 +146,8 @@ class Ctx:
         self.mapping_source = mapping.get("source", "unmapped")
         self.keys = [c for c, b in self.columns.items() if b["part_of_key"]] or [df.columns[0]]
         self.covered = RuleCoverage()
+        self._key_values: Optional[pd.Series] = None
+        self._key_label = ""
 
     # -- mapping lookups ----------------------------------------------------
     def cols(self, *concepts: str) -> List[str]:
@@ -185,11 +187,14 @@ class Ctx:
         return not off
 
     def row(self, idx, detail: str) -> Dict[str, Any]:
-        rec = self.df.loc[idx]
+        if self._key_values is None:   # built once per table, not one df.loc lookup per flagged row
+            parts = [self.df[c].astype(object).where(self.df[c].notna(), "").astype(str) for c in self.keys]
+            self._key_values = parts[0].str.cat(parts[1:], sep=" / ") if len(parts) > 1 else parts[0]
+            self._key_label = " + ".join(self.keys)
         return {
             "row_index": int(idx),
-            "key_field": " + ".join(self.keys),
-            "key_value": " / ".join(str(rec[c]) if pd.notna(rec[c]) else "" for c in self.keys),
+            "key_field": self._key_label,
+            "key_value": self._key_values[idx],
             "issue_detail": detail,
         }
 

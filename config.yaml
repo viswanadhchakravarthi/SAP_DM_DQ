@@ -277,12 +277,20 @@ anomalies:
 
 profiling:
   top_n_frequent: 10
+  # ydata-profiling runs on a random sample of this many rows when a table is larger
+  # (0 = always the full table). The planner is told the stats are from a sample; the
+  # deterministic engines and every planner check still run on all rows.
+  sample_rows: 50000 # EXPLORER_PROFILE_SAMPLE_ROWS
+  sample_seed: 42 # fixed, so the same data gives the same profile (and prompt) every run
   max_checks_per_table: 25
   max_iterations_per_column: 5 # legacy, pre-batch-profiling explorer loop
 
 sandbox:
-  timeout_seconds: 10
-  mem_limit_mb: 512
+  timeout_seconds: 10          # per check, from the moment the check starts
+  mem_limit_mb: 512            # Unix only: headroom on top of the loaded data
+  # Time for the worker to start and receive the tables, once per batch of checks
+  # (not counted against timeout_seconds; ~10 s for 1M vendor rows)
+  load_timeout_seconds: 120
 
 privacy:
   max_result_list_len: 20

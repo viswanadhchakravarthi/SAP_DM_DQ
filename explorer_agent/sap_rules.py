@@ -215,8 +215,7 @@ def _country_rules(ctx: Ctx) -> List[Dict[str, Any]]:
             v = values[i].upper()
             hint = (f" - probably '{aliases[v]}'" if v in aliases
                     else f" - probably '{v}'" if v in ctx.pack["_iso"] else "")
-            rows.append(ctx.row(i, f"{col} '{text(ctx.df[col])[i]}' is not an ISO 3166-1 alpha-2 country "
-                                   f"code{hint}."))
+            rows.append(ctx.row(i, f"{col} '{values[i]}' is not an ISO 3166-1 alpha-2 country code{hint}."))
         if rows:
             out.append(finding(ctx, rule_id, col, f"Invalid country key ({col})",
                                f"{ctx.table}.{col} must be an ISO 3166-1 alpha-2 country code; postal and tax "
@@ -236,13 +235,17 @@ def _postal_rules(ctx: Ctx) -> List[Dict[str, Any]]:
         ctx.covered.add(f"{col} postal code format per country in {country_col} ({len(formats)} countries) - "
                         f"CORRECTNESS", [col], "CORRECTNESS", "VALUE_ERROR")
         countries = _valid_country(ctx, country_col)
-        codes = upper(ctx.df[col])
+        raw = text(ctx.df[col])
+        codes = raw.str.upper()
         rows = []
-        for i in ctx.df.index[(codes != "") & countries.isin(list(formats))]:
-            regex, example = formats[countries[i]]
-            if not regex.match(codes[i]):
-                rows.append(ctx.row(i, f"Postal code '{text(ctx.df[col])[i]}' does not match the "
-                                       f"{countries[i]} format (e.g. '{example}')."))
+        # One vectorized regex per country instead of one Python match per row.
+        for country in sorted(set(countries[(codes != "")]) & set(formats)):
+            regex, example = formats[country]
+            in_country = (countries == country) & (codes != "")
+            for i in ctx.df.index[in_country & ~codes.str.match(regex)]:
+                rows.append(ctx.row(i, f"Postal code '{raw[i]}' does not match the {country} format "
+                                       f"(e.g. '{example}')."))
+        rows.sort(key=lambda r: r["row_index"])
         if rows:
             out.append(finding(ctx, rule_id, col, f"Postal code does not fit its country ({col} vs {country_col})",
                                f"{ctx.table}.{col} must match the postal code format of the country in "

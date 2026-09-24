@@ -165,6 +165,8 @@ class Config:
 
     # Batch profiling settings
     PROFILING_TOP_N_FREQUENT = _env_int("EXPLORER_PROFILE_TOP_N", _get("profiling.top_n_frequent", 10))
+    PROFILING_SAMPLE_ROWS = _env_int("EXPLORER_PROFILE_SAMPLE_ROWS", _get("profiling.sample_rows", 50000))
+    PROFILING_SAMPLE_SEED = int(_get("profiling.sample_seed", 42))
     MAX_TOTAL_CHECKS_PER_TABLE = _env_int(
         "EXPLORER_MAX_CHECKS_PER_TABLE", _get("profiling.max_checks_per_table", 25)
     )
@@ -268,6 +270,8 @@ class Config:
     # Sandbox settings
     SANDBOX_TIMEOUT_SECONDS = _env_int("EXPLORER_SANDBOX_TIMEOUT", _get("sandbox.timeout_seconds", 10))
     SANDBOX_MEM_LIMIT_MB = _env_int("EXPLORER_SANDBOX_MEM_MB", _get("sandbox.mem_limit_mb", 512))
+    SANDBOX_LOAD_TIMEOUT_SECONDS = _env_int("EXPLORER_SANDBOX_LOAD_TIMEOUT",
+                                            _get("sandbox.load_timeout_seconds", 120))
 
     # Privacy guardrail
     MAX_RESULT_LIST_LEN = _env_int(

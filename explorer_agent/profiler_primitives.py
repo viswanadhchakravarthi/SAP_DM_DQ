@@ -13,20 +13,36 @@ def mask_value(value: Any, keep_last: int = 2) -> str:
     return "*" * (len(s) - keep_last) + s[-keep_last:]
 
 
+# Applied in order by normalize_text and normalize_text_series - one list, so both agree.
+_NORMALIZE_STEPS = [
+    # Normalize common abbreviations in vendor names
+    (r'\bpvt\.?\s*ltd\.?', 'private limited'),
+    (r'\bltd\.?', 'limited'),
+    (r'\binc\.?', 'incorporated'),
+    (r'\bcorp\.?', 'corporation'),
+    (r'\bgmbh\b', 'gmbh'),
+    (r'\bco\.?', 'company'),
+    (r'[^a-z0-9\s]', ' '),
+]
+
+
 def normalize_text(text: Any) -> str:
     """Normalize text for fuzzy matching: lowercase, strip punctuation, standardize common company suffixes."""
     if text is None or pd.isna(text):
         return ""
     s = str(text).strip().lower()
-    # Normalize common abbreviations in vendor names
-    s = re.sub(r'\bpvt\.?\s*ltd\.?', 'private limited', s)
-    s = re.sub(r'\bltd\.?', 'limited', s)
-    s = re.sub(r'\binc\.?', 'incorporated', s)
-    s = re.sub(r'\bcorp\.?', 'corporation', s)
-    s = re.sub(r'\bgmbh\b', 'gmbh', s)
-    s = re.sub(r'\bco\.?', 'company', s)
-    s = re.sub(r'[^a-z0-9\s]', ' ', s)
+    for pattern, replacement in _NORMALIZE_STEPS:
+        s = re.sub(pattern, replacement, s)
     return " ".join(s.split())
+
+
+def normalize_text_series(values: pd.Series) -> pd.Series:
+    """normalize_text for a whole column of strings (no NaN), vectorized - same steps, same result."""
+    s = values.str.strip().str.lower()
+    for pattern, replacement in _NORMALIZE_STEPS:
+        s = s.str.replace(pattern, replacement, regex=True)
+    # " ".join(s.split()): re's Unicode \s and str.split() use the same whitespace definition
+    return s.str.replace(r"\s+", " ", regex=True).str.strip()
 
 
 def fuzzy_token_similarity(s1: Any, s2: Any) -> float:

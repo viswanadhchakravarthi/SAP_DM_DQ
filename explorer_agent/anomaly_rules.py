@@ -24,6 +24,7 @@ Findings are CORRECTNESS / VALUE_ERROR; statistical ones carry is_anomaly=True.
 """
 
 import math
+import re
 from typing import Any, Dict, List
 
 import numpy as np
@@ -158,7 +159,9 @@ def _currency_rules(ctx: Ctx) -> List[Dict[str, Any]]:
 # ---------------------------------------------------------------------------
 
 def _text_checks(ctx: Ctx, col: str) -> List[tuple]:
-    """(check id, title, detail(value) -> str | None, severity, is_anomaly) for one text column."""
+    """(check id, title, detail(value) -> str | None, severity, is_anomaly, prefilter) for one text
+    column. ``prefilter(series) -> bool mask`` is a vectorized SUPERSET of the rows the per-value
+    check can flag, so the Python function only runs on candidates (1M rows: seconds, not minutes)."""
     pack, concept = ctx.pack, ctx.b(col)["concept"]
     illegal, mojibake = pack["_illegal_chars"], pack["_mojibake"]
 
@@ -189,14 +192,22 @@ def _text_checks(ctx: Ctx, col: str) -> List[tuple]:
     def placeholder(v):
         return "is a placeholder, not a real value" if pack["_text_placeholder"].match(v.strip().upper()) else None
 
-    checks = [("encoding", "Encoding corruption", encoding, "MEDIUM", False),
-              ("html_entity", "HTML entity in text", html, "LOW", False),
-              ("whitespace", "Whitespace issue", whitespace, "LOW", False),
-              ("placeholder", "Placeholder value", placeholder, "MEDIUM", False)]
+    mojibake_re = "|".join(re.escape(m) for m in mojibake) or r"(?!)"
+    illegal_re = "[" + "".join(re.escape(ch) for ch in illegal) + "]" if illegal else r"(?!)"
+    checks = [("encoding", "Encoding corruption", encoding, "MEDIUM", False,
+               lambda s: s.str.contains(mojibake_re, regex=True)),
+              ("html_entity", "HTML entity in text", html, "LOW", False,
+               lambda s: s.str.contains(pack["_html_entity"], regex=True)),
+              ("whitespace", "Whitespace issue", whitespace, "LOW", False,
+               lambda s: (s != s.str.lstrip()) | s.str.contains("  ", regex=False) | s.str.contains("\t", regex=False)),
+              ("placeholder", "Placeholder value", placeholder, "MEDIUM", False,
+               lambda s: s.str.strip().str.upper().str.match(pack["_text_placeholder"]))]
     if concept in _NAME_CONCEPTS:
-        checks += [("brackets", "Unbalanced brackets", brackets, "LOW", False)]
+        checks += [("brackets", "Unbalanced brackets", brackets, "LOW", False,
+                    lambda s: s.str.contains(r"[()\[\]{}]", regex=True))]
     if concept == "LEGAL_NAME":
-        checks += [("illegal_chars", "Illegal characters in name", illegal_chars, "MEDIUM", False)]
+        checks += [("illegal_chars", "Illegal characters in name", illegal_chars, "MEDIUM", False,
+                    lambda s: s.str.contains(illegal_re, regex=True))]
     if concept in _NAME_CONCEPTS:
         raw = ctx.df[col].dropna().astype(str)
         letters = raw[raw.str.contains(r"[A-Za-z]", regex=True)]
@@ -205,7 +216,7 @@ def _text_checks(ctx: Ctx, col: str) -> List[tuple]:
             def casing(v):
                 return ("is written entirely in capitals while the rest of the column is mixed case"
                         if sum(ch.isalpha() for ch in v) >= 4 and v == v.upper() and v != v.lower() else None)
-            checks += [("casing", "Inconsistent casing", casing, "LOW", True)]
+            checks += [("casing", "Inconsistent casing", casing, "LOW", True, lambda s: s == s.str.upper())]
     return checks
 
 
@@ -215,13 +226,14 @@ def _text_rules(ctx: Ctx) -> List[Dict[str, Any]]:
         raw = ctx.df[col]
         present = raw.notna() & (raw.astype(str).str.strip() != "")
         covered = []
-        for check, title, test, severity, is_anomaly in _text_checks(ctx, col):
+        values = raw.astype(object).where(present, "").astype(str)
+        for check, title, test, severity, is_anomaly, prefilter in _text_checks(ctx, col):
             rule_id = f"text.{check}.{ctx.table}.{col}"
             if not ctx.enabled(rule_id):
                 continue
             covered.append(check.replace("_", " "))
             rows = []
-            for i in ctx.df.index[present]:
+            for i in ctx.df.index[present & prefilter(values).fillna(False).astype(bool)]:
                 problem = test(str(raw[i]))
                 if problem:
                     rows.append(ctx.row(i, f"{col} '{raw[i]}' {problem}."))
@@ -246,14 +258,10 @@ def _contact_rules(ctx: Ctx) -> List[Dict[str, Any]]:
                 continue
             ctx.covered.add(f"{col} {what} format - CORRECTNESS", [col], "CORRECTNESS", "VALUE_ERROR")
             values = text(ctx.df[col])
-            rows = []
-            for i in ctx.df.index[values != ""]:
-                v = values[i]
-                bad = not ctx.pack[regex_key].match(v)
-                if concept == "PHONE" and not bad:
-                    bad = sum(ch.isdigit() for ch in v) < min_digits
-                if bad:
-                    rows.append(ctx.row(i, f"{col} '{v}' is not a valid {what}."))
+            bad = (values != "") & ~values.str.match(ctx.pack[regex_key]).fillna(False).astype(bool)
+            if concept == "PHONE":
+                bad |= (values != "") & (values.str.count(r"\d") < min_digits)
+            rows = [ctx.row(i, f"{col} '{values[i]}' is not a valid {what}.") for i in ctx.df.index[bad]]
             if rows:
                 out.append(finding(ctx, rule_id, col, f"Invalid {what} ({col})",
                                    f"{ctx.table}.{col} must hold a well-formed {what}.",
