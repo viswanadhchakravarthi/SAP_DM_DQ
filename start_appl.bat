@@ -1,1 +1,0 @@
-uvicorn review_app.main:app --reload

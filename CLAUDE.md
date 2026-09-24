@@ -50,7 +50,7 @@ python -m explorer_agent.memory.promotion [--run-id <id>] [--dedup-threshold <fl
 
 # Run the human review web app (serves review_app/static/ + JSON API):
 # page 1 (/) picks the client and uploads its data, page 2 (/review.html?client=<id>) reviews findings
-uvicorn review_app.main:app --reload   # same as start_appl.bat
+uvicorn review_app.main:app --reload   # start_appl.bat does the same locally (gitignored)
 ```
 
 There is no test suite, linter, or `pyproject.toml` configured in this repo currently.

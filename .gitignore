@@ -200,3 +200,7 @@ logs/
 playground.ipynb
 plan.md
 
+
+# local launch scripts and Claude Code settings (per machine)
+start_appl.bat
+.claude/
