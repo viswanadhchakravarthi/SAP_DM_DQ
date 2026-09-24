@@ -1827,3 +1827,9 @@ header .btn-icon:hover {
 .dq-win-table tr.dq-total td { font-weight: 600; border-top: 1px solid #e2e8f0; }
 .dq-cell { cursor: help; }
 .dq-win-note { margin: 8px 0 0; font-size: 11.5px; color: #64748b; line-height: 1.4; }
+
+/* Page 1: clear all uploaded files */
+.btn-clear-files { margin-left: auto; align-self: center; padding: 6px 12px; border-radius: 8px;
+  border: 1px solid #fecaca; background: #ffffff; color: #b91c1c; font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-clear-files:hover { background: #fef2f2; border-color: #f87171; }
+.btn-clear-files.hidden { display: none; }

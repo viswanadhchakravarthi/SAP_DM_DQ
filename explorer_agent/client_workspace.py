@@ -223,6 +223,29 @@ def remove_table(client_id: str, table: str) -> Dict[str, Any]:
     return get_workspace(client_id)
 
 
+def clear_files(client_id: str) -> Dict[str, Any]:
+    """Remove every uploaded data file of a client - the dictionary, all tables and any
+    other CSV in its folder (a run profiles every CSV there, listed or not) - so a new
+    set can be uploaded. Sub-folders left empty are removed too.
+
+    Kept: the Mapping Agent / Metadata Repository inputs (field_mapping.json,
+    target_domains.json - not uploaded on page 1), and everything outside the folder:
+    findings and review state (episodic DB), and the client's memory
+    (memory_store/clients/<client>: duplicate decisions and rules, column mappings)."""
+    base = workspace_dir(client_id)
+    removed = 0
+    with _lock:
+        if base.exists():
+            for path in sorted(base.rglob("*.csv")):
+                path.unlink(missing_ok=True)
+                removed += 1
+            for folder in sorted((p for p in base.rglob("*") if p.is_dir()), key=lambda p: len(p.parts), reverse=True):
+                if not any(folder.iterdir()):
+                    folder.rmdir()
+        _write_metadata(client_id, {"dictionary": None, "tables": {}})
+    return {**get_workspace(client_id), "removed_files": removed}
+
+
 def seed_from_folder(client_id: str, source_dir: str, dictionary_file: str) -> Dict[str, Any]:
     """Copy an existing data folder (e.g. the repo's data/) into a client's workspace.
 

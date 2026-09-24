@@ -224,6 +224,23 @@ async function removeTable(table) {
   render();
 }
 
+async function clearAllFiles() {
+  const tables = workspace?.tables?.length || 0;
+  const what = [workspace?.dictionary ? "the data dictionary" : null, tables ? `${tables} table(s)` : null]
+    .filter(Boolean).join(" and ");
+  if (!confirm(`Remove ${what} of ${selected.name}?\n\nFindings, review decisions and the client's memory `
+    + "are kept - only the uploaded files are removed, so you can upload a new set.")) return;
+  try {
+    workspace = await fetchJSON(`${API_BASE}/clients/${encodeURIComponent(selected.client_id)}/files`,
+      { method: "DELETE" });
+    el("uploadLog").innerHTML = "";
+    logUpload(`${workspace.removed_files} file(s)`, "done", "- removed, ready for new uploads");
+  } catch (error) {
+    alert(`Could not clear the files: ${error.message}`);
+  }
+  render();
+}
+
 function setupDropZone(zoneId, inputId, kind) {
   const zone = el(zoneId);
   const input = el(inputId);
@@ -273,6 +290,8 @@ function render() {
   }
 
   const dictionary = workspace?.dictionary;
+  const hasFiles = Boolean(dictionary || workspace?.tables?.length);
+  el("clearFilesBtn").classList.toggle("hidden", !selected || selected.isNew || !hasFiles);
   el("dictionaryState").innerHTML = dictionary ? `
     <div class="file-row">
       <span class="file-name">📘 ${escapeHtml(dictionary.file)}</span>
@@ -318,6 +337,7 @@ function proceed() {
 }
 
 (async function init() {
+  el("clearFilesBtn").addEventListener("click", clearAllFiles);
   setupCombobox();
   setupDropZone("dictionaryDrop", "dictionaryInput", "dictionary");
   setupDropZone("tablesDrop", "tablesInput", "tables");

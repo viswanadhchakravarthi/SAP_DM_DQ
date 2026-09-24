@@ -28,6 +28,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def revalidate_static_files(request: Request, call_next):
+    """Make browsers re-check the UI files (HTML/JS/CSS) on every load. Without a
+    Cache-Control header they cache them heuristically, so after an update a browser
+    can keep running the old app.js/setup.js against the new HTML. Unchanged files
+    still come from cache (ETag -> 304), so this costs next to nothing."""
+    response = await call_next(request)
+    if not request.url.path.startswith("/api/"):
+        response.headers.setdefault("Cache-Control", "no-cache")
+    return response
+
+
 store.init_db()
 
 
@@ -152,6 +165,21 @@ def delete_table(client_id: str, table: str):
         workspace = client_workspace.remove_table(client_id, table)
     except KeyError:
         raise HTTPException(status_code=404, detail=f"Table {table} is not uploaded for this client")
+    return {"client": client, **workspace}
+
+
+@app.delete("/api/clients/{client_id}/files")
+def clear_client_files(client_id: str):
+    """Page 1 "Clear all files": remove the client's uploaded dictionary and tables in one go.
+    Findings, review decisions and the client's memory are kept. Refused during a run."""
+    client = _require_client(client_id)
+    job = job_manager.get_current_job()
+    if job and job.get("status") == "RUNNING":
+        raise HTTPException(status_code=409, detail="A run is in progress - wait for it to finish before clearing files")
+    try:
+        workspace = client_workspace.clear_files(client_id)
+    except client_workspace.WorkspaceError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     return {"client": client, **workspace}
 
 
