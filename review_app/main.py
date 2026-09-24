@@ -5,6 +5,7 @@ approve/reject decisions back into the same store. No promotion logic
 here yet - that's Week 3.
 """
 
+import json
 from pathlib import Path
 from typing import List, Optional
 
@@ -43,6 +44,16 @@ class ItemVerdictRequest(BaseModel):
 
 class ClusterVerdictRequest(BaseModel):
     verdict: str
+    comment: Optional[str] = ""
+    reviewer: Optional[str] = ""
+
+
+class ClusterAcceptRequest(BaseModel):
+    # The Unique record the others merge into; None only when every record is Unique.
+    survivor_item_id: Optional[str] = None
+    # Other records marked Unique: separate entities (look-alikes), not duplicates.
+    separate_item_ids: List[str] = []
+    reviewer: Optional[str] = ""
     comment: Optional[str] = ""
 
 
@@ -248,6 +259,31 @@ def stats(run_id: Optional[str] = None):
     return store.get_stats(run_id=run_id)
 
 
+@app.get("/api/scorecard")
+def get_scorecard(client_id: str, run_id: Optional[str] = None):
+    """Composite DQ scorecard of a run (default: the client's latest scored run), with the
+    previous scored run's index per entry for the trend."""
+    runs = store.scorecard_runs(client_id)
+    if not runs:
+        raise HTTPException(status_code=404, detail="No scorecard yet - run the explorer for this client")
+    run_id = run_id if run_id in runs else runs[0]
+    previous = runs[runs.index(run_id) + 1] if runs.index(run_id) + 1 < len(runs) else None
+    before = {(e["scope"], e["name"]): e for e in store.get_scorecard(previous)} if previous else {}
+    entries = store.get_scorecard(run_id)
+    for e in entries:
+        prev = before.get((e["scope"], e["name"]))
+        e["previous_dq_index"] = prev["dq_index"] if prev else None
+    for e in entries:   # the worklist is served separately (/api/scorecard/not-ready)
+        (e["details"].get("readiness") or {}).pop("worklist", None)
+        prev = before.get((e["scope"], e["name"]))
+        e["previous_readiness"] = prev["readiness"] if prev else None
+    return {"run_id": run_id, "previous_run_id": previous, "weights": Config.SCORECARD_WEIGHTS,
+            "bands": Config.SCORECARD_BANDS, "readiness_bands": Config.READINESS_BANDS,
+            "overall": next((e for e in entries if e["scope"] == "run"), None),
+            "objects": [e for e in entries if e["scope"] == "object"],
+            "tables": [e for e in entries if e["scope"] == "table"]}
+
+
 # Promotion endpoints
 # ======================================
 from explorer_agent.memory.promotion import promote_approved_findings
@@ -287,12 +323,159 @@ def get_finding_duplicate_groups(finding_id: str):
 def set_cluster_verdict_endpoint(finding_id: str, group_id: str, body: ClusterVerdictRequest):
     if body.verdict not in store.ALL_VALID_VERDICTS:
         raise HTTPException(status_code=400, detail="Invalid verdict")
-    updated = store.set_cluster_verdict(finding_id, group_id, body.verdict, body.comment or "")
+    updated = store.set_cluster_verdict(finding_id, group_id, body.verdict, body.comment or "",
+                                        (body.reviewer or "").strip())
     if updated == 0:
         raise HTTPException(status_code=404, detail="Cluster not found")
     memory = _remember_duplicate_groups(finding_id, {group_id})
     return {"ok": True, "finding_id": finding_id, "group_id": group_id, "verdict": body.verdict,
             "updated_count": updated, "memory": memory}
+
+
+@app.post("/api/findings/{finding_id}/duplicate-groups/{group_id}/accept")
+def accept_cluster_endpoint(finding_id: str, group_id: str, body: ClusterAcceptRequest):
+    """Accept a cluster: survivor = Unique, separate entities = Unique, all others =
+    Duplicate of the survivor. Saved to the run and to the client's memory, so a
+    fully decided cluster is not shown again on the next run."""
+    try:
+        updated = store.accept_cluster(finding_id, group_id, body.survivor_item_id, body.separate_item_ids,
+                                       (body.reviewer or "").strip(), body.comment or "")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    if updated == 0:
+        raise HTTPException(status_code=404, detail="Cluster or record not found")
+    memory = _remember_duplicate_groups(finding_id, {group_id})
+    return {"ok": True, "finding_id": finding_id, "group_id": group_id, "updated_count": updated, "memory": memory}
+
+
+@app.post("/api/findings/{finding_id}/duplicate-groups/{group_id}/undo")
+def undo_cluster_endpoint(finding_id: str, group_id: str):
+    """Undo the cluster's last Accept / To be confirmed: rows go back to their earlier
+    state and the client's memory is updated to match."""
+    restored = store.undo_cluster(finding_id, group_id)
+    if restored == 0:
+        raise HTTPException(status_code=404, detail="Cluster not found")
+    memory = _remember_duplicate_groups(finding_id, {group_id})
+    groups = [g for g in store.get_duplicate_groups(finding_id) if g["duplicate_group_id"] == group_id]
+    return {"ok": True, "finding_id": finding_id, "group_id": group_id, "restored_count": restored,
+            "group": groups[0] if groups else None, "memory": memory}
+
+
+@app.get("/api/scorecard/not-ready")
+def get_not_ready_records(client_id: str, table: str, run_id: Optional[str] = None):
+    """The cleansing worklist: one table's records that cannot be loaded as they are, with reasons."""
+    runs = store.scorecard_runs(client_id)
+    if not runs:
+        raise HTTPException(status_code=404, detail="No scorecard yet")
+    run_id = run_id if run_id in runs else runs[0]
+    entry = next((e for e in store.get_scorecard(run_id) if e["scope"] == "table" and e["name"] == table), None)
+    if not entry:
+        raise HTTPException(status_code=404, detail=f"No table {table} in run {run_id}")
+    r = entry["details"].get("readiness") or {}
+    return {"run_id": run_id, "table": table, **{k: r.get(k) for k in (
+        "records", "in_scope", "out_of_scope", "ready", "not_ready", "unlisted", "score", "top_reasons", "worklist")}}
+
+
+# Handoff to / from the neighbouring agents (explorer_agent/contracts.py)
+# ======================================
+@app.get("/api/clients/{client_id}/handoff/structural-profile")
+def get_structural_profile(client_id: str, run_id: Optional[str] = None):
+    """The structural profile for the Mapping / Value Mapping Agent: the latest run's, or one run's."""
+    from fastapi.responses import FileResponse
+    from explorer_agent import structural_profile
+    path = structural_profile.profile_path(client_id, run_id)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="No structural profile yet - run the explorer for this client")
+    return FileResponse(path, media_type="application/json", filename=f"{client_id}_structural_profile.json")
+
+
+@app.get("/api/handoff/schemas/{name}")
+def get_contract_schema(name: str):
+    """JSON Schema of a handoff contract: sap-dm.structural-profile or sap-dm.field-value-mapping."""
+    from explorer_agent import contracts
+    models = {contracts.STRUCTURAL_PROFILE: contracts.StructuralProfile,
+              contracts.FIELD_VALUE_MAPPING: contracts.FieldValueMapping,
+              contracts.TARGET_DOMAINS: contracts.TargetDomains,
+              contracts.PIPELINE_EVENT: contracts.PipelineEvent}
+    if name not in models:
+        raise HTTPException(status_code=404, detail=f"Unknown contract; known: {sorted(models)}")
+    return models[name].model_json_schema()
+
+
+@app.put("/api/clients/{client_id}/handoff/field-mapping")
+async def put_field_mapping(client_id: str, request: Request):
+    """The Mapping Agent delivers its field/value mapping here. It is validated against the
+    contract and stored in the client's data folder, where the next run picks it up."""
+    from explorer_agent import contracts
+    if not client_knowledge.get_client(client_id):
+        raise HTTPException(status_code=404, detail="Unknown client")
+    try:
+        doc = json.loads(await request.body())
+        contracts.check_version(doc.get("version", "?"), doc.get("contract", ""))
+        parsed = contracts.FieldValueMapping.model_validate(doc)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Not a valid {contracts.FIELD_VALUE_MAPPING} document: {exc}")
+    folder = Path(Config.CLIENT_DATA_DIR) / client_id
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / Config.HANDOFF_MAPPING_FILE).write_text(json.dumps(doc, indent=2, ensure_ascii=False), encoding="utf-8")
+    return {"ok": True, "client_id": client_id, "field_mappings": len(parsed.field_mappings),
+            "value_mappings": len(parsed.value_mappings), "stored_as": Config.HANDOFF_MAPPING_FILE}
+
+
+@app.put("/api/clients/{client_id}/handoff/target-domains")
+async def put_target_domains(client_id: str, request: Request):
+    """The Metadata Repository delivers the allowed SAP values per target field (check tables)."""
+    from explorer_agent import contracts
+    if not client_knowledge.get_client(client_id):
+        raise HTTPException(status_code=404, detail="Unknown client")
+    try:
+        doc = json.loads(await request.body())
+        contracts.check_version(doc.get("version", "?"), doc.get("contract", ""))
+        parsed = contracts.TargetDomains.model_validate(doc)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Not a valid {contracts.TARGET_DOMAINS} document: {exc}")
+    folder = Path(Config.CLIENT_DATA_DIR) / client_id
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / Config.HANDOFF_TARGET_DOMAINS_FILE).write_text(json.dumps(doc, indent=2, ensure_ascii=False),
+                                                             encoding="utf-8")
+    return {"ok": True, "client_id": client_id, "domains": len(parsed.domains),
+            "stored_as": Config.HANDOFF_TARGET_DOMAINS_FILE}
+
+
+@app.get("/api/handoff/events")
+def get_pipeline_events(client_id: Optional[str] = None, type: Optional[str] = None, after: Optional[str] = None,
+                        limit: int = 100):
+    """Pipeline events (sap-dm.pipeline-event), oldest first; pass the last seen event_id as
+    `after` to resume. The POC outbox - a queue replaces the transport in production."""
+    from explorer_agent import events
+    return events.read(client_id=client_id, event_type=type, after=after, limit=limit)
+
+
+@app.get("/api/clients/{client_id}/duplicate-decisions.csv")
+def export_duplicate_decisions(client_id: str):
+    """The client's remembered duplicate decisions as a merge map (all runs): each record,
+    its verdict, the survivor it merges into and the proposed action - the old-number ->
+    surviving-number table the cleansing/load stage needs."""
+    import csv
+    import io
+    from fastapi.responses import Response
+    if not client_knowledge.get_client(client_id):
+        raise HTTPException(status_code=404, detail="Unknown client")
+    data = client_knowledge.load_all_duplicate_decisions(client_id)
+    out = io.StringIO()
+    writer = csv.writer(out)
+    writer.writerow(["table", "record_key", "verdict", "golden_record", "merge_into", "action",
+                     "recommended_verdict", "accepted_as_recommended", "reviewer", "decided_at", "run_id"])
+    for table, decisions in sorted(data.items()):
+        for entry in sorted(decisions.values(), key=lambda e: (e.get("merge_into") or e["key"], e["key"])):
+            final = entry["verdict"] in ("UNIQUE", "DUPLICATE")
+            recommended = entry.get("recommended_verdict") if final else None
+            writer.writerow([table, entry["key"], entry["verdict"], "yes" if entry.get("survivor") else "",
+                             entry.get("merge_into") or "", entry.get("action") or "", recommended or "",
+                             "" if not recommended else ("yes" if recommended == entry["verdict"] else "no"),
+                             entry.get("reviewer") or "", entry.get("decided_at", ""), entry.get("run_id", "")])
+    return Response(out.getvalue(), media_type="text/csv",
+                    headers={"Content-Disposition": f'attachment; filename="{client_id}_duplicate_decisions.csv"'})
 
 
 @app.post("/api/finding-items/{item_id}/decision")
@@ -361,8 +544,12 @@ def _build_explorer_cli_args(body: RunExplorerRequest, client: dict, workspace: 
     return args
 
 
+@app.post("/api/jobs/run-profiling")
 @app.post("/api/jobs/run-explorer")
 def run_explorer_endpoint(body: RunExplorerRequest):
+    """Start a profiling run in the background; returns a job_id at once. Poll
+    /api/jobs/{job_id} (status, run_id, outputs) or read the profiling.completed event.
+    /run-profiling is the name the pipeline orchestrator uses; /run-explorer is the UI's."""
     client = _require_client(body.client_id)
     workspace = client_workspace.get_workspace(body.client_id)
     if not workspace["ready"]:

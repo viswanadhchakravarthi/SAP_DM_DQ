@@ -1,0 +1,57 @@
+{
+  "contract": "sap-dm.target-domains",
+  "version": "1.0",
+  "producer": {
+    "agent": "metadata-repository",
+    "client_id": "acme-retail"
+  },
+  "domains": [
+    {
+      "target_table": "LFB1",
+      "target_field": "ZTERM",
+      "check_table": "T052",
+      "values": [
+        {
+          "value": "0001"
+        },
+        {
+          "value": "0002"
+        },
+        {
+          "value": "NT30"
+        },
+        {
+          "value": "Z014"
+        },
+        {
+          "value": "Z030"
+        },
+        {
+          "value": "Z060"
+        },
+        {
+          "value": "Z090"
+        }
+      ]
+    },
+    {
+      "target_table": "LFA1",
+      "target_field": "KTOKK",
+      "check_table": "T077K",
+      "values": [
+        {
+          "value": "DIEN"
+        },
+        {
+          "value": "KRED"
+        },
+        {
+          "value": "LIEF"
+        },
+        {
+          "value": "ZEMP"
+        }
+      ]
+    }
+  ]
+}

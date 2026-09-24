@@ -17,7 +17,9 @@ from .cache_runner import run_cached_skills
 from .duplicate_detector import detect_table_duplicates
 from .duplicate_rule_planner import RulePlanner
 from .sap_rules import RuleCoverage, load_pack, run_sap_rules
-from . import column_mapping
+from . import column_mapping, events, scorecard, survivorship, structural_profile
+from .duplicate_detector import LAST_STATS as DUPLICATE_STATS
+from .data_loader import load_data_dictionary_structured
 from . import client_knowledge
 from .memory.retriever import SkillRetriever
 from . import episodic_store as store
@@ -160,6 +162,16 @@ def main():
              "(and is limited to identical rows if no LLM is configured).",
     )
     parser.add_argument(
+        "--mapping-file", default=None,
+        help="The Mapping Agent's field/value mapping (contract sap-dm.field-value-mapping). Default: "
+             "<data-dir>/" + Config.HANDOFF_MAPPING_FILE + " when it exists.",
+    )
+    parser.add_argument(
+        "--target-domains-file", default=None,
+        help="Allowed SAP values per target field (contract sap-dm.target-domains). Default: "
+             "<data-dir>/" + Config.HANDOFF_TARGET_DOMAINS_FILE + " when it exists.",
+    )
+    parser.add_argument(
         "--deterministic-only", action="store_true",
         help="Run only the LLM-free engines: duplicate matching plus the built-in SAP rule pack "
              "(sap_rules.py). No planner or reflector call; duplicate rules for a schema never seen "
@@ -245,10 +257,23 @@ def main():
     # first, because a rule on one table reads the mapping of others (orphans,
     # dormancy). SAP-standard layouts and saved mappings cost nothing; a new
     # non-standard layout costs one LLM call per table, once per client.
+    mapping_file = args.mapping_file or str(Path(args.data_dir) / Config.HANDOFF_MAPPING_FILE)
+    domains_file = args.target_domains_file or str(Path(args.data_dir) / Config.HANDOFF_TARGET_DOMAINS_FILE)
+    try:
+        mapping_agent = column_mapping.load_mapping_agent_file(mapping_file)
+        target_domains = column_mapping.load_target_domains(domains_file)
+    except Exception as exc:  # a broken handoff must not be silently half-used
+        parser.error(f"Handoff input is invalid ({mapping_file} / {domains_file}): {exc}")
     mappings = {}
     if Config.SAP_RULES_ENABLED and not args.duplicates_only:
         mappings = column_mapping.resolve_mappings(tables, load_pack(), dictionary, client_id=client["client_id"],
-                                                   client_name=client["name"], planner=mapping_planner)
+                                                   client_name=client["name"], planner=mapping_planner,
+                                                   mapping_agent=mapping_agent)
+    if target_domains and mappings:
+        logger.info("Target domains attached to %d column(s)",
+                    column_mapping.attach_target_domains(mappings, target_domains))
+    # What the rules see: values after the Mapping Agent's value mapping (all tables).
+    rule_tables = column_mapping.apply_value_maps(tables, mappings)
 
     run_id = store.create_run(model=run_label, table_names=list(tables.keys()),
                               client_id=client["client_id"], client_name=client["name"])
@@ -256,6 +281,7 @@ def main():
 
     total_findings = 0
     failed_tables = []
+    table_scores = []
     for table_name, df in tables.items():
         table_start = time.perf_counter()
         # Deterministic duplicate detection first: zero LLM cost, and its
@@ -267,11 +293,22 @@ def main():
         if duplicate_finding:
             findings.append(duplicate_finding)
         # Known SAP standards next - also zero LLM cost, also kept if the LLM fails.
-        rule_coverage = RuleCoverage()
+        rule_coverage, rule_findings = RuleCoverage(), []
         if not args.duplicates_only:
-            rule_findings, rule_coverage = run_sap_rules(table_name, df, tables, dictionary,
+            rule_findings, rule_coverage = run_sap_rules(table_name, rule_tables[table_name], rule_tables, dictionary,
                                                          client_id=client["client_id"], mappings=mappings)
             findings += rule_findings
+        # Quality score + recommended survivor per duplicate group - a pre-selection
+        # for the reviewer, never a verdict. Uses the rules' per-row defects.
+        if duplicate_finding:
+            survivorship.annotate(duplicate_finding, table_name, rule_tables.get(table_name, df), mappings,
+                                  rule_tables, rule_findings)
+        if not args.duplicates_only and Config.SAP_RULES_ENABLED:
+            table_scores.append(scorecard.score_table(
+                table_name, rule_tables[table_name], mappings.get(table_name), rule_coverage, rule_findings,
+                duplicate_finding, DUPLICATE_STATS.get(table_name),
+                scorecard.migration_object(table_name, mappings.get(table_name), load_pack(),
+                                           table_files.get(table_name))))
         if not no_planner:
             try:
                 findings += explore_table(graph, table_name, df, dictionary, tables, skill_retriever,
@@ -304,6 +341,22 @@ def main():
         total_findings += len(findings)
         logger.info("[%s] done in %.2fs - %d finding(s)", table_name, time.perf_counter() - table_start, len(findings))
 
+    # Composite DQ scorecard per table, migration object and run (deterministic engines only).
+    dq = None
+    if table_scores:
+        entries = scorecard.build(table_scores)
+        store.save_scorecard(run_id, client["client_id"], entries, Config.SCORECARD_WEIGHTS)
+        dq = entries[-1]
+
+    # Handoff to the Mapping / Value Mapping Agent: what every source column looks like.
+    handoff_path = None
+    try:
+        doc = structural_profile.build_profile(tables, table_files, load_data_dictionary_structured(dictionary_path),
+                                               mappings, client, run_id)
+        handoff_path = structural_profile.write_profile(doc)
+    except Exception as exc:
+        logger.error("Structural profile (handoff) could not be written: %s", exc)
+
     elapsed = time.perf_counter() - start_time
     metrics.log_summary(logger)
 
@@ -318,7 +371,34 @@ def main():
           f"Findings: {metrics.sap_rule_findings} (anomalies: {metrics.anomaly_findings}) | "
           f"Rows flagged: {metrics.sap_rule_rows} | "
           f"Planner checks dropped as already covered: {metrics.planner_checks_covered_by_rules}")
-    print(f"Column mapping - SAP standard (free): {metrics.column_mapping_standard} | Reused from memory: "
+    status = "COMPLETED" if not failed_tables else "PARTIAL"
+    try:
+        events.publish("profiling.completed", client["client_id"], client["name"], run_id, status, {
+            "tables": list(tables.keys()), "findings": total_findings, "failed_tables": failed_tables,
+            "structural_profile": {
+                "path": str(handoff_path) if handoff_path else None,
+                "url": f"/api/clients/{client['client_id']}/handoff/structural-profile?run_id={run_id}"
+                       if handoff_path else None},
+            "duplicate_decisions_url": f"/api/clients/{client['client_id']}/duplicate-decisions.csv",
+            "mapping_input": "mapping-agent" if mapping_agent else None,
+            "target_domains": len(target_domains) or None,
+            "dq_index": dq["dq_index"] if dq else None,
+            "record_readiness": dq["readiness"]["score"] if dq else None,
+            "scorecard_url": f"/api/scorecard?client_id={client['client_id']}&run_id={run_id}" if dq else None,
+        })
+    except Exception as exc:
+        logger.error("profiling.completed event could not be published: %s", exc)
+    if dq:
+        r = dq["readiness"]
+        print(f"Record readiness: {'n/a' if r['score'] is None else format(r['score'], '.1%')} - {r['ready']:,} of "
+              f"{r['in_scope']:,} in-scope records loadable as they are; {r['not_ready']:,} need work; "
+              f"{r['out_of_scope']:,} out of scope (deleted/dormant)")
+        print("DQ Index (all tables): " + ("n/a" if dq["dq_index"] is None else f"{dq['dq_index']:.1%}") + " | " +
+              " | ".join(f"{p.capitalize()}: {'n/a' if not dq['pillars'][p] else format(dq['pillars'][p]['score'], '.1%')}"
+                         for p in scorecard.PILLARS))
+    print(f"Handoff - structural profile: {handoff_path or 'NOT written (see log)'}")
+    print(f"Column mapping - Mapping Agent: {metrics.column_mapping_agent} | SAP standard (free): "
+          f"{metrics.column_mapping_standard} | Reused from memory: "
           f"{metrics.column_mapping_hits} | Mapped by LLM: {metrics.column_mapping_llm_calls} | "
           f"Failed: {metrics.column_mapping_failures}")
     print(f"Cache - Hits: {metrics.cache_hits} | Misses: {metrics.cache_misses}")
@@ -326,6 +406,9 @@ def main():
           f"Served by fallback: {metrics.llm_fallback_calls}")
     print(f"\nReview at: http://localhost:8000")
 
+    # One machine-readable line for the job manager (review_app/job_manager.py).
+    print("RESULT_JSON: " + json.dumps({"run_id": run_id, "client_id": client["client_id"], "status": status,
+                                        "structural_profile": str(handoff_path) if handoff_path else None}))
     if failed_tables:
         print(f"\nTables whose LLM exploration was skipped because every LLM failed: {failed_tables} "
               f"- re-run with --tables {' '.join(failed_tables)}")

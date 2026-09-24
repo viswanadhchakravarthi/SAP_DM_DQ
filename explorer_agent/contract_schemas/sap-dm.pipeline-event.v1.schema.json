@@ -1,0 +1,105 @@
+{
+  "$defs": {
+    "Producer": {
+      "additionalProperties": true,
+      "properties": {
+        "agent": {
+          "description": "Producing agent, e.g. 'data-profiling-agent'",
+          "title": "Agent",
+          "type": "string"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Producer's run id (traceability)",
+          "title": "Run Id"
+        },
+        "client_id": {
+          "description": "Client (company) slug, e.g. 'acme-retail'",
+          "title": "Client Id",
+          "type": "string"
+        },
+        "client_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Client Name"
+        }
+      },
+      "required": [
+        "agent",
+        "client_id"
+      ],
+      "title": "Producer",
+      "type": "object"
+    }
+  },
+  "additionalProperties": true,
+  "properties": {
+    "contract": {
+      "const": "sap-dm.pipeline-event",
+      "default": "sap-dm.pipeline-event",
+      "title": "Contract",
+      "type": "string"
+    },
+    "version": {
+      "default": "1.0",
+      "title": "Version",
+      "type": "string"
+    },
+    "event_id": {
+      "title": "Event Id",
+      "type": "string"
+    },
+    "type": {
+      "description": "e.g. profiling.completed",
+      "title": "Type",
+      "type": "string"
+    },
+    "occurred_at": {
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "producer": {
+      "$ref": "#/$defs/Producer"
+    },
+    "status": {
+      "description": "PARTIAL: some tables' LLM steps failed",
+      "enum": [
+        "COMPLETED",
+        "PARTIAL",
+        "FAILED"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "description": "Type-specific: run summary and links to the outputs",
+      "title": "Payload",
+      "type": "object"
+    }
+  },
+  "required": [
+    "event_id",
+    "type",
+    "occurred_at",
+    "producer",
+    "status"
+  ],
+  "title": "PipelineEvent",
+  "type": "object"
+}

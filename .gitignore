@@ -192,6 +192,8 @@ episodic_memory.backup-*.db
 memory_store/
 # per-client uploaded data (raw client CSVs) - data.client_data_dir in config.yaml
 client_data/
+# structural profiles for the Mapping Agent - they contain client code lists (handoff.dir)
+handoff/
 logs/
 
 # my local testing environment

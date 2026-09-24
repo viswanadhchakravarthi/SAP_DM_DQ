@@ -25,6 +25,15 @@ How ``duplicate_detector`` uses them on the next run for the same client:
               grouped with at least one of its former partners again. (A group
               with one DUPLICATE and one UNIQUE record is a confirmed duplicate
               whose UNIQUE record is the original to keep.)
+* Settled groups - when EVERY record of a group already carries a DUPLICATE or
+              UNIQUE decision covering all its current partners, the group is not
+              shown again at all (``is_settled_group``). A new record joining it,
+              or a changed record (new fingerprint), brings it back.
+
+Accepted clusters also record the survivor (the UNIQUE record the others merge
+into), each duplicate's ``merge_into`` target and proposed action, the
+recommendation that was shown, and the reviewer - the merge map the cleansing
+stage will need, exportable from the review app.
 
 The review app writes here the moment a verdict is saved (last action wins);
 the explorer only reads.
@@ -154,6 +163,11 @@ def load_duplicate_decisions(client_id: Optional[str], table: str) -> Dict[str, 
     return read_json(_decisions_path(client_id), {}).get("tables", {}).get(table, {})
 
 
+def load_all_duplicate_decisions(client_id: str) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    """{table: {record_id: decision}} for every table of one client (merge-map export)."""
+    return read_json(_decisions_path(client_id), {}).get("tables", {})
+
+
 def is_known_not_duplicate(decisions: Dict[str, Dict[str, Any]], id_a: str, id_b: str) -> bool:
     """True only when BOTH records were reviewed as UNIQUE against each other.
 
@@ -179,6 +193,20 @@ def carried_verdict(decisions: Dict[str, Dict[str, Any]], own_id: str,
     return entry if set(other_ids) & set(entry["partners"]) else None
 
 
+def is_settled_group(decisions: Dict[str, Dict[str, Any]], record_ids: List[str]) -> bool:
+    """True when every record already has a final decision (DUPLICATE / UNIQUE)
+    that covers all the other records of this group - nothing left to review."""
+    if len(record_ids) < 2:
+        return False
+    for rid in record_ids:
+        entry = decisions.get(rid)
+        if not entry or entry["verdict"] not in ("DUPLICATE", "UNIQUE"):
+            return False
+        if not set(record_ids) - {rid} <= set(entry["partners"]):
+            return False
+    return True
+
+
 def sync_duplicate_group(client_id: str, table: str, members: List[Dict[str, Any]],
                          run_id: str, finding_id: str, group_id: str) -> int:
     """Store the current verdicts of one reviewed group. Returns the number of records written.
@@ -190,6 +218,7 @@ def sync_duplicate_group(client_id: str, table: str, members: List[Dict[str, Any
     """
     usable = [m for m in members if m.get("record")]
     ids = {m["id"]: record_id(m["key_value"], m["record"]) for m in usable}
+    survivor = next((m for m in usable if m.get("is_golden_record") and m.get("review_verdict") == "UNIQUE"), None)
     now = datetime.now(timezone.utc).isoformat()
     written = 0
 
@@ -218,6 +247,13 @@ def sync_duplicate_group(client_id: str, table: str, members: List[Dict[str, Any
                 "run_id": run_id,
                 "finding_id": finding_id,
                 "group_id": group_id,
+                "survivor": bool(survivor and m["id"] == survivor["id"]),
+                "merge_into": (str(survivor["key_value"]) if survivor and verdict == "DUPLICATE" else None),
+                # Only a final decision has an action - an open (TO_BE_CONFIRMED) record
+                # still carries the recommendation's, which nobody accepted.
+                "action": (m.get("suggested_action") or None) if verdict in ("UNIQUE", "DUPLICATE") else None,
+                "recommended_verdict": m.get("recommended_verdict") or None,
+                "reviewer": m.get("reviewer") or None,
             }
             written += 1
 

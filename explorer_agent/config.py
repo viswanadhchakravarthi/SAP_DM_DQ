@@ -207,6 +207,34 @@ class Config:
     )
     DUPLICATE_MAX_BLOCK_SIZE = _env_int("EXPLORER_DUPLICATE_MAX_BLOCK", _get("duplicates.max_block_size", 500))
     DUPLICATE_MAX_GROUPS = _env_int("EXPLORER_DUPLICATE_MAX_GROUPS", _get("duplicates.max_groups", 500))
+    DUPLICATE_HIDE_DECIDED_GROUPS = _env_bool(
+        "EXPLORER_DUPLICATE_HIDE_DECIDED", _get("duplicates.hide_decided_groups", True))
+
+    # Composite DQ scorecard (explorer_agent/scorecard.py).
+    SCORECARD_WEIGHTS = {k: float(v) for k, v in (_get("scorecard.weights", None) or {
+        "completeness": 0.35, "correctness": 0.35, "uniqueness": 0.30, "activeness": 0.0}).items()}
+
+    READINESS_MAX_WORKLIST = _env_int("EXPLORER_READINESS_MAX_WORKLIST", _get("scorecard.max_worklist", 5000))
+    READINESS_BANDS = {k: float(v) for k, v in (_get("scorecard.readiness_bands", None) or
+                                                {"good": 0.95, "fair": 0.80}).items()}
+    SCORECARD_BANDS = {k: float(v) for k, v in (_get("scorecard.bands", None) or {"good": 0.95, "fair": 0.85}).items()}
+
+    # Handoff to / from the neighbouring agents (explorer_agent/contracts.py).
+    HANDOFF_DIR = _resolve_path(_env_str("EXPLORER_HANDOFF_DIR", _get("handoff.dir", "handoff")))
+    HANDOFF_MAX_DOMAIN_VALUES = _env_int("EXPLORER_HANDOFF_MAX_DOMAIN", _get("handoff.max_domain_values", 200))
+    HANDOFF_MAPPING_FILE = _env_str("EXPLORER_HANDOFF_MAPPING_FILE", _get("handoff.mapping_file", "field_mapping.json"))
+    HANDOFF_MIN_CONFIDENCE = _env_float("EXPLORER_HANDOFF_MIN_CONFIDENCE", _get("handoff.min_confidence", 90))
+    HANDOFF_TARGET_DOMAINS_FILE = _env_str("EXPLORER_HANDOFF_TARGET_DOMAINS_FILE",
+                                           _get("handoff.target_domains_file", "target_domains.json"))
+
+    # Survivorship (explorer_agent/survivorship.py): record quality score per duplicate
+    # group member and a recommended survivor - a suggestion, never a verdict.
+    SURVIVORSHIP_ENABLED = _env_bool("EXPLORER_SURVIVORSHIP_ENABLED", _get("survivorship.enabled", True))
+    SURVIVORSHIP_WEIGHTS = {
+        k: float(v) for k, v in (_get("survivorship.weights", None) or
+                                 {"completeness": 0.4, "active": 0.25, "usage": 0.2, "recency": 0.15}).items()}
+    SURVIVORSHIP_RECOMMEND_MATCH_TYPES = _env_list(
+        "EXPLORER_SURVIVORSHIP_MATCH_TYPES", _get("survivorship.recommend_for", ["EXACT", "PROBABLE"]))
 
     # Deterministic SAP domain rules (explorer_agent/sap_rules.py) - zero LLM calls.
     SAP_RULES_ENABLED = _env_bool("EXPLORER_SAP_RULES_ENABLED", _get("sap_rules.enabled", True))

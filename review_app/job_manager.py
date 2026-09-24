@@ -11,6 +11,7 @@ so concurrent runs aren't safe.
 """
 
 import collections
+import json
 import subprocess
 import sys
 import threading
@@ -36,6 +37,7 @@ class JobState:
     lock: threading.Lock = field(default_factory=threading.Lock)
     process: Optional[subprocess.Popen] = None
     stop_requested: bool = False
+    result: Optional[Dict[str, Any]] = None  # the run's RESULT_JSON line (run_id, outputs)
 
     def to_dict(self) -> Dict[str, Any]:
         with self.lock:
@@ -46,6 +48,8 @@ class JobState:
                 "started_at": self.started_at,
                 "finished_at": self.finished_at,
                 "return_code": self.return_code,
+                "run_id": (self.result or {}).get("run_id"),
+                "outputs": _outputs(self.result),
                 "log_tail": list(self.log_lines),
             }
 
@@ -55,12 +59,28 @@ _current_job_id: Optional[str] = None
 _manager_lock = threading.Lock()
 
 
+def _outputs(result: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Where the next agent picks the run's handoff up (REST, same as the pipeline event)."""
+    if not result:
+        return None
+    client, run = result.get("client_id"), result.get("run_id")
+    return {"status": result.get("status"),
+            "structural_profile_url": (f"/api/clients/{client}/handoff/structural-profile?run_id={run}"
+                                       if result.get("structural_profile") else None),
+            "events_url": f"/api/handoff/events?client_id={client}&type=profiling.completed"}
+
+
 def _stream_output(job: JobState) -> None:
     proc = job.process
     assert proc is not None and proc.stdout is not None
     for line in proc.stdout:
         with job.lock:
             job.log_lines.append(line.rstrip("\n"))
+            if line.startswith("RESULT_JSON: "):
+                try:
+                    job.result = json.loads(line[len("RESULT_JSON: "):])
+                except ValueError:
+                    pass
     return_code = proc.wait()
     with job.lock:
         job.return_code = return_code

@@ -103,7 +103,9 @@ def _code_rules(ctx: Ctx) -> List[Dict[str, Any]]:
     out = []
     for col in ctx.cols("CODE"):
         rule_id = f"anomaly.rare_code.{ctx.table}.{col}"
-        if ctx.b(col)["part_of_key"] or not ctx.enabled(rule_id):
+        # A known SAP target domain (sap_rules._domain_rules) beats rarity: a valid code
+        # used twice is fine, a bogus code used a hundred times is not.
+        if ctx.b(col)["part_of_key"] or ctx.b(col).get("allowed_values") or not ctx.enabled(rule_id):
             continue
         values = text(ctx.df[col])
         filled = values[values != ""]

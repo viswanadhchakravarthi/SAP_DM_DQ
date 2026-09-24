@@ -5,6 +5,12 @@ business concepts - KEY, DELETION_FLAG, COUNTRY, POSTAL_CODE, TAX_ID, AMOUNT ...
 (``schemas.ColumnConcept``) - never against column names. This module decides,
 once per client and table layout, which column plays which concept:
 
+0. The Mapping Agent's field mapping (``contracts.FieldValueMapping``, the
+   ``sap-dm.field-value-mapping`` file) when the run has one: a source column
+   mapped to an SAP field takes that field's meaning from the rule pack, with
+   references and related columns translated back to source names. This is the
+   intended pipeline (Mapping Agent -> Profiling Agent); steps 1-4 are the
+   fallback when no Mapping Agent output exists yet.
 1. A mapping saved for THIS client whose schema signature still fits (the
    normal case from the second run on, and where a human correction lives -
    the file is plain JSON under ``<memory.clients_dir>/<client>/column_mappings.json``).
@@ -104,6 +110,8 @@ def _binding(raw: Dict[str, Any], reason: str) -> Dict[str, Any]:
         "cascades": bool(raw.get("cascades", False)),
         "allow_negative": bool(raw.get("allow_negative", False)),
         "reason": raw.get("reason") or reason,
+        "target": raw.get("target") or None,   # SAP TABLE.FIELD when a Mapping Agent mapped it (primary)
+        "targets": raw.get("targets") or None,  # every SAP TABLE.FIELD it feeds (1-to-many)
     }
 
 
@@ -322,16 +330,217 @@ def save(table: str, mapping: Dict[str, Any], columns, created_by: str, client_i
 # Resolver
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Mapping Agent input (contracts.FieldValueMapping)
+# ---------------------------------------------------------------------------
+
+def load_mapping_agent_file(path: Optional[str]):
+    """The Mapping Agent's field/value mapping, validated against the contract, or None."""
+    from .contracts import FieldValueMapping, check_version
+    if not path or not Path(path).exists():
+        return None
+    doc = json.loads(Path(path).read_text(encoding="utf-8"))
+    check_version(doc.get("version", "?"), doc.get("contract", "field-value-mapping"))
+    fvm = FieldValueMapping.model_validate(doc)
+    logger.info("Mapping Agent input %s: %d field mapping(s), %d value mapping(s) from %s",
+                path, len(fvm.field_mappings), len(fvm.value_mappings), fvm.producer.agent)
+    return fvm
+
+
+def _usable(status: str, score: Optional[float]) -> bool:
+    """APPROVED always counts, REJECTED never; a PROPOSED candidate counts from
+    ``handoff.min_confidence`` (0-100). The Mapping Agent sends everything - the
+    threshold is applied here, so low-confidence candidates stay visible upstream."""
+    if status == "REJECTED":
+        return False
+    return status == "APPROVED" or (score is not None and score >= Config.HANDOFF_MIN_CONFIDENCE)
+
+
+def mapping_agent_mappings(tables: Dict[str, pd.DataFrame], pack: Dict[str, Any], fvm,
+                           dictionary: Optional[Dict[Tuple[str, str], str]] = None) -> Dict[str, Dict[str, Any]]:
+    """{source table: mapping} for the tables the Mapping Agent mapped.
+
+    A source column may feed several SAP targets (a denormalized legacy vendor file:
+    VENDOR_ID -> LFA1-LIFNR, LFB1-LIFNR, LFM1-LIFNR). The primary-key target, else the
+    first, gives the column its meaning for the rules; a column is required when any of
+    its targets is; every target is kept on the binding (``targets``)."""
+    from .contracts import confidence_tier
+    upper_tables = {t.upper(): t for t in tables}
+    best: Dict[Tuple[str, str], Any] = {}
+    below = []
+    for fm in fvm.field_mappings:
+        table = upper_tables.get(fm.source_table.upper())
+        if not table:
+            continue
+        if not _usable(fm.status, fm.confidence_score):
+            if fm.status != "REJECTED":
+                below.append(f"{fm.source_table}.{fm.source_column} ({fm.confidence_score}, "
+                             f"{fm.confidence_tier or confidence_tier(fm.confidence_score)})")
+            continue
+        col = next((c for c in tables[table].columns if str(c).upper() == fm.source_column.upper()), None)
+        if col is None:
+            logger.warning("Mapping Agent maps %s.%s, which is not in the upload - ignored",
+                           fm.source_table, fm.source_column)
+            continue
+        rank = (fm.status == "APPROVED", fm.confidence_score or 0)
+        current = best.get((table, col))
+        if current is None or rank > (current.status == "APPROVED", current.confidence_score or 0):
+            best[(table, col)] = fm
+    if below:
+        metrics.mapping_candidates_below_threshold += len(below)
+        logger.info("%d PROPOSED mapping candidate(s) below handoff.min_confidence=%s not used (still for review "
+                    "upstream): %s", len(below), Config.HANDOFF_MIN_CONFIDENCE, "; ".join(below[:10]))
+
+    def primary(fm):
+        return next((t for t in fm.targets if t.is_primary_key), fm.targets[0])
+
+    # SAP TABLE.FIELD -> (source table, source column), from EVERY target, to translate
+    # references back to source names (a denormalized file maps several to one column).
+    reverse: Dict[str, Tuple[str, str]] = {}
+    for (t, c), fm in sorted(best.items(), key=lambda kv: kv[1].confidence_score or 0):
+        for target in fm.targets:
+            reverse[f"{target.table.upper()}.{target.field.upper()}"] = (t, c)
+    standard = pack.get("standard_columns", {}) or {}
+
+    out: Dict[str, Dict[str, Any]] = {}
+    for table in {t for t, _ in best}:
+        df = tables[table]
+        columns: Dict[str, Dict[str, Any]] = {}
+        for col in df.columns:
+            fm = best.get((table, col))
+            if fm is None:
+                columns[col] = _binding({"concept": "OTHER"}, "not mapped by the Mapping Agent")
+                continue
+            main_target = primary(fm)
+            target_table, target_field = main_target.table.upper(), main_target.field.upper()
+            target = f"{target_table}.{target_field}"
+            all_targets = [f"{t.table.upper()}.{t.field.upper()}" for t in fm.targets]
+            score = main_target.confidence_score if main_target.confidence_score is not None else fm.confidence_score
+            origin = (f"Mapping Agent: {table}.{col} -> {', '.join(all_targets)} ({fm.status.lower()}"
+                      + (f", confidence {score:g}" if score is not None else "") + ")"
+                      + (f" - {fm.explanation}" if fm.explanation else ""))
+            spec = dict((standard.get(target_table) or {}).get(target_field) or {})
+            if not spec:
+                columns[col] = _binding({"concept": "OTHER", "target": target, "targets": all_targets},
+                                        f"{origin}; {target} has no rules in the rule pack")
+                continue
+            desc = (dictionary or {}).get((table.upper(), str(col).upper()))
+            for override in spec.pop("dictionary_override", None) or []:
+                if desc and re.search(override["regex"], desc, re.IGNORECASE):
+                    spec.update(override["set"])
+            if spec.get("references"):
+                ref = reverse.get(spec["references"].upper())
+                # A reference back to the same source table is the same record in a
+                # denormalized file (LFB1-LIFNR -> LFA1-LIFNR both from VENDOR_ID): no link.
+                spec["references"] = f"{ref[0]}.{ref[1]}" if ref and ref[0] != table else None
+            if spec.get("related_column"):
+                rel = reverse.get(f"{target_table}.{spec['related_column'].upper()}")
+                spec["related_column"] = rel[1] if rel and rel[0] == table else None
+            spec["required"] = bool(spec.get("required")) or any(
+                ((standard.get(t.table.upper()) or {}).get(t.field.upper()) or {}).get("required") for t in fm.targets)
+            spec["target"], spec["targets"] = target, all_targets
+            columns[col] = _binding(spec, f"{origin}; meaning of {target} from the SAP rule pack")
+        out[table] = _mapping(table, columns, "mapping-agent",
+                              f"mapped by the Mapping Agent ({fvm.producer.agent}); SAP field meanings from the rule pack")
+        out[table]["value_maps"] = _value_maps(table, fvm, reverse)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Target domains (contracts.TargetDomains, from the Metadata Repository)
+# ---------------------------------------------------------------------------
+
+def load_target_domains(path: Optional[str]) -> Dict[str, Dict[str, Any]]:
+    """{'TABLE.FIELD': {'values': set, 'check_table': str}} or {} when there is no file."""
+    from .contracts import TargetDomains, check_version
+    if not path or not Path(path).exists():
+        return {}
+    doc = json.loads(Path(path).read_text(encoding="utf-8"))
+    check_version(doc.get("version", "?"), doc.get("contract", "target-domains"))
+    parsed = TargetDomains.model_validate(doc)
+    index = {f"{d.target_table.upper()}.{d.target_field.upper()}":
+             {"values": {v.value for v in d.values}, "check_table": d.check_table} for d in parsed.domains}
+    logger.info("Target domains %s: %d SAP field(s) with allowed values from %s", path, len(index),
+                parsed.producer.agent)
+    return index
+
+
+def attach_target_domains(mappings: Dict[str, Dict[str, Any]], domains: Dict[str, Dict[str, Any]]) -> int:
+    """Put the allowed SAP values on each column whose target field has a domain: the
+    Mapping Agent's targets, or the column itself for an SAP-standard table."""
+    attached = 0
+    if not domains:
+        return 0
+    for table, m in mappings.items():
+        for col, b in m["columns"].items():
+            targets = b.get("targets") or ([b["target"]] if b.get("target") else [])
+            if not targets and str(m.get("source", "")).startswith("sap-standard"):
+                targets = [f"{table.upper()}.{str(col).upper()}"]
+            hit = next((t for t in targets if t in domains), None)
+            if hit:
+                b["allowed_values"] = sorted(domains[hit]["values"])
+                b["domain_target"], b["check_table"] = hit, domains[hit]["check_table"]
+                attached += 1
+    return attached
+
+
+def _value_maps(table: str, fvm, reverse: Dict[str, Tuple[str, str]]) -> Dict[str, Dict[str, str]]:
+    """{source column: {source value: SAP value}} - rules check values AFTER value mapping."""
+    maps: Dict[str, Dict[str, str]] = {}
+    for vm in fvm.value_mappings:
+        if vm.status == "REJECTED":
+            continue
+        if vm.source_table and vm.source_column:
+            if vm.source_table.upper() != table.upper():
+                continue
+            col = vm.source_column
+        else:
+            src = reverse.get(f"{vm.target_table.upper()}.{vm.target_field.upper()}")
+            if not src or src[0] != table:
+                continue
+            col = src[1]
+        maps.setdefault(col, {})[vm.source_value] = vm.target_value
+    return maps
+
+
+def apply_value_maps(tables: Dict[str, pd.DataFrame],
+                     mappings: Dict[str, Dict[str, Any]]) -> Dict[str, pd.DataFrame]:
+    """Tables with the Value Mapping Agent's source -> SAP values applied, for the rule
+    engines and survivorship ('UK' mapped to 'GB' is not an invalid country; a legacy
+    'Y' deletion flag mapped to 'X' is set). ALL tables are translated, because rules
+    read other tables too (a parent's deletion flag). Tables without value maps are
+    passed through as they are; duplicate matching keeps using the originals."""
+    out = dict(tables)
+    for table, m in (mappings or {}).items():
+        maps = {c: vm for c, vm in (m.get("value_maps") or {}).items() if c in tables.get(table, pd.DataFrame()).columns}
+        if not maps:
+            continue
+        df = tables[table].copy()
+        for col, vmap in maps.items():
+            original = df[col].fillna("").astype(str).str.strip()
+            df[col] = original.map(lambda v: vmap.get(v, v)).where(df[col].notna(), df[col])
+            logger.info("[%s] %s: %d value(s) translated by value mapping before the rules (%d mapping(s))",
+                        table, col, int(original.isin(list(vmap)).sum()), len(vmap))
+        out[table] = df
+    return out
+
+
 def resolve_mappings(tables: Dict[str, pd.DataFrame], pack: Dict[str, Any],
                      dictionary: Optional[Dict[Tuple[str, str], str]] = None,
                      client_id: Optional[str] = None, client_name: Optional[str] = None,
-                     planner=None) -> Dict[str, Dict[str, Any]]:
+                     planner=None, mapping_agent=None) -> Dict[str, Dict[str, Any]]:
     """{table: mapping} for every loaded table. Runs before any rule, because
     rules on one table read the mapping of others (orphans, dormancy)."""
     other_columns = {t: [str(c) for c in df.columns] for t, df in tables.items()}
-    mappings: Dict[str, Dict[str, Any]] = {}
+    mappings: Dict[str, Dict[str, Any]] = (mapping_agent_mappings(tables, pack, mapping_agent, dictionary)
+                                           if mapping_agent else {})
+    for table, m in mappings.items():
+        metrics.column_mapping_agent += 1
+        logger.info("[%s] column mapping (mapping-agent): %s", table, describe(m))
     llm_mapped = []
     for table, df in tables.items():
+        if table in mappings:
+            continue
         saved = load_saved(table, df.columns, client_id)
         if saved:
             metrics.column_mapping_hits += 1

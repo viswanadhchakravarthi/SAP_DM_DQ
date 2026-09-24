@@ -253,6 +253,17 @@ standard_columns:
     KUNNR: {concept: KEY, part_of_key: true, references: KNA1.KUNNR}
 
 # ---------------------------------------------------------------------------
+# Migration objects, for the DQ scorecard: which SAP tables make up each object.
+# A non-SAP table joins the object of the SAP tables it is mapped to.
+# ---------------------------------------------------------------------------
+objects:
+  Vendor: [LFA1, LFB1, LFBK, LFM1]
+  Customer: [KNA1, KNB1, KNVV]
+  Material: [MARA, MARC, MARD, MBEW, MVKE, MAKT]
+  Service: [ASMD, ASMDT]
+  Business Partner: [BUT000, BUT020, BUT0ID, BUT100, ADRC, CVI_VEND_LINK, CVI_CUST_LINK]
+
+# ---------------------------------------------------------------------------
 # ACTIVENESS
 # ---------------------------------------------------------------------------
 # Values meaning "set" for a flag whose mapping gives none.

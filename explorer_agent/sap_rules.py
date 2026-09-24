@@ -310,6 +310,33 @@ def _tax_rules(ctx: Ctx) -> List[Dict[str, Any]]:
     return out
 
 
+def _domain_rules(ctx: Ctx) -> List[Dict[str, Any]]:
+    """Values outside the SAP target domain (check table from the Metadata Repository,
+    sap-dm.target-domains). Checked after value mapping, so a mapped 'UK' is not reported.
+    Where a domain exists it replaces the statistical rare-code check (anomaly_rules)."""
+    out = []
+    for col, b in ctx.columns.items():
+        allowed = b.get("allowed_values")
+        rule_id = f"domain.{ctx.table}.{col}"
+        if not allowed or not ctx.enabled(rule_id):
+            continue
+        target, check_table = b.get("domain_target"), b.get("check_table")
+        where = f"{target}" + (f" (check table {check_table})" if check_table else "")
+        ctx.covered.add(f"{col} value exists in the SAP domain of {where} - CORRECTNESS", [col],
+                        "CORRECTNESS", "VALUE_ERROR")
+        values = text(ctx.df[col])
+        allowed_set = set(allowed)
+        hits = ctx.df.index[(values != "") & ~values.isin(allowed_set)]
+        if not len(hits):
+            continue
+        rows = [ctx.row(i, f"{col} '{values[i]}' is not a valid {where} value - map it (Value Mapping) or "
+                           f"correct it.") for i in hits]
+        out.append(finding(ctx, rule_id, col, f"Invalid code ({col} not in {check_table or target})",
+                           f"Every {ctx.table}.{col} value must exist in the target domain of {where}.",
+                           rows, "CORRECTNESS", "HIGH", sub_type="VALUE_ERROR", fix_type="MANUAL_FIX"))
+    return out
+
+
 # ---------------------------------------------------------------------------
 # RELATIONSHIP_INTEGRITY
 # ---------------------------------------------------------------------------
@@ -384,7 +411,7 @@ def _propagation_rules(ctx: Ctx) -> List[Dict[str, Any]]:
 # ---------------------------------------------------------------------------
 
 _FAMILIES = (_flag_rules, _dormancy_rules, _mandatory_rules, _country_rules, _postal_rules, _tax_rules,
-             _orphan_rules, _propagation_rules)
+             _domain_rules, _orphan_rules, _propagation_rules)
 
 
 def run_sap_rules(table_name: str, df: pd.DataFrame, all_tables: Dict[str, pd.DataFrame],
@@ -400,6 +427,8 @@ def run_sap_rules(table_name: str, df: pd.DataFrame, all_tables: Dict[str, pd.Da
     """
     if not Config.SAP_RULES_ENABLED or df.empty:
         return [], RuleCoverage()
+    # Callers pass tables already translated by column_mapping.apply_value_maps, so the
+    # rules - including cross-table ones - check the values the records will have in SAP.
     ctx = Ctx(load_pack(), table_name.upper(), df, all_tables, dictionary, client_id, mappings)
     families = list(_FAMILIES) + (list(anomaly_rules.FAMILIES) if Config.ANOMALIES_ENABLED else [])
     findings: List[Dict[str, Any]] = []

@@ -26,7 +26,15 @@
             <polyline points="20 4 20 9 15 9"/>
           </svg>
         </button>
-        <button id="promoteBtn" class="btn-promote">Promote Approved Skills</button>
+        <div class="promote-stack">
+          <button id="promoteBtn" class="btn-promote">Promote Approved Skills</button>
+          <button id="dqIndexBtn" class="dq-chip hidden" aria-haspopup="dialog" aria-expanded="false"
+            title="Composite DQ Index - completeness, correctness, uniqueness">DQ Index</button>
+          <div id="dqWindow" class="dq-window hidden" role="dialog" aria-label="DQ Index"></div>
+          <button id="readinessBtn" class="dq-chip hidden" aria-haspopup="dialog" aria-expanded="false"
+            title="Record readiness - records that can be loaded as they are">Record readiness</button>
+          <div id="readinessWindow" class="dq-window hidden" role="dialog" aria-label="Record readiness"></div>
+        </div>
       </div>
     </div>
 

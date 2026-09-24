@@ -1,0 +1,687 @@
+{
+  "$defs": {
+    "ColumnStats": {
+      "additionalProperties": true,
+      "properties": {
+        "rows": {
+          "title": "Rows",
+          "type": "integer"
+        },
+        "filled": {
+          "description": "Non-blank values",
+          "title": "Filled",
+          "type": "integer"
+        },
+        "null_pct": {
+          "description": "Blank or missing, % of rows",
+          "title": "Null Pct",
+          "type": "number"
+        },
+        "distinct": {
+          "description": "Distinct non-blank values",
+          "title": "Distinct",
+          "type": "integer"
+        },
+        "distinct_pct": {
+          "description": "Distinct as % of filled values (100 = every value different)",
+          "title": "Distinct Pct",
+          "type": "number"
+        },
+        "unique": {
+          "description": "Filled in every row and no value repeats - a single-column key candidate",
+          "title": "Unique",
+          "type": "boolean"
+        },
+        "min_length": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min Length"
+        },
+        "max_length": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Longest value in characters (for target field length checks)",
+          "title": "Max Length"
+        },
+        "avg_length": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Avg Length"
+        },
+        "leading_zeros": {
+          "default": false,
+          "description": "Some numeric-looking values have leading zeros (a code, not a number)",
+          "title": "Leading Zeros",
+          "type": "boolean"
+        },
+        "min": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "NUMERIC / DATE columns only, as text",
+          "title": "Min"
+        },
+        "max": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "NUMERIC / DATE columns only, as text",
+          "title": "Max"
+        },
+        "decimals": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "NUMERIC: most decimal places seen",
+          "title": "Decimals"
+        }
+      },
+      "required": [
+        "rows",
+        "filled",
+        "null_pct",
+        "distinct",
+        "distinct_pct",
+        "unique"
+      ],
+      "title": "ColumnStats",
+      "type": "object"
+    },
+    "DictionaryEntry": {
+      "additionalProperties": true,
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "data_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "As declared in the client's data dictionary, e.g. CHAR10",
+          "title": "Data Type"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        }
+      },
+      "title": "DictionaryEntry",
+      "type": "object"
+    },
+    "Domain": {
+      "additionalProperties": true,
+      "properties": {
+        "listed": {
+          "description": "True when `values` holds every distinct value of the column",
+          "title": "Listed",
+          "type": "boolean"
+        },
+        "values": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DomainValue"
+          },
+          "title": "Values",
+          "type": "array"
+        },
+        "withheld_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Why the values are not listed, when listed=false",
+          "title": "Withheld Reason"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "SAP TABLE.FIELD whose domain the values were checked against",
+          "title": "Target"
+        },
+        "check_table": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "SAP check table of that domain, e.g. T052",
+          "title": "Check Table"
+        },
+        "unmapped_count": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Distinct values with target_status UNMAPPED",
+          "title": "Unmapped Count"
+        }
+      },
+      "required": [
+        "listed"
+      ],
+      "title": "Domain",
+      "type": "object"
+    },
+    "DomainValue": {
+      "additionalProperties": true,
+      "properties": {
+        "value": {
+          "title": "Value",
+          "type": "string"
+        },
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        },
+        "pct": {
+          "description": "% of filled values",
+          "title": "Pct",
+          "type": "number"
+        },
+        "target_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "VALID",
+                "MAPPED",
+                "UNMAPPED"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Only when the column's SAP target domain is known (sap-dm.target-domains): VALID = the value exists in the target check table; MAPPED = a value mapping converts it to a valid target value; UNMAPPED = neither - the Value Mapping Agent still has to convert it",
+          "title": "Target Status"
+        },
+        "target_value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "MAPPED: the target value it converts to",
+          "title": "Target Value"
+        }
+      },
+      "required": [
+        "value",
+        "count",
+        "pct"
+      ],
+      "title": "DomainValue",
+      "type": "object"
+    },
+    "Pattern": {
+      "additionalProperties": true,
+      "properties": {
+        "shape": {
+          "description": "Value shape: A = upper-case letter, a = lower-case, 9 = digit, other characters literal, runs compressed, e.g. 'A{2}9{9}' for 'DE123456789'",
+          "title": "Shape",
+          "type": "string"
+        },
+        "regex": {
+          "description": "Anchored regex for the shape",
+          "title": "Regex",
+          "type": "string"
+        },
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        },
+        "pct": {
+          "description": "% of filled values with this shape",
+          "title": "Pct",
+          "type": "number"
+        }
+      },
+      "required": [
+        "shape",
+        "regex",
+        "count",
+        "pct"
+      ],
+      "title": "Pattern",
+      "type": "object"
+    },
+    "Privacy": {
+      "additionalProperties": true,
+      "properties": {
+        "domain_policy": {
+          "description": "Which columns list their distinct values, in words",
+          "title": "Domain Policy",
+          "type": "string"
+        },
+        "max_domain_values": {
+          "description": "A column with more distinct values than this lists none",
+          "title": "Max Domain Values",
+          "type": "integer"
+        },
+        "withheld_classes": {
+          "description": "Value classes / concepts whose values are never listed",
+          "items": {
+            "type": "string"
+          },
+          "title": "Withheld Classes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "domain_policy",
+        "max_domain_values",
+        "withheld_classes"
+      ],
+      "title": "Privacy",
+      "type": "object"
+    },
+    "Producer": {
+      "additionalProperties": true,
+      "properties": {
+        "agent": {
+          "description": "Producing agent, e.g. 'data-profiling-agent'",
+          "title": "Agent",
+          "type": "string"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Producer's run id (traceability)",
+          "title": "Run Id"
+        },
+        "client_id": {
+          "description": "Client (company) slug, e.g. 'acme-retail'",
+          "title": "Client Id",
+          "type": "string"
+        },
+        "client_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Client Name"
+        }
+      },
+      "required": [
+        "agent",
+        "client_id"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "ProfiledColumn": {
+      "additionalProperties": true,
+      "properties": {
+        "column": {
+          "title": "Column",
+          "type": "string"
+        },
+        "position": {
+          "description": "1-based column order in the source file",
+          "title": "Position",
+          "type": "integer"
+        },
+        "dictionary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DictionaryEntry"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "detected_type": {
+          "enum": [
+            "string",
+            "integer",
+            "decimal",
+            "date",
+            "empty"
+          ],
+          "title": "Detected Type",
+          "type": "string"
+        },
+        "value_class": {
+          "description": "CATEGORICAL: a small repeating set of codes; FLAG: 1-3 short values; IDENTIFIER: (nearly) every value different; FREE_TEXT: names, descriptions, addresses; NUMERIC; DATE; EMPTY",
+          "enum": [
+            "CATEGORICAL",
+            "FLAG",
+            "IDENTIFIER",
+            "FREE_TEXT",
+            "NUMERIC",
+            "DATE",
+            "EMPTY"
+          ],
+          "title": "Value Class",
+          "type": "string"
+        },
+        "sensitivity": {
+          "description": "PERSONAL: names, addresses, contact data, tax or bank numbers - never listed, only shapes and statistics",
+          "enum": [
+            "NONE",
+            "PERSONAL"
+          ],
+          "title": "Sensitivity",
+          "type": "string"
+        },
+        "stats": {
+          "$ref": "#/$defs/ColumnStats"
+        },
+        "patterns": {
+          "description": "Most frequent value shapes, at most 5",
+          "items": {
+            "$ref": "#/$defs/Pattern"
+          },
+          "title": "Patterns",
+          "type": "array"
+        },
+        "regex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "One regex covering >= 95% of filled values (alternation of the top shapes), or null when the column has no dominant format",
+          "title": "Regex"
+        },
+        "regex_coverage_pct": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Regex Coverage Pct"
+        },
+        "domain": {
+          "$ref": "#/$defs/Domain"
+        },
+        "semantic_hint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SemanticHint"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "column",
+        "position",
+        "detected_type",
+        "value_class",
+        "sensitivity",
+        "stats",
+        "patterns",
+        "domain"
+      ],
+      "title": "ProfiledColumn",
+      "type": "object"
+    },
+    "ProfiledTable": {
+      "additionalProperties": true,
+      "properties": {
+        "table": {
+          "description": "Table name as uploaded (file name without .csv, upper-cased)",
+          "title": "Table",
+          "type": "string"
+        },
+        "source_file": {
+          "title": "Source File",
+          "type": "string"
+        },
+        "row_count": {
+          "title": "Row Count",
+          "type": "integer"
+        },
+        "column_count": {
+          "title": "Column Count",
+          "type": "integer"
+        },
+        "key_candidates": {
+          "description": "Single columns that are filled and unique in every row",
+          "items": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": "Key Candidates",
+          "type": "array"
+        },
+        "declared_key": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The row key from this agent's column mapping",
+          "title": "Declared Key"
+        },
+        "declared_key_unique": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Declared Key Unique"
+        },
+        "columns": {
+          "items": {
+            "$ref": "#/$defs/ProfiledColumn"
+          },
+          "title": "Columns",
+          "type": "array"
+        }
+      },
+      "required": [
+        "table",
+        "source_file",
+        "row_count",
+        "column_count",
+        "key_candidates",
+        "columns"
+      ],
+      "title": "ProfiledTable",
+      "type": "object"
+    },
+    "SemanticHint": {
+      "additionalProperties": true,
+      "description": "This agent's own reading of the column, if it has one - a hint, not a mapping.",
+      "properties": {
+        "concept": {
+          "description": "Business concept, e.g. COUNTRY, TAX_ID (schemas.ColumnConcept)",
+          "title": "Concept",
+          "type": "string"
+        },
+        "sap_field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "TABLE.FIELD when the column is SAP-standard or mapped",
+          "title": "Sap Field"
+        },
+        "source": {
+          "description": "sap-standard | mapping-agent | llm | client-memory | ...",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "concept",
+        "source"
+      ],
+      "title": "SemanticHint",
+      "type": "object"
+    }
+  },
+  "additionalProperties": true,
+  "properties": {
+    "contract": {
+      "const": "sap-dm.structural-profile",
+      "default": "sap-dm.structural-profile",
+      "title": "Contract",
+      "type": "string"
+    },
+    "version": {
+      "default": "1.0",
+      "title": "Version",
+      "type": "string"
+    },
+    "generated_at": {
+      "description": "ISO-8601 UTC",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "producer": {
+      "$ref": "#/$defs/Producer"
+    },
+    "privacy": {
+      "$ref": "#/$defs/Privacy"
+    },
+    "tables": {
+      "items": {
+        "$ref": "#/$defs/ProfiledTable"
+      },
+      "title": "Tables",
+      "type": "array"
+    }
+  },
+  "required": [
+    "generated_at",
+    "producer",
+    "privacy",
+    "tables"
+  ],
+  "title": "StructuralProfile",
+  "type": "object"
+}

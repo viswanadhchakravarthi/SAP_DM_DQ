@@ -55,6 +55,9 @@ from .profiler_primitives import fuzzy_token_similarity, normalize_text
 logger = get_logger("duplicate_detector")
 
 MATCH_RANK = {"EXACT": 3, "PROBABLE": 2, "SIMILAR": 1}
+# Per-table stats of this process's last detection (incl. groups settled in earlier
+# runs, which produce no rows) - read by the scorecard.
+LAST_STATS: Dict[str, Dict[str, Any]] = {}
 _PROBABLE_NAME_SIMILARITY = 90.0
 
 _PLACEHOLDER_RE = re.compile(
@@ -307,6 +310,41 @@ def find_duplicate_groups(df: pd.DataFrame, rules: Dict[str, Any],
         assembled.append((members, member_links, best_type, best_score))
     assembled.sort(key=lambda c: (MATCH_RANK[c[2]], c[3], len(c[0])), reverse=True)
 
+    # Groups a reviewer already fully decided in an earlier run are not shown again
+    # (duplicates.hide_decided_groups): re-detecting them costs nothing, re-reviewing
+    # them costs the reviewer's time. A new member or changed record brings one back.
+    settled = settled_records = settled_duplicates = 0
+    settled_rows: List[Dict[str, Any]] = []
+    if Config.DUPLICATE_HIDE_DECIDED_GROUPS and decisions:
+        open_groups = []
+        for group in assembled:
+            ids = [records[m]["record_id"] for m in group[0]]
+            if client_knowledge.is_settled_group(decisions, ids):
+                settled += 1
+                settled_records += len(ids)
+                # Still duplicates in the data - the scorecard must keep counting them: all
+                # members but the ones kept as UNIQUE (at least one). Counted this way, not
+                # per DUPLICATE verdict, because fully identical rows share one record id and
+                # their UNIQUE / DUPLICATE decisions overwrite each other in memory.
+                kept = len({i for i in ids if decisions[i]["verdict"] == "UNIQUE"})
+                settled_duplicates += len(ids) - max(1, kept)
+                # ...and which rows they are, for record readiness: DUPLICATE decisions,
+                # keeping one row when identical rows overwrote each other's verdicts.
+                dup_members = [m for m in sorted(group[0]) if decisions[records[m]["record_id"]]["verdict"] == "DUPLICATE"]
+                if not kept and dup_members:
+                    dup_members = dup_members[1:]
+                for m in dup_members:
+                    decision = decisions[records[m]["record_id"]]
+                    settled_rows.append({"row_index": records[m]["row_index"], "key": records[m]["key"],
+                                         "merge_into": decision.get("merge_into"), "action": decision.get("action")})
+            else:
+                open_groups.append(group)
+        assembled = open_groups
+    empty_stats.update(settled_groups=settled, settled_records=settled_records,
+                       settled_duplicates=settled_duplicates, settled_duplicate_rows=settled_rows)
+    if not assembled:
+        return [], empty_stats
+
     max_groups = Config.DUPLICATE_MAX_GROUPS
     if len(assembled) > max_groups:
         logger.warning("Found %d duplicate groups; keeping the strongest %d (duplicates.max_groups)",
@@ -347,6 +385,7 @@ def find_duplicate_groups(df: pd.DataFrame, rules: Dict[str, Any],
             if remembered:
                 row.update({
                     "review_verdict": remembered["verdict"],
+                    "is_golden_record": bool(remembered.get("survivor")),
                     "decision_source": "REMEMBERED",
                     "reviewed_at": remembered["decided_at"],
                     "reviewer_comment": f"Remembered from an earlier review (run {remembered['run_id'][:8]})",
@@ -431,6 +470,10 @@ def detect_table_duplicates(table_name: str, df: pd.DataFrame, client_id: Option
 
     decisions = client_knowledge.load_duplicate_decisions(client_id, table_name)
     rows, stats = find_duplicate_groups(df, rules, decisions)
+    LAST_STATS[table_name] = stats
+    if not rows and stats.get("settled_groups"):
+        logger.info("[%s] all %d duplicate group(s) were fully decided in earlier runs - nothing new to review",
+                    table_name, stats["settled_groups"])
     logger.info("[%s] duplicate detection: %d group(s), %d record(s) (EXACT=%d PROBABLE=%d SIMILAR=%d) | "
                 "client=%s remembered decisions=%d, unique pairs skipped=%d, verdicts pre-filled=%d",
                 table_name, stats.get("groups", 0), stats.get("records", 0),
@@ -441,6 +484,8 @@ def detect_table_duplicates(table_name: str, df: pd.DataFrame, client_id: Option
 
     breakdown = ", ".join(f"{stats[t]} {t.lower()}" for t in ("EXACT", "PROBABLE", "SIMILAR") if stats[t])
     memory_notes = []
+    if stats.get("settled_groups"):
+        memory_notes.append(f"{stats['settled_groups']} group(s) fully decided in earlier runs not shown again")
     if stats["suppressed_pairs"]:
         memory_notes.append(f"{stats['suppressed_pairs']} pair(s) previously reviewed as unique skipped")
     if stats["remembered_records"]:

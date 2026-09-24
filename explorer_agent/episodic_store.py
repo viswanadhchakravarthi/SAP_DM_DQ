@@ -130,6 +130,80 @@ def _migrate_finding_items(conn: sqlite3.Connection) -> None:
         # 'REMEMBERED' when review_verdict was pre-filled from client knowledge,
         # 'HUMAN' once a reviewer sets it in this run.
         conn.execute("ALTER TABLE finding_items ADD COLUMN decision_source TEXT")
+    # Survivorship (explorer_agent/survivorship.py). is_golden_record now marks the
+    # survivor - the UNIQUE record the group's duplicates merge into.
+    for col, ddl in (("quality_score", "REAL"),          # 0-100 record quality score
+                     ("score_breakdown", "TEXT"),        # JSON {component: 0..1}
+                     ("recommended_verdict", "TEXT"),    # what was pre-selected: UNIQUE / DUPLICATE
+                     ("reviewer", "TEXT"),               # who accepted (free text - no SSO yet)
+                     ("undo_state", "TEXT")):            # JSON of the row before the last cluster action
+        if col not in existing_item_cols:
+            conn.execute(f"ALTER TABLE finding_items ADD COLUMN {col} {ddl}")
+
+
+def _migrate_scorecards(conn: sqlite3.Connection) -> None:
+    """Composite DQ scorecard per run (explorer_agent/scorecard.py): one row per table,
+    migration object and the run total."""
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS scorecards (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        run_id TEXT NOT NULL,
+        client_id TEXT,
+        scope TEXT NOT NULL,          -- table | object | run
+        name TEXT NOT NULL,
+        object_name TEXT,
+        row_count INTEGER,
+        completeness REAL, correctness REAL, uniqueness REAL, activeness REAL,
+        dq_index REAL,
+        details TEXT,                 -- JSON: pillars with bad/total and breakdowns, weights
+        created_at TEXT NOT NULL
+    )""")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_scorecards_run ON scorecards(run_id)")
+    existing = [row["name"] for row in conn.execute("PRAGMA table_info(scorecards)").fetchall()]
+    for col, ddl in (("readiness", "REAL"), ("ready_records", "INTEGER"), ("in_scope_records", "INTEGER")):
+        if col not in existing:
+            conn.execute(f"ALTER TABLE scorecards ADD COLUMN {col} {ddl}")
+
+
+def save_scorecard(run_id: str, client_id: Optional[str], entries: List[Dict[str, Any]],
+                   weights: Dict[str, float]) -> None:
+    now = datetime.now(timezone.utc).isoformat()
+    with get_connection() as conn:
+        conn.execute("DELETE FROM scorecards WHERE run_id = ?", (run_id,))
+        for e in entries:
+            p = e["pillars"]
+            score = lambda k: p[k]["score"] if p.get(k) else None  # noqa: E731
+            conn.execute(
+                """INSERT INTO scorecards (run_id, client_id, scope, name, object_name, row_count, completeness,
+                   correctness, uniqueness, activeness, dq_index, details, created_at, readiness, ready_records,
+                   in_scope_records)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (run_id, client_id, e["scope"], e["name"], e.get("object"), e["rows"], score("completeness"),
+                 score("correctness"), score("uniqueness"), score("activeness"), e["dq_index"],
+                 json.dumps({"pillars": p, "tables": e.get("tables"), "weights": weights,
+                             "readiness": e.get("readiness")}, default=str), now,
+                 (e.get("readiness") or {}).get("score"), (e.get("readiness") or {}).get("ready"),
+                 (e.get("readiness") or {}).get("in_scope")))
+
+
+def get_scorecard(run_id: str) -> List[Dict[str, Any]]:
+    with get_connection() as conn:
+        rows = conn.execute("SELECT * FROM scorecards WHERE run_id = ? ORDER BY id", (run_id,)).fetchall()
+    out = []
+    for r in rows:
+        entry = dict(r)
+        entry["details"] = json.loads(entry["details"]) if entry.get("details") else {}
+        out.append(entry)
+    return out
+
+
+def scorecard_runs(client_id: str) -> List[str]:
+    """Runs of this client that have a scorecard, newest first."""
+    with get_connection() as conn:
+        rows = conn.execute(
+            """SELECT s.run_id FROM scorecards s JOIN runs r ON r.run_id = s.run_id
+               WHERE r.client_id = ? GROUP BY s.run_id ORDER BY MAX(r.started_at) DESC""", (client_id,)).fetchall()
+    return [r["run_id"] for r in rows]
 
 
 def _migrate_runs(conn: sqlite3.Connection) -> None:
@@ -148,6 +222,7 @@ def init_db():
         _migrate(conn)
         _migrate_finding_items(conn)
         _migrate_runs(conn)
+        _migrate_scorecards(conn)
 
 
 # --- Per-pillar review-verdict vocabulary -----------------------------------
@@ -424,8 +499,9 @@ def save_finding_items(finding_id: str, items: List[Dict[str, Any]]) -> List[str
                 (id, finding_id, row_index, key_field, key_value, issue_detail,
                  corrected_data, status, created_at, reviewed_at, reviewer_comment,
                  duplicate_group_id, similarity_score, match_type, match_reasons,
-                 is_golden_record, review_verdict, suggested_action, record_data, decision_source)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                 is_golden_record, review_verdict, suggested_action, record_data, decision_source,
+                 quality_score, score_breakdown, recommended_verdict, reviewer)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (item_id, finding_id, item.get("row_index"), item.get("key_field"),
                  str(item.get("key_value")), item.get("issue_detail"), item.get("corrected_data", ""),
                  # A pre-filled (remembered) verdict resolves the row like a human one would.
@@ -441,7 +517,9 @@ def save_finding_items(finding_id: str, items: List[Dict[str, Any]]) -> List[str
                  verdict,
                  item.get("suggested_action", ""),
                  json.dumps(item["record_data"], default=str) if item.get("record_data") else None,
-                 item.get("decision_source")),
+                 item.get("decision_source"),
+                 item.get("quality_score"), item.get("score_breakdown"), item.get("recommended_verdict"),
+                 item.get("reviewer")),
             )
             ids.append(item_id)
     return ids
@@ -491,18 +569,87 @@ def update_item_verdict(item_id: str, verdict: str, comment: str = "", corrected
         return cur.rowcount > 0
 
 
-def set_cluster_verdict(finding_id: str, group_id: str, verdict: str, comment: str = "") -> int:
+_UNDO_FIELDS = ("review_verdict", "status", "is_golden_record", "suggested_action", "decision_source",
+                "reviewed_at", "reviewer_comment", "reviewer")
+
+
+def _snapshot_cluster(conn, finding_id: str, group_id: str) -> None:
+    """Keep each row's review state before a cluster action, for undo_cluster (one level)."""
+    rows = conn.execute(f"SELECT id, {', '.join(_UNDO_FIELDS)} FROM finding_items "
+                        "WHERE finding_id = ? AND duplicate_group_id = ?", (finding_id, group_id)).fetchall()
+    for r in rows:
+        conn.execute("UPDATE finding_items SET undo_state = ? WHERE id = ?",
+                     (json.dumps({f: r[f] for f in _UNDO_FIELDS}), r["id"]))
+
+
+def undo_cluster(finding_id: str, group_id: str) -> int:
+    """Put a duplicate cluster back the way it was before its last Accept / To be confirmed.
+    Rows without a snapshot (decided before undo existed) go back to PENDING."""
+    with get_connection() as conn:
+        rows = conn.execute("SELECT id, undo_state, recommended_verdict FROM finding_items "
+                            "WHERE finding_id = ? AND duplicate_group_id = ?", (finding_id, group_id)).fetchall()
+        for r in rows:
+            if r["undo_state"]:
+                before = json.loads(r["undo_state"])
+            else:
+                before = {"review_verdict": "PENDING", "status": "PENDING",
+                          "is_golden_record": 1 if r["recommended_verdict"] == "UNIQUE" else 0,
+                          "decision_source": None, "reviewed_at": None, "reviewer_comment": None, "reviewer": None}
+            fields = [f for f in _UNDO_FIELDS if f in before]
+            conn.execute(f"UPDATE finding_items SET {', '.join(f'{f} = ?' for f in fields)}, undo_state = NULL "
+                         "WHERE id = ?", [before[f] for f in fields] + [r["id"]])
+        return len(rows)
+
+
+def accept_cluster(finding_id: str, group_id: str, survivor_id: Optional[str], separate_ids: List[str],
+                   reviewer: str = "", comment: str = "") -> int:
+    """Accept a duplicate group's decision: the survivor is UNIQUE (is_golden_record=1),
+    records in ``separate_ids`` are UNIQUE separate entities (look-alikes), every other
+    record is a DUPLICATE of the survivor. With no survivor, every record must be in
+    ``separate_ids`` ("none of these are duplicates"). Returns rows updated (0 = unknown group)."""
+    now = datetime.now(timezone.utc).isoformat()
+    with get_connection() as conn:
+        rows = conn.execute("SELECT id, key_value, suggested_action FROM finding_items "
+                            "WHERE finding_id = ? AND duplicate_group_id = ?", (finding_id, group_id)).fetchall()
+        ids = {r["id"] for r in rows}
+        if not rows or (survivor_id and survivor_id not in ids) or not set(separate_ids) <= ids:
+            return 0
+        if not survivor_id and set(separate_ids) != ids:
+            raise ValueError("Choose a survivor, or mark every record Unique")
+        survivor_key = next((r["key_value"] for r in rows if r["id"] == survivor_id), None)
+        _snapshot_cluster(conn, finding_id, group_id)
+        for r in rows:
+            if r["id"] == survivor_id:
+                verdict, golden, action = "UNIQUE", 1, "GOLDEN_RECORD"
+            elif r["id"] in separate_ids:
+                verdict, golden, action = "UNIQUE", 0, "SEPARATE_ENTITY"
+            else:
+                verdict, golden = "DUPLICATE", 0
+                proposed = r["suggested_action"] or ""
+                # Keep the recommended kind of action, re-targeted at the chosen survivor.
+                action = (f"BLOCK_AND_DELETE (duplicate of {survivor_key})" if proposed.startswith("BLOCK")
+                          else f"MERGE_INTO {survivor_key}")
+            conn.execute(
+                """UPDATE finding_items SET review_verdict = ?, status = 'APPROVED', is_golden_record = ?,
+                   suggested_action = ?, reviewed_at = ?, reviewer_comment = ?, reviewer = ?,
+                   decision_source = 'HUMAN' WHERE id = ?""",
+                (verdict, golden, action, now, comment, reviewer or None, r["id"]))
+        return len(rows)
+
+
+def set_cluster_verdict(finding_id: str, group_id: str, verdict: str, comment: str = "", reviewer: str = "") -> int:
     """Applies one verdict to every item in a duplicate cluster at once (e.g. cluster-level 'To Be Confirmed')."""
     if verdict not in ALL_VALID_VERDICTS:
         raise ValueError(f"Invalid verdict: {verdict}")
 
     status = "PENDING" if verdict in _OPEN_VERDICTS else "APPROVED"
     with get_connection() as conn:
+        _snapshot_cluster(conn, finding_id, group_id)
         cur = conn.execute(
             """UPDATE finding_items SET review_verdict = ?, status = ?,
-               reviewed_at = ?, reviewer_comment = ?, decision_source = 'HUMAN'
-               WHERE finding_id = ? AND duplicate_group_id = ?""",
-            (verdict, status, datetime.now(timezone.utc).isoformat(), comment, finding_id, group_id),
+               reviewed_at = ?, reviewer_comment = ?, reviewer = COALESCE(NULLIF(?, ''), reviewer),
+               decision_source = 'HUMAN' WHERE finding_id = ? AND duplicate_group_id = ?""",
+            (verdict, status, datetime.now(timezone.utc).isoformat(), comment, reviewer, finding_id, group_id),
         )
         return cur.rowcount
 
@@ -575,6 +722,8 @@ def get_duplicate_groups(finding_id: str) -> List[Dict[str, Any]]:
         primary_type = (max(match_types, key=lambda t: _MATCH_TYPE_RANK.get(t, 0)) if match_types
                         else ("EXACT" if max_score == 100.0 else "PROBABLE"))
         golden = next((m for m in members if m.get("is_golden_record") == 1), None)
+        recommended = next((m for m in members if m.get("recommended_verdict") == "UNIQUE"), None)
+        decided = all((m.get("review_verdict") or "PENDING") in ("UNIQUE", "DUPLICATE") for m in members)
         verdicts: Dict[str, int] = {}
         for m in members:
             verdict = m.get("review_verdict") or "PENDING"
@@ -586,6 +735,11 @@ def get_duplicate_groups(finding_id: str) -> List[Dict[str, Any]]:
             "match_type": primary_type,
             "golden_record_id": golden["id"] if golden else None,
             "golden_record_key": golden["key_value"] if golden else None,
+            # Survivorship: the pre-selected survivor, and - once decided - whether the
+            # reviewer kept it (the online quality signal for the scoring).
+            "recommended_survivor_id": recommended["id"] if recommended else None,
+            "accepted_as_recommended": (bool(golden and recommended and golden["id"] == recommended["id"])
+                                        if decided and recommended else None),
             "member_count": len(members),
             "verdicts": verdicts,
             "members": members,

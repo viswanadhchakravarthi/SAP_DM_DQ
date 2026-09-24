@@ -1,0 +1,28 @@
+{
+  "contract": "sap-dm.pipeline-event",
+  "version": "1.0",
+  "event_id": "c8a6cd7c-6e91-4a69-a836-fb14ccab4e2f",
+  "type": "profiling.completed",
+  "occurred_at": "2026-09-24T06:37:20.390174+00:00",
+  "producer": {
+    "agent": "data-profiling-agent",
+    "run_id": "b86414db-4c87-4363-8021-132c62dd3026",
+    "client_id": "legacy-extract",
+    "client_name": "legacy-extract"
+  },
+  "status": "COMPLETED",
+  "payload": {
+    "tables": [
+      "VENDOR_EXTRACT"
+    ],
+    "findings": 14,
+    "failed_tables": [],
+    "structural_profile": {
+      "path": "C:\\Users\\gayat\\Documents\\SAP_DM_DQ\\handoff\\legacy-extract\\b86414db-4c87-4363-8021-132c62dd3026\\structural_profile.json",
+      "url": "/api/clients/legacy-extract/handoff/structural-profile?run_id=b86414db-4c87-4363-8021-132c62dd3026"
+    },
+    "duplicate_decisions_url": "/api/clients/legacy-extract/duplicate-decisions.csv",
+    "mapping_input": "mapping-agent",
+    "target_domains": null
+  }
+}

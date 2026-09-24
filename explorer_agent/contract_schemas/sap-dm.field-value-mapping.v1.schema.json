@@ -1,0 +1,314 @@
+{
+  "$defs": {
+    "FieldMapping": {
+      "additionalProperties": true,
+      "description": "One source column and ALL its candidate SAP targets (1-to-many for denormalized legacy files).",
+      "properties": {
+        "source_table": {
+          "title": "Source Table",
+          "type": "string"
+        },
+        "source_column": {
+          "title": "Source Column",
+          "type": "string"
+        },
+        "targets": {
+          "description": "Every SAP field this source column feeds, e.g. VENDOR_ID -> LFA1-LIFNR (primary key), LFB1-LIFNR and LFM1-LIFNR (foreign keys). The primary-key target, else the first, decides the column's meaning here.",
+          "items": {
+            "$ref": "#/$defs/FieldTarget"
+          },
+          "minItems": 1,
+          "title": "Targets",
+          "type": "array"
+        },
+        "confidence_score": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "0-100 (section 14)",
+          "title": "Confidence Score"
+        },
+        "confidence_tier": {
+          "anyOf": [
+            {
+              "enum": [
+                "HIGH",
+                "MEDIUM",
+                "LOW",
+                "VERY_LOW"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Derived from the score when omitted",
+          "title": "Confidence Tier"
+        },
+        "explanation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Why the Mapping Agent proposes this mapping",
+          "title": "Explanation"
+        },
+        "status": {
+          "default": "PROPOSED",
+          "enum": [
+            "APPROVED",
+            "PROPOSED",
+            "REJECTED"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_table",
+        "source_column",
+        "targets"
+      ],
+      "title": "FieldMapping",
+      "type": "object"
+    },
+    "FieldTarget": {
+      "additionalProperties": true,
+      "properties": {
+        "table": {
+          "description": "SAP table, e.g. LFA1",
+          "title": "Table",
+          "type": "string"
+        },
+        "field": {
+          "description": "SAP field, e.g. LIFNR",
+          "title": "Field",
+          "type": "string"
+        },
+        "is_primary_key": {
+          "default": false,
+          "description": "The field identifies the target table's record (e.g. LFA1-LIFNR for a vendor id)",
+          "title": "Is Primary Key",
+          "type": "boolean"
+        },
+        "is_foreign_key": {
+          "default": false,
+          "description": "The field points to another target table's record (e.g. LFB1-LIFNR -> LFA1)",
+          "title": "Is Foreign Key",
+          "type": "boolean"
+        },
+        "confidence_score": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Overrides the mapping's score for this target",
+          "title": "Confidence Score"
+        },
+        "explanation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Explanation"
+        }
+      },
+      "required": [
+        "table",
+        "field"
+      ],
+      "title": "FieldTarget",
+      "type": "object"
+    },
+    "Producer": {
+      "additionalProperties": true,
+      "properties": {
+        "agent": {
+          "description": "Producing agent, e.g. 'data-profiling-agent'",
+          "title": "Agent",
+          "type": "string"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Producer's run id (traceability)",
+          "title": "Run Id"
+        },
+        "client_id": {
+          "description": "Client (company) slug, e.g. 'acme-retail'",
+          "title": "Client Id",
+          "type": "string"
+        },
+        "client_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Client Name"
+        }
+      },
+      "required": [
+        "agent",
+        "client_id"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "ValueMapping": {
+      "additionalProperties": true,
+      "properties": {
+        "target_table": {
+          "title": "Target Table",
+          "type": "string"
+        },
+        "target_field": {
+          "title": "Target Field",
+          "type": "string"
+        },
+        "source_value": {
+          "title": "Source Value",
+          "type": "string"
+        },
+        "target_value": {
+          "description": "Value in the SAP target domain, e.g. GB for source value UK",
+          "title": "Target Value",
+          "type": "string"
+        },
+        "source_table": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Restrict to one source table (optional)",
+          "title": "Source Table"
+        },
+        "source_column": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Restrict to one source column (optional)",
+          "title": "Source Column"
+        },
+        "status": {
+          "default": "PROPOSED",
+          "enum": [
+            "APPROVED",
+            "PROPOSED",
+            "REJECTED"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_table",
+        "target_field",
+        "source_value",
+        "target_value"
+      ],
+      "title": "ValueMapping",
+      "type": "object"
+    }
+  },
+  "additionalProperties": true,
+  "description": "The Mapping Agent sends ALL candidates (low confidence included, with explanations);\nthis agent decides what to use with ``handoff.min_confidence`` - dropping them upstream\nwould hide them from the consultant (scoping document sections 13, 14, 26).",
+  "properties": {
+    "contract": {
+      "const": "sap-dm.field-value-mapping",
+      "default": "sap-dm.field-value-mapping",
+      "title": "Contract",
+      "type": "string"
+    },
+    "version": {
+      "default": "1.0",
+      "title": "Version",
+      "type": "string"
+    },
+    "generated_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Generated At"
+    },
+    "producer": {
+      "$ref": "#/$defs/Producer"
+    },
+    "field_mappings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/FieldMapping"
+      },
+      "title": "Field Mappings",
+      "type": "array"
+    },
+    "value_mappings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ValueMapping"
+      },
+      "title": "Value Mappings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "producer"
+  ],
+  "title": "FieldValueMapping",
+  "type": "object"
+}

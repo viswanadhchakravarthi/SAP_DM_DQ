@@ -220,8 +220,15 @@ async function loadCounts(runId, status, scope) {
   ].join("");
 }
 
+let scorecardKey = null; // run shown in the scorecard - it only changes when a run is added or picked
+
 async function loadFindings() {
   const runId = document.getElementById("runSelect").value;
+  const key = `${runId}|${Object.keys(RUNS_BY_ID).length}`;
+  if (key !== scorecardKey) {
+    scorecardKey = key;
+    loadScorecard();
+  }
   const status = document.getElementById("statusFilter").value;
   const scope = document.getElementById("scopeFilter").value;
   const params = new URLSearchParams();
@@ -699,15 +706,13 @@ function attachPillarWorkflowHandlers(findingId, finding, isSynthetic) {
 }
 
 // ---------------------------------------------------------------------------
-// Duplicates: groups shown immediately, one Duplicate / Unique / To Be
-// Confirmed decision per record (plus whole-group shortcuts)
+// Duplicates: one cluster at a time. The recommended golden record (highest
+// record quality score, explorer_agent/survivorship.py) is pre-selected: the
+// Unique record the others merge into. Every other record is a Duplicate of it,
+// unless the reviewer marks it Unique = a separate entity (look-alike).
+// Nothing is saved until "Accept"; "To be confirmed" parks the whole cluster.
+// Either locks the cluster; the ↺ button undoes the last action.
 // ---------------------------------------------------------------------------
-
-const DUP_VERDICTS = [
-  { verdict: "DUPLICATE", label: "Duplicate", tone: "negative" },
-  { verdict: "UNIQUE", label: "Unique", tone: "positive" },
-  { verdict: "TO_BE_CONFIRMED", label: "To Confirm", tone: "warning" },
-];
 
 const DUP_FILTERS = [
   { key: "all", label: "All groups", test: () => true },
@@ -717,22 +722,54 @@ const DUP_FILTERS = [
   { key: "SIMILAR", label: "Similar", test: (g) => g.match_type === "SIMILAR" },
 ];
 
-let dupReview = null; // { findingId, groups, filter }
+const SCORE_PARTS = { completeness: "Completeness", active: "Active", usage: "Usage", recency: "Recency" };
+
+let dupReview = null; // { findingId, groups, filter, drafts }
 let findingsDirty = false; // reload the card list when the modal closes
 
 function isOpenVerdict(verdict) {
   return !verdict || verdict === "PENDING" || verdict === "TO_BE_CONFIRMED";
 }
 
+function reviewerName() {
+  try { return localStorage.getItem("reviewerName") || ""; } catch { return ""; }
+}
+
 async function loadDuplicateReview(findingId) {
   const container = document.getElementById("duplicateReview");
   try {
     const groups = await fetchJSON(`${API_BASE}/findings/${encodeURIComponent(findingId)}/duplicate-groups`);
-    dupReview = { findingId, groups, filter: dupReview?.findingId === findingId ? dupReview.filter : "all" };
+    const keepFilter = dupReview?.findingId === findingId ? dupReview.filter : "all";
+    dupReview = { findingId, groups, filter: keepFilter, drafts: {} };
+    groups.forEach((g) => { dupReview.drafts[g.duplicate_group_id] = initialDraft(g); });
     renderDuplicateReview();
   } catch (error) {
     container.innerHTML = `<p class="empty-state">Unable to load duplicate groups: ${escapeHtml(error.message)}</p>`;
   }
+}
+
+// What the cluster shows before the reviewer touches it: the saved decision if
+// there is one (this run or remembered), else the recommendation, else nothing.
+function initialDraft(group) {
+  const members = group.members;
+  const decided = members.some((m) => m.review_verdict === "UNIQUE" || m.review_verdict === "DUPLICATE");
+  if (decided) {
+    const uniques = members.filter((m) => m.review_verdict === "UNIQUE");
+    const survivor = uniques.find((m) => m.is_golden_record === 1)
+      || (uniques.length === 1 && members.some((m) => m.review_verdict === "DUPLICATE") ? uniques[0] : null);
+    return {
+      survivor: survivor ? survivor.id : null,
+      separate: new Set(uniques.filter((m) => !survivor || m.id !== survivor.id).map((m) => m.id)),
+      touched: false,
+    };
+  }
+  return { survivor: group.recommended_survivor_id || null, separate: new Set(), touched: false };
+}
+
+function draftVerdict(draft, member) {
+  if (draft.survivor === member.id) return "KEEP";
+  if (draft.separate.has(member.id)) return "UNIQUE";
+  return draft.survivor ? "DUPLICATE" : "PENDING";
 }
 
 function renderDuplicateReview() {
@@ -743,9 +780,9 @@ function renderDuplicateReview() {
   if (groups.length === 0) {
     container.innerHTML = `
       <div class="dup-empty">
-        <strong>No duplicate records were captured for this finding.</strong>
-        <p class="hint-text">This finding was produced by an older, LLM-generated check that did not save row-level
-        matches. Re-run the explorer (or use <em>Duplicates only</em> in Run) to get reviewable duplicate groups.</p>
+        <strong>No duplicate groups to review in this finding.</strong>
+        <p class="hint-text">Groups a reviewer already decided in earlier runs are not shown again. Older,
+        LLM-generated duplicate checks did not save row-level matches - re-run the explorer to get reviewable groups.</p>
       </div>`;
     return;
   }
@@ -755,6 +792,8 @@ function renderDuplicateReview() {
   members.forEach((m) => { counts[m.review_verdict in counts ? m.review_verdict : "PENDING"] += 1; });
   const decided = counts.DUPLICATE + counts.UNIQUE;
   const pct = (n) => (members.length ? (n / members.length) * 100 : 0);
+  const judged = groups.filter((g) => g.accepted_as_recommended !== null && g.accepted_as_recommended !== undefined);
+  const kept = judged.filter((g) => g.accepted_as_recommended).length;
 
   const filter = DUP_FILTERS.find((f) => f.key === dupReview.filter) || DUP_FILTERS[0];
   const visible = groups.filter(filter.test);
@@ -766,6 +805,7 @@ function renderDuplicateReview() {
           <strong>${groups.length}</strong> duplicate group${groups.length === 1 ? "" : "s"} ·
           <strong>${members.length}</strong> records ·
           <strong>${decided}</strong> decided
+          ${judged.length ? ` · recommendation kept in <strong>${kept}/${judged.length}</strong>` : ""}
         </div>
         <div class="dup-legend">
           <span><i class="legend-dot tone-negative"></i>Duplicate ${counts.DUPLICATE}</span>
@@ -785,11 +825,16 @@ function renderDuplicateReview() {
           return `<button class="dup-filter ${f.key === filter.key ? "active" : ""}" data-dup-filter="${f.key}" ${n === 0 && f.key !== "all" ? "disabled" : ""}>
             ${escapeHtml(f.label)} <span>${n}</span></button>`;
         }).join("")}
+        <label class="reviewer-field">Reviewer
+          <input id="reviewerName" type="text" placeholder="your name" value="${escapeHtml(reviewerName())}">
+        </label>
       </div>
     </div>
     ${renderClientMemoryNote()}
-    <p class="hint-text dup-hint">Highlighted cells are the values these records share. Decide each record, or use the group buttons.
-      Click a selected decision again to clear it.</p>
+    <p class="hint-text dup-hint"><strong>★ Golden record</strong> is the record the others merge into (pre-selected:
+      highest quality score). Every other record is a <em>Duplicate</em> of it unless you mark it <em>Unique</em> - a
+      separate entity. Nothing is saved until you click <strong>Accept</strong>, which locks the cluster;
+      <strong>↺</strong> undoes it. Highlighted cells are values the records share.</p>
     <div class="dup-groups">
       ${visible.length ? visible.map(renderDuplicateGroup).join("") : `<p class="empty-state">No groups match this filter.</p>`}
     </div>
@@ -797,7 +842,24 @@ function renderDuplicateReview() {
   attachDuplicateReviewHandlers();
 }
 
+function scoreCell(m) {
+  if (m.quality_score === null || m.quality_score === undefined) return '<span class="blank-cell">—</span>';
+  let parts = {};
+  try { parts = JSON.parse(m.score_breakdown || "{}"); } catch { parts = {}; }
+  const tip = Object.entries(parts).map(([k, v]) => `${SCORE_PARTS[k] || k}: ${Math.round(v * 100)}%`).join(" · ");
+  return `<span class="quality-score" data-tooltip="${escapeHtml(tip)}">${Math.round(m.quality_score)}</span>`;
+}
+
+function actionText(m, verdict, survivorKey) {
+  if (verdict === "KEEP") return "Golden record";
+  if (verdict === "UNIQUE") return "Separate entity";
+  if (verdict !== "DUPLICATE") return m.suggested_action === "CONFIRM_DUPLICATE_FIRST" ? "Confirm duplicate first" : "";
+  const block = (m.suggested_action || "").startsWith("BLOCK");
+  return block ? `Block & delete (dup. of ${survivorKey})` : `Merge into ${survivorKey}`;
+}
+
 function renderDuplicateGroup(group) {
+  const draft = dupReview.drafts[group.duplicate_group_id];
   const keyField = group.members[0]?.key_field || "Key";
   const columns = [];
   group.members.forEach((m) => Object.keys(m.record || {}).forEach((c) => { if (!columns.includes(c)) columns.push(c); }));
@@ -812,46 +874,69 @@ function renderDuplicateGroup(group) {
       if (v) valueCounts[c][v] = (valueCounts[c][v] || 0) + 1;
     });
   });
-  // match_reasons is "vs <KEY> <value>: <reason>; vs ..." per record - the same
-  // pair shows up once from each side, so strip the "vs ..." prefix and dedupe.
   const reasons = [...new Set(group.members.flatMap((m) =>
     (m.match_reasons || "").split(/(?:^|;\s)vs [^:]+:\s/).map((r) => r.trim()).filter(Boolean)))];
   const typeClass = { EXACT: "sim-exact", PROBABLE: "sim-probable", SIMILAR: "sim-similar" }[group.match_type] || "sim-similar";
   const open = group.members.filter((m) => isOpenVerdict(m.review_verdict)).length;
+  const parked = group.members.every((m) => m.review_verdict === "TO_BE_CONFIRMED");
+  const survivor = group.members.find((m) => m.id === draft.survivor);
+  const allUnique = !draft.survivor && group.members.every((m) => draft.separate.has(m.id));
+  const canAccept = Boolean(draft.survivor) || allUnique;
+  const recommended = group.members.find((m) => m.id === group.recommended_survivor_id);
+  const status = open === 0
+    ? (group.accepted_as_recommended === false ? "✓ accepted (recommendation changed)" : "✓ accepted")
+    : parked ? "to be confirmed" : `${open} open`;
+  // Accepted or parked clusters are read-only until the reviewer undoes the action.
+  const locked = open === 0 || parked;
+  const lockAttr = locked ? "disabled" : "";
 
   return `
-    <section class="dup-group ${open === 0 ? "is-done" : ""}" data-group-id="${escapeHtml(group.duplicate_group_id)}">
+    <section class="dup-group ${open === 0 ? "is-done" : ""} ${locked ? "is-locked" : ""}" data-group-id="${escapeHtml(group.duplicate_group_id)}">
       <div class="dup-group-header">
         <div class="dup-group-title">
           <span class="group-id-title">${escapeHtml(group.duplicate_group_id)}</span>
           <span class="similarity-badge ${typeClass}">${escapeHtml(group.match_type)} · ${Number(group.similarity_score ?? 0)}%</span>
-          <span class="dup-group-count">${group.member_count} records${open === 0 ? " · ✓ reviewed" : ` · ${open} open`}</span>
+          <span class="dup-group-count">${group.member_count} records · ${status}</span>
         </div>
         <div class="dup-group-actions">
-          <span class="hint-text">Whole group:</span>
-          ${DUP_VERDICTS.map((d) => `
-            <button class="btn-action btn-tone-${d.tone}" data-group-verdict="${d.verdict}">${d.label}</button>`).join("")}
+          ${locked
+            ? `<span class="lock-note">🔒 ${parked ? "Parked" : "Locked"}</span>
+               <button class="btn-undo" data-group-undo aria-label="Undo - back to the previous state"
+                 data-tooltip="Undo - back to the previous state">↺</button>`
+            : `<button class="btn-action btn-tone-warning" data-group-tbc>To be confirmed</button>
+               <button class="btn-approve" data-group-accept ${canAccept ? "" : "disabled"}
+                 title="${canAccept ? "Save these decisions and lock the cluster" : "Choose the golden record, or mark every record Unique"}">Accept</button>`}
         </div>
       </div>
       ${reasons.length ? `<div class="group-reasons-note"><strong>Why matched:</strong> ${reasons.map((r) => escapeHtml(r)).join("<br>")}</div>` : ""}
+      ${recommended ? `<div class="recommendation-note">Recommended golden record: <strong>${escapeHtml(recommended.key_value)}</strong>
+          (quality score ${Math.round(recommended.quality_score ?? 0)}) - most complete, active, used and recent record.</div>`
+        : group.match_type === "SIMILAR" && open ? `<div class="recommendation-note">Similar match only - these may be look-alikes.
+          Confirm they are duplicates before choosing a golden record.</div>` : ""}
       <div class="dup-table-wrap">
         <table class="dup-table">
           <thead>
             <tr>
               <th>${escapeHtml(keyField)}</th>
+              <th title="Record quality score 0-100 (hover a score for its parts)">Score</th>
               ${legacy ? "<th>Details</th>" : columns.map((c) => `
                 <th><span class="sap-ref" data-table="${escapeHtml(currentDupTable())}" data-column="${escapeHtml(c)}" data-context="">${escapeHtml(c)}</span></th>`).join("")}
+              <th>Action</th>
               <th class="dup-decision-col">Decision</th>
             </tr>
           </thead>
           <tbody>
             ${group.members.map((m) => {
-              const verdict = m.review_verdict || "PENDING";
+              const verdict = draftVerdict(draft, m);
+              const rowClass = { KEEP: "UNIQUE", UNIQUE: "UNIQUE", DUPLICATE: "DUPLICATE" }[verdict] || "PENDING";
               return `
-                <tr class="dup-row verdict-${escapeHtml(verdict)}" data-item-id="${escapeHtml(m.id)}">
-                  <td class="dup-key">${escapeHtml(m.key_value)}${m.decision_source === "REMEMBERED" && verdict !== "PENDING"
-                    ? `<span class="remembered-tag" aria-label="Remembered decision" data-tooltip="${escapeHtml(m.reviewer_comment || "Remembered from an earlier review")}">↺</span>`
-                    : ""}</td>
+                <tr class="dup-row verdict-${rowClass} ${verdict === "KEEP" ? "is-survivor" : ""}" data-item-id="${escapeHtml(m.id)}">
+                  <td class="dup-key">${escapeHtml(m.key_value)}
+                    ${m.id === group.recommended_survivor_id ? '<span class="recommended-tag" data-tooltip="Recommended golden record">★</span>' : ""}
+                    ${m.decision_source === "REMEMBERED" && !isOpenVerdict(m.review_verdict)
+                      ? `<span class="remembered-tag" aria-label="Remembered decision" data-tooltip="${escapeHtml(m.reviewer_comment || "Remembered from an earlier review")}">↺</span>`
+                      : ""}</td>
+                  <td>${scoreCell(m)}</td>
                   ${legacy
                     ? `<td>${escapeHtml(m.issue_detail || "")}</td>`
                     : columns.map((c) => {
@@ -859,11 +944,16 @@ function renderDuplicateGroup(group) {
                         const shared = raw.trim() && valueCounts[c][raw.trim().toLowerCase()] > 1;
                         return `<td class="${shared ? "match-cell" : ""}">${raw ? escapeHtml(raw) : '<span class="blank-cell">—</span>'}</td>`;
                       }).join("")}
+                  <td class="dup-action">${escapeHtml(actionText(m, verdict, survivor?.key_value || ""))}</td>
                   <td class="dup-decision-col">
                     <div class="verdict-seg" role="group" aria-label="Decision for ${escapeHtml(m.key_value)}">
-                      ${DUP_VERDICTS.map((d) => `
-                        <button class="seg-btn tone-${d.tone} ${verdict === d.verdict ? "active" : ""}"
-                          data-verdict="${d.verdict}" aria-pressed="${verdict === d.verdict}">${d.label}</button>`).join("")}
+                      <button class="seg-btn tone-positive ${verdict === "KEEP" ? "active" : ""}" data-draft="KEEP" ${lockAttr}
+                        aria-pressed="${verdict === "KEEP"}" title="Unique - the golden record the others merge into">★ Golden record</button>
+                      <button class="seg-btn tone-positive ${verdict === "UNIQUE" ? "active" : ""}" data-draft="UNIQUE" ${lockAttr}
+                        aria-pressed="${verdict === "UNIQUE"}" title="Unique - a separate entity, not a duplicate">Unique</button>
+                      <button class="seg-btn tone-negative ${verdict === "DUPLICATE" ? "active" : ""}" data-draft="DUPLICATE"
+                        aria-pressed="${verdict === "DUPLICATE"}" ${!locked && draft.survivor && verdict !== "KEEP" ? "" : "disabled"}
+                        title="Duplicate of the golden record">Duplicate</button>
                     </div>
                   </td>
                 </tr>`;
@@ -884,16 +974,25 @@ function currentDupRun() {
 function renderClientMemoryNote() {
   const run = currentDupRun();
   if (!run?.client_name) return "";
+  const exportUrl = `${API_BASE}/clients/${encodeURIComponent(run.client_id)}/duplicate-decisions.csv`;
   return `
     <div class="client-memory-note">
-      🧠 Decisions are remembered for <strong>${escapeHtml(run.client_name)}</strong>: records that are all marked
-      <em>Unique</em> won't be grouped again; every other decision (e.g. <em>Duplicate</em> + <em>Unique</em> for
-      the duplicate and its original) is pre-filled in future runs while the records stay unchanged.
+      🧠 Accepted decisions are remembered for <strong>${escapeHtml(run.client_name)}</strong>: a fully decided group
+      is not shown again in future runs (unless a record changes or a new duplicate joins it), and records all marked
+      <em>Unique</em> are never grouped again.
+      <a href="${exportUrl}" download>Export decisions (CSV merge map)</a>
     </div>`;
 }
 
 function currentDupTable() {
   return currentFindings.find((f) => f.id === dupReview?.findingId)?.table_name || "";
+}
+
+function rerenderKeepingScroll() {
+  const scroller = document.querySelector("#detailModal .modal-content");
+  const scrollTop = scroller ? scroller.scrollTop : 0;
+  renderDuplicateReview();
+  if (scroller) scroller.scrollTop = scrollTop;
 }
 
 function attachDuplicateReviewHandlers() {
@@ -906,61 +1005,326 @@ function attachDuplicateReviewHandlers() {
     });
   });
 
-  container.querySelectorAll(".dup-row .seg-btn").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const row = btn.closest(".dup-row");
-      const itemId = row.dataset.itemId;
-      // Clicking the selected decision again clears it back to PENDING.
-      const verdict = btn.classList.contains("active") ? "PENDING" : btn.dataset.verdict;
-      await saveDuplicateVerdicts(
-        () => fetchJSON(`${API_BASE}/finding-items/${encodeURIComponent(itemId)}/verdict`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ verdict }),
-        }),
-        (m) => m.id === itemId,
-        verdict,
-      );
+  const reviewerInput = container.querySelector("#reviewerName");
+  reviewerInput?.addEventListener("change", () => {
+    try { localStorage.setItem("reviewerName", reviewerInput.value.trim()); } catch { /* private window */ }
+  });
+
+  // Draft changes only - nothing is saved until Accept.
+  container.querySelectorAll(".dup-row [data-draft]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const groupId = btn.closest(".dup-group").dataset.groupId;
+      const itemId = btn.closest(".dup-row").dataset.itemId;
+      const draft = dupReview.drafts[groupId];
+      const choice = btn.dataset.draft;
+      draft.touched = true;
+      if (choice === "KEEP") {
+        // Moving the survivor: the new one leaves the "separate" set, the old one becomes a Duplicate.
+        draft.separate.delete(itemId);
+        draft.survivor = itemId;
+      } else if (choice === "UNIQUE") {
+        if (draft.survivor === itemId) draft.survivor = null;
+        draft.separate.add(itemId);
+      } else {
+        draft.separate.delete(itemId);
+      }
+      rerenderKeepingScroll();
     });
   });
 
-  container.querySelectorAll("[data-group-verdict]").forEach((btn) => {
+  container.querySelectorAll("[data-group-accept]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const groupId = btn.closest(".dup-group").dataset.groupId;
-      const verdict = btn.dataset.groupVerdict;
-      await saveDuplicateVerdicts(
-        () => fetchJSON(
-          `${API_BASE}/findings/${encodeURIComponent(dupReview.findingId)}/duplicate-groups/${encodeURIComponent(groupId)}/verdict`,
-          { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ verdict }) },
-        ),
-        (m) => m.duplicate_group_id === groupId,
-        verdict,
-      );
+      const draft = dupReview.drafts[groupId];
+      await saveGroup(groupId, `accept`, {
+        survivor_item_id: draft.survivor,
+        separate_item_ids: [...draft.separate],
+        reviewer: reviewerName(),
+      }, (m) => {
+        m.review_verdict = m.id === draft.survivor || draft.separate.has(m.id) ? "UNIQUE" : "DUPLICATE";
+        m.is_golden_record = m.id === draft.survivor ? 1 : 0;
+      });
+    });
+  });
+
+  container.querySelectorAll("[data-group-undo]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const groupId = btn.closest(".dup-group").dataset.groupId;
+      let result;
+      try {
+        result = await fetchJSON(
+          `${API_BASE}/findings/${encodeURIComponent(dupReview.findingId)}/duplicate-groups/${encodeURIComponent(groupId)}/undo`,
+          { method: "POST" },
+        );
+      } catch (error) {
+        alert(`Failed to undo: ${error.message}`);
+        return;
+      }
+      const i = dupReview.groups.findIndex((g) => g.duplicate_group_id === groupId);
+      if (result.group && i >= 0) dupReview.groups[i] = result.group;
+      dupReview.drafts[groupId] = initialDraft(dupReview.groups[i]);
+      findingsDirty = true;
+      rerenderKeepingScroll();
+    });
+  });
+
+  container.querySelectorAll("[data-group-tbc]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const groupId = btn.closest(".dup-group").dataset.groupId;
+      await saveGroup(groupId, `verdict`, { verdict: "TO_BE_CONFIRMED", reviewer: reviewerName() },
+        (m) => { m.review_verdict = "TO_BE_CONFIRMED"; });
     });
   });
 }
 
-// Saves, then updates local state and re-renders in place (keeping the
-// modal's scroll position) instead of re-fetching every group.
-async function saveDuplicateVerdicts(request, matchesMember, verdict) {
-  const scroller = document.querySelector("#detailModal .modal-content");
-  const scrollTop = scroller.scrollTop;
+// Saves one cluster, then updates local state and re-renders in place (keeping
+// the modal's scroll position) instead of re-fetching every group.
+async function saveGroup(groupId, endpoint, body, applyLocally) {
   try {
-    await request();
+    await fetchJSON(
+      `${API_BASE}/findings/${encodeURIComponent(dupReview.findingId)}/duplicate-groups/${encodeURIComponent(groupId)}/${endpoint}`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+    );
   } catch (error) {
     alert(`Failed to save decision: ${error.message}`);
     await loadDuplicateReview(dupReview.findingId);
     return;
   }
-  dupReview.groups.forEach((g) => g.members.forEach((m) => {
-    if (matchesMember(m)) {
-      m.review_verdict = verdict;
-      m.decision_source = "HUMAN";
-    }
-  }));
+  const group = dupReview.groups.find((g) => g.duplicate_group_id === groupId);
+  group.members.forEach((m) => { applyLocally(m); m.decision_source = "HUMAN"; });
+  if (endpoint === "accept" && group.recommended_survivor_id) {
+    group.accepted_as_recommended = group.recommended_survivor_id === body.survivor_item_id;
+  }
+  dupReview.drafts[groupId] = initialDraft(group);
   findingsDirty = true;
-  renderDuplicateReview();
-  scroller.scrollTop = scrollTop;
+  rerenderKeepingScroll();
+}
+
+// ---------------------------------------------------------------------------
+// Record readiness (dashboard panel) and the DQ Index (mini window behind the
+// small "DQ" chip under Promote). Both from /api/scorecard (explorer_agent/scorecard.py).
+// Meters: the fill carries the status band, the track is a lighter step of the
+// same hue, and the value is always printed next to it (never color alone).
+// ---------------------------------------------------------------------------
+
+const PILLAR_INFO = {
+  completeness: { label: "Completeness", unit: "mandatory cells filled" },
+  correctness: { label: "Correctness", unit: "checked cells without a defect" },
+  uniqueness: { label: "Uniqueness", unit: "records that are not redundant duplicates" },
+  activeness: { label: "Activeness", unit: "records neither deleted nor dormant" },
+};
+let scorecardData = null;
+
+function band(score, bands) {
+  const b = bands || { good: 0.95, fair: 0.85 };
+  if (score === null || score === undefined) return { key: "na", label: "n/a", icon: "·" };
+  if (score >= b.good) return { key: "good", label: "Good", icon: "✓" };
+  if (score >= b.fair) return { key: "fair", label: "Fair", icon: "!" };
+  return { key: "poor", label: "Poor", icon: "✕" };
+}
+
+const pct = (v, digits = 1) => (v === null || v === undefined ? "n/a" : `${(v * 100).toFixed(digits)}%`);
+const num = (v) => Number(v || 0).toLocaleString();
+
+function meterBar(score, bands, tip) {
+  const b = band(score, bands);
+  return `<div class="sc-meter sc-${b.key}" role="meter" aria-valuemin="0" aria-valuemax="100"
+      aria-valuenow="${Math.round((score || 0) * 100)}" aria-label="${escapeHtml(tip)}"><span style="width:${((score || 0) * 100).toFixed(1)}%"></span></div>`;
+}
+
+function deltaText(now, before, unit = "pts") {
+  if (now === null || now === undefined || before === null || before === undefined) return "";
+  const d = (now - before) * 100;
+  if (Math.abs(d) < 0.05) return `<span class="sc-delta">±0.0 ${unit}</span>`;
+  return `<span class="sc-delta ${d > 0 ? "up" : "down"}">${d > 0 ? "▲" : "▼"} ${Math.abs(d).toFixed(1)} ${unit}</span>`;
+}
+
+async function loadScorecard() {
+  const runId = document.getElementById("runSelect").value;
+  const params = new URLSearchParams({ client_id: selectedClientId() });
+  if (runId) params.append("run_id", runId);
+  try {
+    scorecardData = await fetchJSON(`${API_BASE}/scorecard?${params.toString()}`);
+  } catch {
+    scorecardData = null;
+  }
+  const chips = { dqIndexBtn: scorecardData?.overall?.dq_index,
+                  readinessBtn: scorecardData?.overall?.details?.readiness?.score };
+  const labels = { dqIndexBtn: "DQ Index", readinessBtn: "Record readiness" };
+  for (const [id, value] of Object.entries(chips)) {
+    const chip = document.getElementById(id);
+    if (!chip) continue;
+    chip.classList.toggle("hidden", !scorecardData);
+    chip.innerHTML = `<span aria-hidden="true">${id === "dqIndexBtn" ? "▦" : "◔"}</span> ${labels[id]} <strong>${pct(value)}</strong>`;
+  }
+  if (!scorecardData) { closeMiniWindows(); return; }
+  if (!document.getElementById("dqWindow").classList.contains("hidden")) renderDqWindow();
+  if (!document.getElementById("readinessWindow").classList.contains("hidden")) renderReadinessWindow();
+}
+
+// ----------------------------------------------------------------- readiness mini window
+
+function readinessWindowRow(entry, kind) {
+  const r = entry.details?.readiness || {};
+  const b = band(r.score, scorecardData.readiness_bands);
+  const tip = `${num(r.ready)} of ${num(r.in_scope)} in-scope records can be loaded as they are`
+    + (r.out_of_scope ? ` · ${num(r.out_of_scope)} out of scope (marked for deletion or dormant)` : "")
+    + ((r.top_reasons || []).length ? ` · top reason: ${r.top_reasons[0].reason} (${num(r.top_reasons[0].records)})` : "");
+  const name = kind === "object"
+    ? `<button class="sc-toggle" data-rw-object="${escapeHtml(entry.name)}" aria-expanded="false">▸</button> ${escapeHtml(entry.name)}`
+    : `<span class="rw-table">${escapeHtml(entry.name)}</span>`;
+  const view = kind === "table" && r.not_ready
+    ? `<button class="btn-link" data-not-ready="${escapeHtml(entry.name)}">View</button>` : "";
+  return `<tr class="${kind === "run" ? "dq-total" : ""}" ${kind === "table" ? `data-rw-parent="${escapeHtml(entry.object_name || "")}" hidden` : ""}>
+      <td>${kind === "run" ? "All tables" : name}</td>
+      <td class="dq-cell" data-tooltip="${escapeHtml(tip)}">${r.score === null || r.score === undefined ? "n/a"
+        : `<span class="sc-badge sc-${b.key}"><i aria-hidden="true">${b.icon}</i>${pct(r.score)}</span>`}</td>
+      <td>${num(r.not_ready)}</td>
+      <td class="sc-muted">${num(r.out_of_scope)}</td>
+      <td>${view}</td>
+    </tr>`;
+}
+
+function renderReadinessWindow() {
+  const win = document.getElementById("readinessWindow");
+  const sc = scorecardData;
+  if (!sc) return;
+  const rows = (sc.objects || []).map((o) => readinessWindowRow(o, "object")
+    + (sc.tables || []).filter((t) => t.object_name === o.name).map((t) => readinessWindowRow(t, "table")).join("")).join("");
+  win.innerHTML = `
+    <div class="dq-win-head">
+      <strong>Record readiness</strong>
+      <button class="dq-win-close" aria-label="Close">×</button>
+    </div>
+    <table class="dq-win-table">
+      <thead><tr><th></th><th>Ready</th><th>Not ready</th><th class="sc-muted">Out of scope</th><th></th></tr></thead>
+      <tbody>${rows}${sc.overall ? readinessWindowRow(sc.overall, "run") : ""}</tbody>
+    </table>
+    <p class="dq-win-note">Share of in-scope records that can be loaded as they are - no open defect from the built-in
+      checks and not a duplicate that will be merged away. Deleted or dormant records are out of scope. Expand an object
+      and click View for the records and their reasons.</p>`;
+  win.querySelector(".dq-win-close").addEventListener("click", closeMiniWindows);
+  win.querySelectorAll("[data-rw-object]").forEach((btn) => btn.addEventListener("click", () => {
+    const open = btn.getAttribute("aria-expanded") !== "true";
+    btn.setAttribute("aria-expanded", String(open));
+    btn.textContent = open ? "▾" : "▸";
+    win.querySelectorAll(`tr[data-rw-parent="${CSS.escape(btn.dataset.rwObject)}"]`).forEach((tr) => { tr.hidden = !open; });
+  }));
+  win.querySelectorAll("[data-not-ready]").forEach((btn) => btn.addEventListener("click", () => {
+    closeMiniWindows();
+    openNotReady(btn.dataset.notReady);
+  }));
+}
+
+// The cleansing worklist of one table, in the detail modal: reasons as filters.
+async function openNotReady(table) {
+  const modal = document.getElementById("detailModal");
+  const body = document.getElementById("modalBody");
+  body.innerHTML = '<p class="empty-state">Loading...</p>';
+  modal.classList.remove("hidden");
+  let w;
+  try {
+    w = await fetchJSON(`${API_BASE}/scorecard/not-ready?client_id=${encodeURIComponent(selectedClientId())}`
+      + `&table=${encodeURIComponent(table)}&run_id=${encodeURIComponent(scorecardData.run_id)}`);
+  } catch (error) {
+    body.innerHTML = `<p class="empty-state">Unable to load: ${escapeHtml(error.message)}</p>`;
+    return;
+  }
+  let filter = null;
+  const render = () => {
+    const list = filter ? w.worklist.filter((x) => x.reasons.includes(filter)) : w.worklist;
+    body.innerHTML = `
+      <h2>${escapeHtml(table)} - records not ready</h2>
+      <p class="hint-text">${num(w.not_ready)} of ${num(w.in_scope)} in-scope records cannot be loaded as they are
+        (readiness ${pct(w.score)}). ${w.unlisted ? `${num(w.unlisted)} more are beyond the stored list.` : ""}
+        Click a reason to filter.</p>
+      <div class="nr-reasons">
+        ${(w.top_reasons || []).map((x) => `<button class="dup-filter ${filter === x.reason ? "active" : ""}" data-reason="${escapeHtml(x.reason)}">
+          ${escapeHtml(x.reason)} <span>${num(x.records)}</span></button>`).join("")}
+        ${filter ? '<button class="dup-filter" data-reason="">Show all</button>' : ""}
+      </div>
+      <div class="dup-table-wrap">
+        <table class="dup-table nr-table">
+          <thead><tr><th>Key</th><th>Why it is not ready</th></tr></thead>
+          <tbody>${list.map((x) => `<tr><td class="dup-key">${escapeHtml(x.key)}</td>
+            <td>${x.reasons.map((r) => `<span class="nr-reason">${escapeHtml(r)}</span>`).join("")}</td></tr>`).join("")}</tbody>
+        </table>
+      </div>`;
+    body.querySelectorAll("[data-reason]").forEach((btn) => btn.addEventListener("click", () => {
+      filter = btn.dataset.reason || null;
+      render();
+    }));
+  };
+  render();
+}
+
+// ----------------------------------------------------------------- DQ Index mini window
+
+const MINI_WINDOWS = { dqIndexBtn: "dqWindow", readinessBtn: "readinessWindow" };
+
+function closeMiniWindows() {
+  for (const [chipId, winId] of Object.entries(MINI_WINDOWS)) {
+    document.getElementById(winId)?.classList.add("hidden");
+    document.getElementById(chipId)?.setAttribute("aria-expanded", "false");
+  }
+}
+
+function renderDqWindow() {
+  const win = document.getElementById("dqWindow");
+  const sc = scorecardData;
+  if (!sc) return;
+  const bands = sc.bands;
+  const w = sc.weights || {};
+  const weightText = Object.entries(w).filter(([, v]) => v > 0).map(([k, v]) => `${PILLAR_INFO[k]?.label || k} ${Math.round(v * 100)}%`).join(" · ");
+  const cell = (e, p) => {
+    const x = e.details?.pillars?.[p];
+    if (!x) return '<td class="sc-na">n/a</td>';
+    const tip = `${PILLAR_INFO[p].label}: ${num(x.total - x.bad)} of ${num(x.total)} ${PILLAR_INFO[p].unit}`;
+    return `<td class="dq-cell" data-tooltip="${escapeHtml(tip)}">${pct(x.score)}</td>`;
+  };
+  const row = (e, cls) => {
+    const b = band(e.dq_index, bands);
+    return `<tr class="${cls}"><td>${escapeHtml(e.name)}</td>${["completeness", "correctness", "uniqueness", "activeness"].map((p) => cell(e, p)).join("")}
+      <td><span class="sc-badge sc-${b.key}"><i aria-hidden="true">${b.icon}</i>${pct(e.dq_index)}</span></td></tr>`;
+  };
+  win.innerHTML = `
+    <div class="dq-win-head">
+      <strong>DQ Index</strong>
+      <button class="dq-win-close" aria-label="Close">×</button>
+    </div>
+    <table class="dq-win-table">
+      <thead><tr><th></th><th>Compl.</th><th>Correct.</th><th>Unique.</th><th class="sc-muted">Active.*</th><th>Index</th></tr></thead>
+      <tbody>${(sc.objects || []).map((o) => row(o, "")).join("")}${sc.overall ? row(sc.overall, "dq-total") : ""}</tbody>
+    </table>
+    <p class="dq-win-note">Share of cells / records that pass the built-in checks. Index = ${escapeHtml(weightText)}.
+      *Activeness is shown, not weighted. Hover a value for its counts.</p>`;
+  win.querySelector(".dq-win-close").addEventListener("click", closeMiniWindows);
+}
+
+function initDqWindow() {
+  // Two small chips under "Promote Approved Skills", each opening its mini window;
+  // opening one closes the other. Esc or a click outside closes them.
+  const renderers = { dqIndexBtn: renderDqWindow, readinessBtn: renderReadinessWindow };
+  for (const [chipId, winId] of Object.entries(MINI_WINDOWS)) {
+    const chip = document.getElementById(chipId);
+    const win = document.getElementById(winId);
+    if (!chip || !win) continue;
+    chip.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const wasOpen = !win.classList.contains("hidden");
+      closeMiniWindows();
+      if (wasOpen) return;
+      renderers[chipId]();
+      win.classList.remove("hidden");
+      chip.setAttribute("aria-expanded", "true");
+    });
+  }
+  document.addEventListener("click", (event) => {
+    const inside = Object.entries(MINI_WINDOWS).some(([chipId, winId]) =>
+      document.getElementById(winId)?.contains(event.target) || event.target.closest?.(`#${chipId}`));
+    if (!inside) closeMiniWindows();
+  });
+  document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeMiniWindows(); });
 }
 
 // ---------------------------------------------------------------------------
@@ -1303,6 +1667,7 @@ document.getElementById("closeRunExplorerModal").addEventListener("click", () =>
 });
 
 (async function init() {
+  initDqWindow();
   // Page 2 only makes sense for a chosen, existing client - otherwise back to page 1.
   if (!CLIENT_ID) {
     window.location.replace("./");

@@ -1,0 +1,161 @@
+{
+  "$defs": {
+    "AllowedValue": {
+      "additionalProperties": true,
+      "properties": {
+        "value": {
+          "title": "Value",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "AllowedValue",
+      "type": "object"
+    },
+    "Producer": {
+      "additionalProperties": true,
+      "properties": {
+        "agent": {
+          "description": "Producing agent, e.g. 'data-profiling-agent'",
+          "title": "Agent",
+          "type": "string"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Producer's run id (traceability)",
+          "title": "Run Id"
+        },
+        "client_id": {
+          "description": "Client (company) slug, e.g. 'acme-retail'",
+          "title": "Client Id",
+          "type": "string"
+        },
+        "client_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Client Name"
+        }
+      },
+      "required": [
+        "agent",
+        "client_id"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "TargetDomain": {
+      "additionalProperties": true,
+      "properties": {
+        "target_table": {
+          "description": "SAP table, e.g. LFB1",
+          "title": "Target Table",
+          "type": "string"
+        },
+        "target_field": {
+          "description": "SAP field, e.g. ZTERM",
+          "title": "Target Field",
+          "type": "string"
+        },
+        "check_table": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "SAP check table, e.g. T052",
+          "title": "Check Table"
+        },
+        "values": {
+          "description": "Every allowed value in the client's target system",
+          "items": {
+            "$ref": "#/$defs/AllowedValue"
+          },
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "target_table",
+        "target_field",
+        "values"
+      ],
+      "title": "TargetDomain",
+      "type": "object"
+    }
+  },
+  "additionalProperties": true,
+  "properties": {
+    "contract": {
+      "const": "sap-dm.target-domains",
+      "default": "sap-dm.target-domains",
+      "title": "Contract",
+      "type": "string"
+    },
+    "version": {
+      "default": "1.0",
+      "title": "Version",
+      "type": "string"
+    },
+    "generated_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Generated At"
+    },
+    "producer": {
+      "$ref": "#/$defs/Producer"
+    },
+    "domains": {
+      "items": {
+        "$ref": "#/$defs/TargetDomain"
+      },
+      "title": "Domains",
+      "type": "array"
+    }
+  },
+  "required": [
+    "producer",
+    "domains"
+  ],
+  "title": "TargetDomains",
+  "type": "object"
+}

@@ -29,6 +29,8 @@ class RunMetrics:
     planner_checks_covered_by_rules: int = 0  # planner checks dropped because a rule already ran them
     anomaly_findings: int = 0          # of sap_rule_findings, from anomaly_rules.py
     # Column mapping (column_mapping.py): what each column means, for the rule engines.
+    column_mapping_agent: int = 0      # tables mapped from the Mapping Agent's input file (free)
+    mapping_candidates_below_threshold: int = 0  # PROPOSED candidates under handoff.min_confidence (not used)
     column_mapping_standard: int = 0   # tables mapped from the SAP-standard pack (free)
     column_mapping_hits: int = 0       # tables whose saved mapping was reused (free)
     column_mapping_llm_calls: int = 0  # tables mapped by an LLM call (first sight of a schema)
@@ -69,6 +71,8 @@ class RunMetrics:
         self.sap_rule_rows = 0
         self.planner_checks_covered_by_rules = 0
         self.anomaly_findings = 0
+        self.column_mapping_agent = 0
+        self.mapping_candidates_below_threshold = 0
         self.column_mapping_standard = 0
         self.column_mapping_hits = 0
         self.column_mapping_llm_calls = 0

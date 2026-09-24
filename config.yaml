@@ -113,6 +113,11 @@ duplicates:
   # blocks larger than this are skipped to bound runtime on big tables.
   max_block_size: 500 # EXPLORER_DUPLICATE_MAX_BLOCK
   max_groups: 500 # EXPLORER_DUPLICATE_MAX_GROUPS
+  # Don't show a group again when a reviewer already decided every record in it
+  # (each one DUPLICATE or UNIQUE against all its current partners). A new member
+  # or a changed record brings it back. Decisions stay in
+  # memory_store/clients/<client>/duplicate_decisions.json. EXPLORER_DUPLICATE_HIDE_DECIDED
+  hide_decided_groups: true
 
   rules:
     # How the matching rules for a table are produced (explorer_agent/duplicate_rules.py):
@@ -149,6 +154,66 @@ duplicates:
   #       location: []          # corroborating fields for name matches
   #       display: [KOINH, BANKS, BANKL, BANKN, IBAN]  # columns shown in the review app
   tables: {}
+
+scorecard:
+  # Composite DQ Index per table, migration object and run (explorer_agent/scorecard.py),
+  # computed during the run from the deterministic engines only (reproducible; LLM
+  # checks are left out). Weighted average of the pillars that have a score.
+  # Activeness is shown but weighted 0: a deleted or dormant record is a migration-scope
+  # fact, not bad data. Set it above 0 to include it.
+  weights: {completeness: 0.35, correctness: 0.35, uniqueness: 0.30, activeness: 0.0}
+  # Status bands shown on the dashboard: Good from `good`, Fair from `fair`, else Poor.
+  bands: {good: 0.95, fair: 0.85}
+  # RECORD READINESS (the dashboard's headline): share of in-scope records with no open
+  # defect - loadable as they are. Deleted/dormant records are out of scope. Its bands:
+  readiness_bands: {good: 0.95, fair: 0.80}
+  # Not-ready records kept per table with their reasons (the cleansing worklist).
+  max_worklist: 5000 # EXPLORER_READINESS_MAX_WORKLIST
+
+handoff:
+  # Priority 4 - the pipeline around this agent (explorer_agent/contracts.py):
+  #   Extract -> structural profile -> Mapping Agent -> field/value mapping -> DQ rules -> Cleansing
+  # OUT: every run writes the structural profile (types, lengths, value shapes/regexes,
+  # distinct values of code columns) for the Mapping / Value Mapping Agent to
+  # <dir>/<client_id>/<run_id>/structural_profile.json (+ structural_profile.latest.json).
+  # It contains client values (code lists), so it is gitignored like client_data/.
+  dir: handoff # EXPLORER_HANDOFF_DIR
+  # A code column with more distinct values than this lists none of them.
+  max_domain_values: 200 # EXPLORER_HANDOFF_MAX_DOMAIN
+  # IN: the Mapping Agent's field/value mapping, picked up from the client's data
+  # folder under this name (or --mapping-file). When present it decides what each
+  # source column means for the DQ rules. EXPLORER_HANDOFF_MAPPING_FILE
+  mapping_file: field_mapping.json
+  # The Mapping Agent sends ALL candidates with a 0-100 confidence_score (tiers: 90-100
+  # HIGH, 70-89 MEDIUM, 40-69 LOW, 0-39 VERY_LOW - scoping document section 14); this
+  # side decides what the DQ rules use. APPROVED always counts, REJECTED never, PROPOSED
+  # from this score (default: HIGH only). EXPLORER_HANDOFF_MIN_CONFIDENCE
+  min_confidence: 90
+  # IN: allowed SAP values per target field (check tables) from the Metadata Repository,
+  # picked up from the client's data folder under this name (or --target-domains-file).
+  # A value outside its domain is an INVALID_CODE finding, and the domain replaces the
+  # statistical rare-code check for that column. EXPLORER_HANDOFF_TARGET_DOMAINS_FILE
+  target_domains_file: target_domains.json
+
+survivorship:
+  # Record quality score (0-100) for every member of a duplicate group, and a
+  # recommended survivor ("Unique") the others merge into (explorer_agent/survivorship.py).
+  # It is only a pre-selection in the review app: nothing is decided until a
+  # reviewer clicks Accept. EXPLORER_SURVIVORSHIP_ENABLED
+  enabled: true
+  # Components, each 0..1 (a component that cannot be computed for a table - no
+  # creation date, no org-level tables loaded - is left out and the rest re-weighted):
+  #   completeness  share of the record's important mapped fields (required, tax,
+  #                 contact, address, name) that are filled AND not flagged by a rule
+  #   active        1 = no flag, 0.5 = blocked, 0 = marked for deletion
+  #   usage         share of org-level child tables (company code, purchasing org...)
+  #                 the record is extended to - the record the business uses survives
+  #   recency       creation date ranked within the group (newest 1, oldest 0)
+  weights: {completeness: 0.4, active: 0.25, usage: 0.2, recency: 0.15}
+  # Only groups with a strong match get a pre-selected survivor; SIMILAR groups hold
+  # look-alikes (same trading name, different company), so the reviewer confirms
+  # the duplicate first. EXPLORER_SURVIVORSHIP_MATCH_TYPES
+  recommend_for: [EXACT, PROBABLE]
 
 sap_rules:
   # Deterministic SAP domain rules (explorer_agent/sap_rules.py): deletion flags,
