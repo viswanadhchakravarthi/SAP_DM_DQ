@@ -14,6 +14,8 @@ class RunMetrics:
     sandbox_executions: int = 0
     cache_hits: int = 0       # columns served (at least partially) from cache
     cache_misses: int = 0     # columns with no cached skills at all
+    repair_llm_calls: int = 0    # batched repair calls for checks that failed to run (repair.py)
+    checks_repaired: int = 0     # of those checks, how many then ran successfully
     preflight_rejected: int = 0  # planner checks rejected before execution (preflight.py)
     llm_call_failures: int = 0   # model attempts that failed (after SDK retries) - see llm_providers.py
     # Token counts of every LLM request (llm_usage.py); facts only, no prices.
@@ -44,14 +46,14 @@ class RunMetrics:
             "RUN METRICS SUMMARY | planner_llm_calls=%d reflector_llm_calls=%d "
             "duplicate_rule_llm_calls=%d duplicate_rule_hits=%d duplicate_rule_misses=%d "
             "sandbox_executions=%d cache_hits=%d cache_misses=%d "
-            "preflight_rejected=%d llm_call_failures=%d llm_input_tokens=%d llm_output_tokens=%d llm_reasoning_tokens=%d "
+            "repair_llm_calls=%d checks_repaired=%d preflight_rejected=%d llm_call_failures=%d llm_input_tokens=%d llm_output_tokens=%d llm_reasoning_tokens=%d "
             "sap_rules_evaluated=%d sap_rule_findings=%d sap_rule_rows=%d planner_checks_covered_by_rules=%d "
             "anomaly_findings=%d column_mapping_standard=%d column_mapping_hits=%d column_mapping_llm_calls=%d "
             "column_mapping_failures=%d",
             self.planner_llm_calls, self.reflector_llm_calls,
             self.duplicate_rule_llm_calls, self.duplicate_rule_hits, self.duplicate_rule_misses,
             self.sandbox_executions, self.cache_hits, self.cache_misses,
-            self.preflight_rejected, self.llm_call_failures, self.llm_input_tokens, self.llm_output_tokens, self.llm_reasoning_tokens,
+            self.repair_llm_calls, self.checks_repaired, self.preflight_rejected, self.llm_call_failures, self.llm_input_tokens, self.llm_output_tokens, self.llm_reasoning_tokens,
             self.sap_rules_evaluated, self.sap_rule_findings, self.sap_rule_rows,
             self.planner_checks_covered_by_rules, self.anomaly_findings, self.column_mapping_standard,
             self.column_mapping_hits, self.column_mapping_llm_calls, self.column_mapping_failures,
@@ -63,6 +65,8 @@ class RunMetrics:
         self.sandbox_executions = 0
         self.cache_hits = 0
         self.cache_misses = 0
+        self.repair_llm_calls = 0
+        self.checks_repaired = 0
         self.preflight_rejected = 0
         self.llm_call_failures = 0
         self.llm_input_tokens = 0

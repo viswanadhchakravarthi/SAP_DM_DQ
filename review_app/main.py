@@ -87,7 +87,7 @@ class RunExplorerRequest(BaseModel):
     client_id: str
     model: Optional[str] = None
     temperature: Optional[float] = None
-    max_iterations: Optional[int] = None
+    max_repair_rounds: Optional[int] = None
     llm_provider: str = Config.LLM_PROVIDER
     no_cache: bool = False
     duplicates_only: bool = False
@@ -263,7 +263,7 @@ def get_config_options():
     """Populates the 'Run Explorer Agent' modal's dropdowns/defaults."""
     return {
         "llm_providers": list(Config.SUPPORTED_LLM_PROVIDERS),
-        "default_max_iterations": Config.MAX_ITERATIONS_PER_COLUMN,
+        "default_max_repair_rounds": Config.MAX_REPAIR_ROUNDS,
         "default_llm_provider": Config.LLM_PROVIDER,
         "gemini_model_default": Config.GEMINI_MODEL,
     }
@@ -563,8 +563,8 @@ def _build_explorer_cli_args(body: RunExplorerRequest, client: dict, workspace: 
         args += ["--model", body.model]
     if body.temperature is not None:
         args += ["--temperature", str(body.temperature)]
-    if body.max_iterations is not None:
-        args += ["--max-iterations", str(body.max_iterations)]
+    if body.max_repair_rounds is not None:
+        args += ["--max-repair-rounds", str(body.max_repair_rounds)]
     if body.no_cache:
         args.append("--no-cache")
     if body.duplicates_only:

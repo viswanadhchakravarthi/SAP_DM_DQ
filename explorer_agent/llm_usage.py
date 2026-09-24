@@ -30,6 +30,7 @@ logger = get_logger("llm_usage")
 # Schema name -> what the call is for.
 ROLES = {
     "CheckPlan": "planner",
+    "CheckRepair": "repair",
     "ReflectionBatch": "reflector",
     "Reflection": "reflector",
     "DuplicateRulePlan": "duplicate_rules",

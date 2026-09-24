@@ -125,7 +125,7 @@ Propose roughly 1-2 checks per notable column (skip clean-looking columns). Do n
     initial_state = {
         "table_name": table_name, "seed_prompt": seed_prompt, "df": df,
         "all_tables": all_tables, "proposed_checks": [], "check_results": [], "findings": [],
-        "rule_coverage": rule_coverage or RuleCoverage(),
+        "rule_coverage": rule_coverage or RuleCoverage(), "repair_round": 0, "to_run": None,
     }
     final_state = graph.invoke(initial_state)
     fresh_findings = final_state["findings"]
@@ -162,7 +162,8 @@ def main():
                         help="Model for the PRIMARY provider (default: its model in config.yaml).")
     parser.add_argument("--temperature", type=float, default=None,
                         help="Temperature for the PRIMARY provider (default: config.yaml).")
-    parser.add_argument("--max-iterations", type=int, default=Config.MAX_ITERATIONS_PER_COLUMN)
+    parser.add_argument("--max-repair-rounds", type=int, default=Config.MAX_REPAIR_ROUNDS,
+                        help="Rounds in which failed planner checks are sent back to the planner (0 = off).")
     parser.add_argument("--tables", nargs="*", default=None)
     parser.add_argument("--no-cache", action="store_true")
     parser.add_argument(
@@ -196,6 +197,7 @@ def main():
     if args.no_cache:
         Config.ENABLE_CACHE_FAST_PATH = False
     Config.LLM_PROVIDER = args.llm_provider
+    Config.MAX_REPAIR_ROUNDS = max(0, args.max_repair_rounds)
 
     if args.duplicates_only and args.deterministic_only:
         parser.error("--duplicates-only and --deterministic-only are mutually exclusive")
@@ -247,7 +249,7 @@ def main():
                            "will only be checked for identical rows.")
     else:
         llms = build_llms(args.model, args.temperature)
-        graph = build_explorer_graph(llms.planner_structured, llms.reflector_structured)
+        graph = build_explorer_graph(llms.planner_structured, llms.reflector_structured, llms.repair_structured)
         reflector_single = llms.reflector_single
         skill_retriever = SkillRetriever()
         run_label = llms.chain_label
@@ -410,7 +412,8 @@ def main():
           f"{metrics.column_mapping_hits} | Mapped by LLM: {metrics.column_mapping_llm_calls} | "
           f"Failed: {metrics.column_mapping_failures}")
     print(f"Cache - Hits: {metrics.cache_hits} | Misses: {metrics.cache_misses}")
-    print(f"Pre-flight - checks rejected before running: {metrics.preflight_rejected}")
+    print(f"Pre-flight - checks rejected before running: {metrics.preflight_rejected} | Repair - calls: "
+          f"{metrics.repair_llm_calls}, checks fixed: {metrics.checks_repaired}")
     print(f"LLM - Failed calls: {metrics.llm_call_failures}")
     tokens = usage.totals()
     print(f"LLM tokens - {tokens['calls']} call(s): in {tokens['input_tokens']:,} | out {tokens['output_tokens']:,}"

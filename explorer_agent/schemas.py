@@ -98,6 +98,10 @@ class ProposedCheck(BaseModel):
 class CheckPlan(BaseModel):
     checks: List[ProposedCheck]
 
+
+class CheckRepair(CheckPlan):
+    """Corrected versions of checks that failed to run: one per failed check, in the same order."""
+
 class FindingJudgment(BaseModel):
     check_index: int = Field(description="Index (0-based) matching the input checks list order")
     is_issue: bool

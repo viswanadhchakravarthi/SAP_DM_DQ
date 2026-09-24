@@ -253,7 +253,10 @@ profiling:
   sample_rows: 50000 # EXPLORER_PROFILE_SAMPLE_ROWS
   sample_seed: 42 # fixed, so the same data gives the same profile (and prompt) every run
   max_checks_per_table: 25
-  max_iterations_per_column: 5 # legacy, pre-batch-profiling explorer loop
+  # Repair loop: planner checks that fail to run (sandbox error or pre-flight rejection) are sent back to
+  # the planner ONCE per round, all in one call, then re-run. 0 = off. Costs at most one extra LLM call
+  # per round and table, and only when a check failed. The loop ends on this counter, never on the model.
+  max_repair_rounds: 1 # EXPLORER_MAX_REPAIR_ROUNDS
 
 sandbox:
   timeout_seconds: 10          # per check, from the moment the check starts

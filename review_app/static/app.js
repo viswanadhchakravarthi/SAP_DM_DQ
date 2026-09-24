@@ -1447,8 +1447,8 @@ async function openRunExplorerModal() {
         <input type="number" step="0.1" id="reTemperature">
       </div>
       <div class="form-row">
-        <label for="reMaxIterations">Max Iterations</label>
-        <input type="number" id="reMaxIterations" value="${options.default_max_iterations}">
+        <label for="reRepairRounds" title="Failed planner checks are sent back to the planner once per round, in one call. 0 = off.">Repair rounds (0 = off)</label>
+        <input type="number" min="0" id="reRepairRounds" value="${options.default_max_repair_rounds}">
       </div>
     </details>
     <div id="runExplorerError" class="hint-text run-explorer-error"></div>
@@ -1464,7 +1464,7 @@ async function openRunExplorerModal() {
 async function submitRunExplorer() {
   const modelVal = document.getElementById("reModel").value.trim();
   const tempVal = document.getElementById("reTemperature").value;
-  const maxIterVal = document.getElementById("reMaxIterations").value;
+  const repairVal = document.getElementById("reRepairRounds").value;
 
   const body = {
     client_id: CLIENT_ID, // the server resolves data folder, dictionary and tables from this client's workspace
@@ -1474,7 +1474,7 @@ async function submitRunExplorer() {
   };
   if (modelVal) body.model = modelVal;
   if (tempVal !== "") body.temperature = parseFloat(tempVal);
-  if (maxIterVal !== "") body.max_iterations = parseInt(maxIterVal, 10);
+  if (repairVal !== "") body.max_repair_rounds = parseInt(repairVal, 10);
 
   const errorEl = document.getElementById("runExplorerError");
   errorEl.textContent = "";

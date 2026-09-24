@@ -7,14 +7,14 @@ Change: instead of iterative tool-calling (many round-trips), we now:
   3. Execute ALL checks locally (sandboxed, zero LLM involvement)
   4. ONE Reflector call judges ALL results at once (structured output)
 
-This is now a LINEAR graph (no cycles needed) - still built with
-LangGraph's StateGraph for consistent state handling and future
-extensibility (e.g. a retry branch for failed checks), per your
-requirement to stay within LangChain/LangGraph. We no longer use
+The graph is linear except for ONE bounded loop, execute_all -> repair_batch -> execute_all:
+checks that failed to run (sandbox error or pre-flight rejection) go back to the planner together,
+in a single call, and only the rewritten ones re-run. The loop ends on a counter
+(Config.MAX_REPAIR_ROUNDS, 0 = off), never on a decision of the model. We no longer use
 ToolNode/tool-calling here since batch structured output doesn't need it.
 
-LLM calls per table: exactly 2 (1 planner + 1 reflector) - constant,
-regardless of column count.
+LLM calls per table: 2 (1 planner + 1 reflector) - constant, regardless of column count -
+plus at most MAX_REPAIR_ROUNDS repair calls, and only when a check failed.
 """
 
 from typing import TypedDict, List, Dict, Any
@@ -23,6 +23,8 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.graph import StateGraph, END
 
 from .schemas import CheckPlan, ReflectionBatch
+from .llm_providers import LLMChainExhaustedError
+from .repair import apply_repairs, build_repair_prompt, failed_indices
 from .check_executor import execute_checks, extract_detail_rows, sandbox_session
 from .config import Config
 from .metrics import metrics
@@ -113,6 +115,17 @@ Cap detail_rows at around 50 rows (use .head(50)).
 Inside code use ONLY single quotes (') for string literals - never double quotes, and no f-strings; build strings with + and str().
 """
 
+# The planner's rules for writing `code` / `detail_code`, reused verbatim so a repair follows the same ones.
+_CODE_RULES = PLANNER_SYSTEM_PROMPT[PLANNER_SYSTEM_PROMPT.index("For EACH check, provide TWO code fields"):]
+
+REPAIR_SYSTEM_PROMPT = """You fix pandas data quality checks that failed to run, for an SAP data migration project. \
+You get the table's columns and dtypes and, for each failed check, its code and the error it produced (or the \
+reason it was rejected before running). Return one corrected check per failed check, in the same order, keeping its \
+column, category and hypothesis. Fix only what the error says; do not add checks, and do not change what the check \
+is testing. The error may be a one-line pre-flight explanation: follow it literally.
+
+""" + _CODE_RULES
+
 REFLECTOR_SYSTEM_PROMPT = """You are reviewing outcomes of MULTIPLE data quality checks that \
 just ran, in one batch across Activeness, Completeness, and Correctness pillars. \
 For EACH result (identified by check_index), decide if it's a genuine issue, its severity/confidence, \
@@ -133,12 +146,15 @@ class TableExplorerState(TypedDict):
     check_results: List[Dict[str, Any]]
     findings: List[Dict[str, Any]]
     rule_coverage: Any  # sap_rules.RuleCoverage - what the deterministic SAP rules already checked
+    repair_round: int   # repair rounds used so far (bounded by Config.MAX_REPAIR_ROUNDS)
+    to_run: Any         # None = execute every check; a list = re-run only these check indices
 
 
-def build_explorer_graph(planner_structured, reflector_structured):
+def build_explorer_graph(planner_structured, reflector_structured, repair_structured=None):
     """
     planner_structured: LLM wrapped with .with_structured_output(CheckPlan)
     reflector_structured: LLM wrapped with .with_structured_output(ReflectionBatch)
+    repair_structured: LLM wrapped with .with_structured_output(CheckRepair); None = no repair loop
     """
 
     def node_plan_batch(state: TableExplorerState) -> Dict[str, Any]:
@@ -171,10 +187,55 @@ def build_explorer_graph(planner_structured, reflector_structured):
         return {"proposed_checks": checks}
 
     def node_execute_all(state: TableExplorerState) -> Dict[str, Any]:
-        results = execute_checks(state["proposed_checks"], state["df"], state["all_tables"])
-        logger.info("Executed %d check(s) for table %s (%d succeeded)",
-                    len(results), state["table_name"], sum(1 for r in results if r["success"]))
-        return {"check_results": results}
+        to_run = state.get("to_run")
+        if to_run is None:  # first pass: every check
+            results = execute_checks(state["proposed_checks"], state["df"], state["all_tables"])
+            logger.info("Executed %d check(s) for table %s (%d succeeded)",
+                        len(results), state["table_name"], sum(1 for r in results if r["success"]))
+            return {"check_results": results, "to_run": None}
+
+        # After a repair round: re-run only the rewritten checks, keep every other result as it was.
+        rerun = execute_checks([state["proposed_checks"][i] for i in to_run], state["df"], state["all_tables"])
+        merged = list(state["check_results"])
+        for i, result in zip(to_run, rerun):
+            result["check_index"] = i
+            merged[i] = result
+        fixed = sum(1 for r in rerun if r["success"])
+        metrics.checks_repaired += fixed
+        logger.info("Re-ran %d repaired check(s) for table %s (%d now succeed)", len(rerun), state["table_name"], fixed)
+        return {"check_results": merged, "to_run": None}
+
+    def route_after_execute(state: TableExplorerState) -> str:
+        """The loop's only branch: repair while checks are failing and the round budget is left."""
+        if (repair_structured is not None and state.get("repair_round", 0) < Config.MAX_REPAIR_ROUNDS
+                and failed_indices(state["check_results"])):
+            return "repair"
+        return "reflect"
+
+    def node_repair_batch(state: TableExplorerState) -> Dict[str, Any]:
+        checks, results = state["proposed_checks"], state["check_results"]
+        indices = failed_indices(results)
+        round_no = state.get("repair_round", 0) + 1
+        # An unusable repair must not loop again: stop the budget, keep what already succeeded.
+        stop = {"repair_round": Config.MAX_REPAIR_ROUNDS, "to_run": []}
+        try:
+            plan = repair_structured.invoke([
+                SystemMessage(content=REPAIR_SYSTEM_PROMPT),
+                HumanMessage(content=build_repair_prompt(state["table_name"], state["df"], state["all_tables"],
+                                                         checks, results, indices)),
+            ])
+        except LLMChainExhaustedError as exc:
+            logger.warning("Repair call failed for table %s - continuing with the checks that ran: %s",
+                           state["table_name"], exc)
+            return stop
+        metrics.repair_llm_calls += 1
+
+        updated, changed = apply_repairs(checks, indices, plan.checks)
+        logger.info("Repair round %d for table %s: %d failed check(s) sent back, %d rewritten",
+                    round_no, state["table_name"], len(indices), len(changed))
+        if not changed:
+            return stop
+        return {"proposed_checks": updated, "to_run": changed, "repair_round": round_no}
 
     def node_reflect_batch(state: TableExplorerState) -> Dict[str, Any]:
         successful = [r for r in state["check_results"] if r["success"]]
@@ -258,13 +319,16 @@ def build_explorer_graph(planner_structured, reflector_structured):
     graph = StateGraph(TableExplorerState)
     graph.add_node("plan_batch", node_plan_batch)
     graph.add_node("execute_all", node_execute_all)
+    graph.add_node("repair_batch", node_repair_batch)
     graph.add_node("reflect_batch", node_reflect_batch)
     graph.add_node("finalize", node_finalize)
     graph.add_node("human_review", node_human_review)
 
     graph.set_entry_point("plan_batch")
     graph.add_edge("plan_batch", "execute_all")
-    graph.add_edge("execute_all", "reflect_batch")
+    graph.add_conditional_edges("execute_all", route_after_execute,
+                                {"repair": "repair_batch", "reflect": "reflect_batch"})
+    graph.add_edge("repair_batch", "execute_all")
     graph.add_edge("reflect_batch", "finalize")
     graph.add_edge("finalize", "human_review")
     graph.add_edge("human_review", END)

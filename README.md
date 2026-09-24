@@ -181,7 +181,7 @@ D:\GitHub\SAP_DM_DQ\.venv\Lib\site-packages\llama_cpp\__init__.py
   * `survivorship.py`, `scorecard.py` — golden-record recommendation and the DQ scorecard.
   * `structural_profile.py`, `contracts.py`, `events.py` — pipeline handoff documents and events.
   * `privacy_guard.py` — heuristic scrubbing of check results before they reach an LLM; `table_profiler.py` — allowlisted statistical profile.
-  * `sandbox.py`, `check_executor.py` — isolated execution of LLM-generated checks; `preflight.py` — free static checks that reject code that can't run.
+  * `sandbox.py`, `check_executor.py` — isolated execution of LLM-generated checks; `preflight.py` — free static checks that reject code that can't run; `repair.py` — the bounded loop that sends failed checks back to the planner once.
   * `episodic_store.py` — SQLite run/finding history and human review state; `client_knowledge.py`, `client_workspace.py` — per-client memory and uploaded data.
   * `evaluate.py` — scores a run against a client's answer key.
 * `explorer_agent/memory/` — `base.py` (MemoryStore interface), `chroma_store.py` (Chroma adapter), `__init__.py` (backend factory `get_memory_store`), `skill_registry.py` (procedural JSON source of truth), `retriever.py`, `promotion.py` (episodic → procedural → semantic), `reindex.py` (rebuild the vector index), `duplicate_rule_store.py`.
