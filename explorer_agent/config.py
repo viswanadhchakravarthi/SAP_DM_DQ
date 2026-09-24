@@ -13,15 +13,12 @@ launched from.
 """
 
 import os
+import warnings
 from pathlib import Path
 from typing import Any, Optional
 
 import yaml
 from dotenv import load_dotenv
-
-# Loads a .env file from the project directory (or a parent directory) into
-# os.environ, without overriding values already supplied by the environment.
-load_dotenv()
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _CONFIG_FILE = Path(os.environ.get("EXPLORER_CONFIG_FILE", PROJECT_ROOT / "config.yaml"))
@@ -35,6 +32,39 @@ def _load_yaml_config(path: Path) -> dict:
 
 
 _yaml_config = _load_yaml_config(_CONFIG_FILE)
+
+
+def _load_env_file() -> Optional[Path]:
+    """Load secrets from the .env file named by ``env_file`` in config.yaml.
+
+    The file lives outside the repository (default: ``~/.env``, i.e. the user's
+    home directory on Linux, macOS and Windows alike). ``~`` and ``%VARS%`` /
+    ``$VARS`` are expanded. EXPLORER_ENV_FILE overrides the yaml value. Values
+    already present in the real environment are never overridden. If the
+    configured file is missing, a legacy ``<project>/.env`` is used when present.
+    Returns the file that was loaded, or None.
+    """
+    configured = os.environ.get("EXPLORER_ENV_FILE") or (_yaml_config.get("env_file") or "~/.env")
+    path = Path(os.path.expandvars(str(configured))).expanduser()
+    if not path.is_absolute():
+        path = PROJECT_ROOT / path
+    if path.is_file():
+        load_dotenv(path)
+        return path
+    legacy = PROJECT_ROOT / ".env"
+    if legacy.is_file():
+        warnings.warn(
+            f"env_file {path} not found; falling back to {legacy}. "
+            "Move it to the configured location so secrets stay outside the repository.",
+            stacklevel=2,
+        )
+        load_dotenv(legacy)
+        return legacy
+    warnings.warn(f"env_file {path} not found; relying on the process environment for secrets.", stacklevel=2)
+    return None
+
+
+ENV_FILE_LOADED = _load_env_file()
 
 
 def _get(dotted_path: str, default: Any = None) -> Any:
@@ -84,20 +114,6 @@ def _env_list(name: str, default: Any) -> list:
     return list(default) if isinstance(default, (list, tuple)) else [default]
 
 
-def _normalize_model_entries(entries: list, default_method: str) -> list:
-    """Model list entries may be plain names or dicts with per-model options."""
-    normalized = []
-    for entry in entries:
-        item = {"name": entry} if isinstance(entry, str) else dict(entry)
-        if not item.get("name"):
-            raise ValueError(f"Model entry {entry!r} in config.yaml is missing 'name'")
-        item.setdefault("structured_output_method", default_method)
-        item.setdefault("reasoning_effort", None)
-        item.setdefault("max_tokens", None)
-        normalized.append(item)
-    return normalized
-
-
 def _resolve_path(value: str) -> str:
     """Anchor a relative path to PROJECT_ROOT; leave absolute paths as-is."""
     p = Path(value)
@@ -108,16 +124,12 @@ class Config:
     """Application configuration - class attributes for simple call-site access."""
 
     PROJECT_ROOT = PROJECT_ROOT
-    CONFIG_FILE = _CONFIG_FILE
 
     # LLM provider selection (see explorer_agent/llm_providers.py:build_llms).
-    # LLM_PROVIDER is the primary backend; LLM_FALLBACK_PROVIDERS are tried in
-    # order when it fails (outage, rate limit, bad structured output, ...).
-    SUPPORTED_LLM_PROVIDERS = ("google", "groq", "local")
+    # Exactly one backend, no fallback chain: "google" (Gemini) or "local" (GGUF).
+    SUPPORTED_LLM_PROVIDERS = ("google", "local")
     LLM_PROVIDER = _env_str("EXPLORER_LLM_PROVIDER", _get("llm.provider", "google"))
-    LLM_FALLBACK_PROVIDERS = _env_list("EXPLORER_LLM_FALLBACKS", _get("llm.fallback_providers", []))
-    # Retries per model AFTER the first attempt, handled by each provider's SDK
-    # (with backoff) before the chain moves on to the next model.
+    # Retries AFTER the first attempt, handled by the provider's SDK (with backoff).
     LLM_MAX_RETRIES = _env_int("EXPLORER_LLM_MAX_RETRIES", _get("llm.max_retries", 2))
     LLM_TIMEOUT_SECONDS = _env_optional_float("EXPLORER_LLM_TIMEOUT", _get("llm.timeout_seconds", 120))
 
@@ -129,26 +141,17 @@ class Config:
 
     # Extra attempts on the SAME model when it returns malformed/missing
     # structured output (invalid JSON, skipped tool call) - these failures are
-    # often random, unlike outages, so one retry is cheaper than failing over.
+    # often random, unlike outages.
     LLM_STRUCTURED_OUTPUT_RETRIES = _env_int(
         "EXPLORER_LLM_STRUCTURED_OUTPUT_RETRIES", _get("llm.structured_output_retries", 1)
     )
 
-    # Groq settings. GROQ_MODELS is itself an ordered fallback list of
-    # {name, structured_output_method, reasoning_effort, max_tokens} dicts.
-    GROQ_TEMPERATURE = _env_optional_float("GROQ_TEMPERATURE", _get("llm.groq.temperature", 0.2))
-    GROQ_STRUCTURED_OUTPUT_METHOD = _env_str(
-        "GROQ_STRUCTURED_OUTPUT_METHOD", _get("llm.groq.structured_output_method", "json_schema")
-    )
-    GROQ_MODELS = _normalize_model_entries(
-        _env_list("GROQ_MODELS", _get("llm.groq.models", ["openai/gpt-oss-20b"])),
-        GROQ_STRUCTURED_OUTPUT_METHOD,
-    )
-    GROQ_API_KEY = os.environ.get("GROQ_API_KEY")  # secret - .env only, no yaml default
-
     # Local GGUF LLM settings. Only ever read/loaded when LLM_PROVIDER=="local".
-    LOCAL_LLM_MODEL_PATH: Optional[str] = _env_str(
-        "EXPLORER_LOCAL_LLM_MODEL_PATH", _get("llm.local.model_path")
+    # "~" and %VAR% are expanded, so the yaml value can be portable across machines.
+    LOCAL_LLM_MODEL_PATH: Optional[str] = (
+        os.path.expanduser(os.path.expandvars(_p))
+        if (_p := _env_str("EXPLORER_LOCAL_LLM_MODEL_PATH", _get("llm.local.model_path")))
+        else None
     )
     LOCAL_LLM_N_CTX = _env_int("EXPLORER_LOCAL_LLM_N_CTX", _get("llm.local.n_ctx", 4096))
 
@@ -332,11 +335,6 @@ class Config:
         """Names of required settings that are unset for `provider` (empty = usable)."""
         if provider == "google":
             return [] if cls.GEMINI_API_KEY else ["GEMINI_API_KEY (.env)"]
-        if provider == "groq":
-            missing = [] if cls.GROQ_API_KEY else ["GROQ_API_KEY (.env)"]
-            if not cls.GROQ_MODELS:
-                missing.append("llm.groq.models (config.yaml) or GROQ_MODELS (.env)")
-            return missing
         if provider == "local":
             return [] if cls.LOCAL_LLM_MODEL_PATH else [
                 "llm.local.model_path (config.yaml) or EXPLORER_LOCAL_LLM_MODEL_PATH (.env)"
@@ -348,19 +346,12 @@ class Config:
 
     @classmethod
     def validate(cls) -> None:
-        """Fail early when the PRIMARY LLM provider lacks required settings.
-
-        Fallback providers are only checked for valid names here; one that is
-        missing credentials is skipped with a warning when the chain is built,
-        so a missing optional key never blocks a run.
-        """
-        for provider in cls.LLM_FALLBACK_PROVIDERS:
-            cls.provider_missing_settings(provider)  # raises on unknown names
+        """Fail early when the configured LLM provider lacks required settings."""
         missing = cls.provider_missing_settings(cls.LLM_PROVIDER)
 
         if missing:
             raise EnvironmentError(
                 f"Missing required configuration: {', '.join(missing)}. "
-                "Set them in config.yaml (non-secret settings) or your .env "
-                "file at the project root (secrets/machine-specific values)."
+                "Set them in config.yaml (non-secret settings) or in the .env "
+                "file named by env_file in config.yaml (secrets)."
             )

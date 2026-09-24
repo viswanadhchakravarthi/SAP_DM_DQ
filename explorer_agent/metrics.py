@@ -12,11 +12,9 @@ class RunMetrics:
     planner_llm_calls: int = 0
     reflector_llm_calls: int = 0
     sandbox_executions: int = 0
-    # observation_tool_calls: int = 0  # NEW - tracks "free" tool calls (no sandbox, no reflection)
     cache_hits: int = 0       # columns served (at least partially) from cache
     cache_misses: int = 0     # columns with no cached skills at all
     llm_call_failures: int = 0   # model attempts that failed (after SDK retries) - see llm_providers.py
-    llm_fallback_calls: int = 0  # structured calls answered by a non-primary model
     # Duplicate matching rules: drafted by the LLM once per client+schema, then
     # served from memory (see duplicate_rules.resolve_rules).
     duplicate_rule_llm_calls: int = 0
@@ -41,14 +39,14 @@ class RunMetrics:
             "RUN METRICS SUMMARY | planner_llm_calls=%d reflector_llm_calls=%d "
             "duplicate_rule_llm_calls=%d duplicate_rule_hits=%d duplicate_rule_misses=%d "
             "sandbox_executions=%d cache_hits=%d cache_misses=%d "
-            "llm_call_failures=%d llm_fallback_calls=%d "
+            "llm_call_failures=%d "
             "sap_rules_evaluated=%d sap_rule_findings=%d sap_rule_rows=%d planner_checks_covered_by_rules=%d "
             "anomaly_findings=%d column_mapping_standard=%d column_mapping_hits=%d column_mapping_llm_calls=%d "
             "column_mapping_failures=%d",
             self.planner_llm_calls, self.reflector_llm_calls,
             self.duplicate_rule_llm_calls, self.duplicate_rule_hits, self.duplicate_rule_misses,
             self.sandbox_executions, self.cache_hits, self.cache_misses,
-            self.llm_call_failures, self.llm_fallback_calls,
+            self.llm_call_failures,
             self.sap_rules_evaluated, self.sap_rule_findings, self.sap_rule_rows,
             self.planner_checks_covered_by_rules, self.anomaly_findings, self.column_mapping_standard,
             self.column_mapping_hits, self.column_mapping_llm_calls, self.column_mapping_failures,
@@ -58,11 +56,9 @@ class RunMetrics:
         self.planner_llm_calls = 0
         self.reflector_llm_calls = 0
         self.sandbox_executions = 0
-        # self.observation_tool_calls = 0
         self.cache_hits = 0
         self.cache_misses = 0
         self.llm_call_failures = 0
-        self.llm_fallback_calls = 0
         self.duplicate_rule_llm_calls = 0
         self.duplicate_rule_hits = 0
         self.duplicate_rule_misses = 0

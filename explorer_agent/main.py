@@ -187,20 +187,13 @@ def main():
     )
     parser.add_argument(
         "--llm-provider", default=Config.LLM_PROVIDER, choices=Config.SUPPORTED_LLM_PROVIDERS,
-        help="Primary LLM backend (overrides config.yaml/EXPLORER_LLM_PROVIDER).",
-    )
-    parser.add_argument(
-        "--fallback-providers", nargs="*", default=None, choices=Config.SUPPORTED_LLM_PROVIDERS,
-        help="Ordered fallback backends (overrides config.yaml/EXPLORER_LLM_FALLBACKS). "
-             "Pass the flag with no values to disable fallbacks.",
+        help="LLM backend, google or local (overrides config.yaml/EXPLORER_LLM_PROVIDER).",
     )
     args = parser.parse_args()
 
     if args.no_cache:
         Config.ENABLE_CACHE_FAST_PATH = False
     Config.LLM_PROVIDER = args.llm_provider
-    if args.fallback_providers is not None:
-        Config.LLM_FALLBACK_PROVIDERS = args.fallback_providers
 
     if args.duplicates_only and args.deterministic_only:
         parser.error("--duplicates-only and --deterministic-only are mutually exclusive")
@@ -215,9 +208,9 @@ def main():
         parser.error(str(exc))
 
     logger.info(
-        "Starting run | client=%s provider=%s fallbacks=%s tables=%s cache_enabled=%s duplicates_only=%s "
+        "Starting run | client=%s provider=%s tables=%s cache_enabled=%s duplicates_only=%s "
         "deterministic_only=%s sap_rules=%s",
-        client["name"], Config.LLM_PROVIDER, Config.LLM_FALLBACK_PROVIDERS, args.tables,
+        client["name"], Config.LLM_PROVIDER, args.tables,
         Config.ENABLE_CACHE_FAST_PATH, args.duplicates_only, args.deterministic_only, Config.SAP_RULES_ENABLED,
     )
 
@@ -241,7 +234,7 @@ def main():
         # duplicates-only run normally stays free. A table whose schema has never
         # been seen for this client still needs one call to draft its rules, so the
         # chain is built lazily - only if such a table actually turns up, and only
-        # when the primary provider is configured.
+        # when the provider is configured.
         rule_planner = mapping_planner = None
         if not Config.provider_missing_settings(Config.LLM_PROVIDER):
             rule_planner = RulePlanner(_rule_chain_factory(args.model, args.temperature))
@@ -410,8 +403,7 @@ def main():
           f"{metrics.column_mapping_hits} | Mapped by LLM: {metrics.column_mapping_llm_calls} | "
           f"Failed: {metrics.column_mapping_failures}")
     print(f"Cache - Hits: {metrics.cache_hits} | Misses: {metrics.cache_misses}")
-    print(f"LLM fallbacks - Failed attempts: {metrics.llm_call_failures} | "
-          f"Served by fallback: {metrics.llm_fallback_calls}")
+    print(f"LLM - Failed calls: {metrics.llm_call_failures}")
     print(f"\nReview at: http://localhost:8000")
 
     # One machine-readable line for the job manager (review_app/job_manager.py).

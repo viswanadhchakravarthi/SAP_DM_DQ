@@ -135,20 +135,20 @@ variable names.
 
 ## Environment Setup
 
-Create a `.env` file in the project root:
+Create a `.env` file in your **home directory** (`C:\Users\<you>\.env` on Windows,
+`~/.env` on Linux/macOS), outside the repository. The location is set by
+`env_file` in `config.yaml` (`~` and `%VAR%` are expanded; `EXPLORER_ENV_FILE`
+overrides it). If that file is missing, a legacy `<project>/.env` is used with a warning.
 
 ```env
 GEMINI_API_KEY="your-gemini-key"
 KAGGLE_API_TOKEN="kaggle-api-token"
 
-GROQ_API_KEY="gsk_your-groq-key" # LLM fallback provider (config.yaml llm.fallback_providers)
-ANTHROPIC_API_KEY="your-anthropic-key" # not required for now
-OPENAI_API_KEY="sk-proj-your-openai-key" # not required for now
-HF_TOKEN="your-huggingface-token" # not required for now
 
-# Only read when config.yaml's llm.provider is "local":
-# EXPLORER_LOCAL_LLM_MODEL_PATH="C:\path\to\your-model.gguf"
 ```
+
+The local GGUF model path is not a secret: set `llm.local.model_path` in
+`config.yaml` (only used when `llm.provider` is `local`; the other option is `google`).
 
 ---
 
@@ -172,12 +172,17 @@ D:\GitHub\SAP_DM_DQ\.venv\Lib\site-packages\llama_cpp\__init__.py
 
 ## Module Index
 
-* `memory/` — Base interface adapters (`base.py`), vector backend factory (`factory.py`), Chroma implementation (`chroma.py`), retriever module (`retriever.py`), and skill registry (`skill_registry.py`).
-* `promotion.py` — Pipeline logic for deduplicating and promoting approved findings from episodic to procedural memory.
-* `reindex.py` — Utility script to rebuild the ChromaDB vector index from the procedural JSON source of truth.
-* `privacy_guard.py` — Heuristic-based output scrubbing to safeguard sensitive client data.
-* `sandbox.py` — Isolated execution context for dynamic check generation and evaluation.
-
-```
-
-```
+* `explorer_agent/` — the profiling pipeline (CLI: `python -m explorer_agent.main`)
+  * `main.py` — entry point; runs the per-table pipeline. `graph.py` — LangGraph plan → execute → reflect flow.
+  * `config.py` + `config.yaml` — all settings; secrets come from the `.env` named by `env_file`.
+  * `llm_providers.py` — builds the single LLM (Gemini or local GGUF); `local_llms.py` — the GGUF chat model.
+  * `duplicate_detector.py`, `duplicate_rule_planner.py`, `duplicate_rules.py` — duplicate matching and its per-client rules.
+  * `column_mapping.py`, `sap_rules.py`, `anomaly_rules.py`, `rule_packs/` — column meaning and the deterministic SAP rule engines.
+  * `survivorship.py`, `scorecard.py` — golden-record recommendation and the DQ scorecard.
+  * `structural_profile.py`, `contracts.py`, `events.py` — pipeline handoff documents and events.
+  * `privacy_guard.py` — heuristic scrubbing of check results before they reach an LLM; `table_profiler.py` — allowlisted statistical profile.
+  * `sandbox.py`, `check_executor.py` — isolated execution of LLM-generated checks.
+  * `episodic_store.py` — SQLite run/finding history and human review state; `client_knowledge.py`, `client_workspace.py` — per-client memory and uploaded data.
+  * `evaluate.py` — scores a run against a client's answer key.
+* `explorer_agent/memory/` — `base.py` (MemoryStore interface), `chroma_store.py` (Chroma adapter), `__init__.py` (backend factory `get_memory_store`), `skill_registry.py` (procedural JSON source of truth), `retriever.py`, `promotion.py` (episodic → procedural → semantic), `reindex.py` (rebuild the vector index), `duplicate_rule_store.py`.
+* `review_app/` — FastAPI + vanilla JS review UI (`uvicorn review_app.main:app`); `job_manager.py` runs the explorer as a child process.

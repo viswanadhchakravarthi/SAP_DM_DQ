@@ -1411,14 +1411,6 @@ async function openRunExplorerModal() {
         ${options.llm_providers.map((p) => `<option value="${escapeHtml(p)}" ${p === options.default_llm_provider ? "selected" : ""}>${escapeHtml(p)}</option>`).join("")}
       </select>
     </div>
-    <div class="form-row">
-      <label>Fallback Providers (leave all unchecked to keep config.yaml defaults)</label>
-      <div class="checkbox-group">
-        ${options.llm_providers.map((p) => `
-          <label class="checkbox-inline"><input type="checkbox" class="re-fallback-check" value="${escapeHtml(p)}" ${options.default_fallback_providers.includes(p) ? "checked" : ""}> ${escapeHtml(p)}</label>
-        `).join("")}
-      </div>
-    </div>
     <div class="form-row checkbox-row">
       <label class="checkbox-inline" data-tooltip="Only run the built-in duplicate detection. No LLM calls, so no API cost.">
         <input type="checkbox" id="reDuplicatesOnly"> Duplicates only (no LLM)
@@ -1453,11 +1445,6 @@ async function openRunExplorerModal() {
 }
 
 async function submitRunExplorer() {
-  const fallbackChecks = Array.from(document.querySelectorAll(".re-fallback-check"));
-  const anyFallbackChecked = fallbackChecks.some((el) => el.checked);
-  const fallbackProviders = anyFallbackChecked
-    ? fallbackChecks.filter((el) => el.checked).map((el) => el.value)
-    : null; // null = don't override config.yaml default
   const modelVal = document.getElementById("reModel").value.trim();
   const tempVal = document.getElementById("reTemperature").value;
   const maxIterVal = document.getElementById("reMaxIterations").value;
@@ -1468,7 +1455,6 @@ async function submitRunExplorer() {
     no_cache: document.getElementById("reNoCache").checked,
     duplicates_only: document.getElementById("reDuplicatesOnly").checked,
   };
-  if (fallbackProviders !== null) body.fallback_providers = fallbackProviders;
   if (modelVal) body.model = modelVal;
   if (tempVal !== "") body.temperature = parseFloat(tempVal);
   if (maxIterVal !== "") body.max_iterations = parseInt(maxIterVal, 10);

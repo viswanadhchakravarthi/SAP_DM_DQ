@@ -1,14 +1,10 @@
 pandas
 numpy
-# openpyx1
-# anthropic>=0.34
-requests
 python-dotenv
 pyyaml
 langchain-core
 langgraph
 langchain-google-genai
-langchain-groq
 fastapi
 uvicorn[standard]
 chromadb  # also provides onnxruntime + tokenizers for local all-MiniLM-L6-v2 embeddings

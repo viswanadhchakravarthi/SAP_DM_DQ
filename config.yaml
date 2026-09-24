@@ -9,28 +9,26 @@
 # variable without editing this file - see explorer_agent/config.py for the
 # exact variable name behind each setting.
 
+# Where secrets (API keys, tokens) are read from. Kept outside the repository so
+# they can't be committed. "~" is your home directory: C:\Users\<you> on Windows,
+# /home/<you> on Linux. %VAR% / $VAR are expanded. Overridable with
+# EXPLORER_ENV_FILE. A missing file falls back to <project>/.env with a warning.
+env_file: ~/.env
+
 llm:
-  # Primary backend: "google" (Gemini API), "groq" (Groq API) or "local"
-  # (GGUF model via llama-cpp-python).
+  # The one LLM backend: "google" (Gemini API) or "local" (GGUF model via
+  # llama-cpp-python). There is no fallback chain: if the model fails, the
+  # table is skipped (exit code 1) and the run reports it.
   # Overridable with EXPLORER_LLM_PROVIDER, or --llm-provider on the CLI.
-  # The local model is only ever loaded into memory when "local" appears in
-  # the provider chain - never just because the code imports this module.
+  # The local model is only loaded into memory when provider is "local".
   provider: google
 
-  # Tried in order when the primary fails (503 overload, 429 rate limit,
-  # timeout, request too large, unparseable structured output, ...).
-  # A fallback whose API key is missing is skipped with a warning.
-  # Overridable with EXPLORER_LLM_FALLBACKS (comma-separated), or
-  # --fallback-providers on the CLI ("--fallback-providers" alone = none).
-  fallback_providers: [groq]
-
-  # Retries per model after the first attempt (with backoff, done by the
-  # provider SDK) before moving to the next model in the chain. Keep this low
-  # when fallbacks exist so an overloaded model fails over quickly.
+  # Retries after the first attempt (with backoff, done by the provider SDK)
+  # for transient errors (429, 5xx, timeouts) before the call is given up.
   max_retries: 2 # EXPLORER_LLM_MAX_RETRIES
   timeout_seconds: 120 # EXPLORER_LLM_TIMEOUT
   # Extra attempts on the SAME model when it returns invalid/missing structured
-  # output (e.g. Groq "json_validate_failed") - often random, so worth a retry.
+  # output (invalid JSON, skipped tool call) - often random, so worth a retry.
   structured_output_retries: 1 # EXPLORER_LLM_STRUCTURED_OUTPUT_RETRIES
 
   gemini:
@@ -39,39 +37,11 @@ llm:
     # (and warns about) any explicit temperature.
     temperature: null
 
-  groq:
-    # Ordered: each model is a fallback for the one above it. Free-tier rate
-    # limits are per model - see https://console.groq.com/settings/limits -
-    # so listing several models also spreads load across separate quotas.
-    # Entries may be a plain name or a dict of per-model options:
-    #   structured_output_method: json_schema | function_calling | json_mode
-    #   reasoning_effort: provider-specific (qwen: none|default, gpt-oss: low|medium|high)
-    #   max_tokens: output cap (reasoning tokens count against it)
-    # GROQ_MODELS (comma-separated names, default options) overrides this list.
-    models:
-      # Free tier caps OUTPUT at ~1000 tokens/min, while a CheckPlan is
-      # ~1.5-2.5k tokens: a fresh quota can serve one plan, but back-to-back
-      # planner calls are rejected ("Request too large") and fail over.
-      - name: qwen/qwen3.8-27b
-        reasoning_effort: none # halves output tokens for structured replies
-      # Free tier ~8000 total tokens/min: roughly one planner call per minute.
-      # Default reasoning ate most of the 2048-token default cap and truncated
-      # the JSON - hence low effort + a larger max_tokens.
-      - name: openai/gpt-oss-20b
-        reasoning_effort: low
-        max_tokens: 8192
-    temperature: 0.2
-    # Default for entries without their own structured_output_method.
-    # json_schema (Groq structured outputs) proved far more reliable than
-    # function_calling for the large, code-heavy CheckPlan schema.
-    structured_output_method: json_schema
-
   local:
-    # Absolute path to a local GGUF model file. Left null here on purpose -
-    # this is machine-specific and often large/private. Set it per-machine
-    # in your local .env as EXPLORER_LOCAL_LLM_MODEL_PATH instead of editing
-    # this committed file.
-    model_path: null
+    # Path to a local GGUF model file ("~" and %VAR% are expanded). Only used
+    # when provider is "local". Machine-specific: EXPLORER_LOCAL_LLM_MODEL_PATH
+    # overrides it per machine without editing this file.
+    model_path: ~/.cache/kagglehub/models/qwen-lm/qwen2.5-coder/gguf/3b-instruct/1/qwen2.5-coder-3b-instruct-q4_k_m.gguf
     n_ctx: 4096
 
 data:

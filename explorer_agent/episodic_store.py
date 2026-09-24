@@ -654,51 +654,6 @@ def set_cluster_verdict(finding_id: str, group_id: str, verdict: str, comment: s
         return cur.rowcount
 
 
-def set_golden_record(finding_id: str, group_id: str, golden_item_id: str) -> bool:
-    """Marks one record as Golden within a duplicate group, and marks siblings for merge.
-
-    No longer called by review_app's API - the golden-record workflow was removed from the
-    Duplicates UI (per-record/per-cluster verdicts replace it). Retained, along with the
-    is_golden_record column, for backward compatibility with historical data: this codebase's
-    SQLite migrations are additive-only (guarded ALTER TABLE, no drop/rebuild path), so old
-    golden-record markings stay readable via get_duplicate_groups() rather than being discarded.
-    """
-    with get_connection() as conn:
-        # 1. Fetch golden item key value
-        golden_row = conn.execute(
-            "SELECT key_value FROM finding_items WHERE id = ? AND finding_id = ?",
-            (golden_item_id, finding_id),
-        ).fetchone()
-        if not golden_row:
-            return False
-        golden_key = golden_row["key_value"]
-
-        # 2. Reset other records in the same group to non-golden
-        conn.execute(
-            """UPDATE finding_items
-               SET is_golden_record = 0,
-                   review_verdict = 'DUPLICATE',
-                   status = 'APPROVED',
-                   suggested_action = 'MERGE_INTO_GOLDEN (Target: ' || ? || ')',
-                   reviewed_at = ?
-               WHERE finding_id = ? AND duplicate_group_id = ? AND id != ?""",
-            (golden_key, datetime.now(timezone.utc).isoformat(), finding_id, group_id, golden_item_id),
-        )
-
-        # 3. Mark target record as golden
-        conn.execute(
-            """UPDATE finding_items
-               SET is_golden_record = 1,
-                   review_verdict = 'DUPLICATE',
-                   status = 'APPROVED',
-                   suggested_action = 'RETAIN_AS_GOLDEN (Master Record)',
-                   reviewed_at = ?
-               WHERE id = ?""",
-            (datetime.now(timezone.utc).isoformat(), golden_item_id),
-        )
-        return True
-
-
 _MATCH_TYPE_RANK = {"EXACT": 3, "PROBABLE": 2, "SIMILAR": 1}
 
 

@@ -89,7 +89,6 @@ class RunExplorerRequest(BaseModel):
     temperature: Optional[float] = None
     max_iterations: Optional[int] = None
     llm_provider: str = Config.LLM_PROVIDER
-    fallback_providers: Optional[List[str]] = None
     no_cache: bool = False
     duplicates_only: bool = False
 
@@ -258,9 +257,7 @@ def get_config_options():
         "llm_providers": list(Config.SUPPORTED_LLM_PROVIDERS),
         "default_max_iterations": Config.MAX_ITERATIONS_PER_COLUMN,
         "default_llm_provider": Config.LLM_PROVIDER,
-        "default_fallback_providers": Config.LLM_FALLBACK_PROVIDERS,
         "gemini_model_default": Config.GEMINI_MODEL,
-        "groq_models_default": [m["name"] for m in Config.GROQ_MODELS],
     }
 
 
@@ -565,10 +562,6 @@ def _build_explorer_cli_args(body: RunExplorerRequest, client: dict, workspace: 
     if body.duplicates_only:
         args.append("--duplicates-only")
     args += ["--llm-provider", body.llm_provider]
-    if body.fallback_providers is not None:
-        # Passing the flag with no values explicitly disables fallbacks,
-        # matching the documented CLI behavior.
-        args += ["--fallback-providers", *body.fallback_providers]
     return args
 
 
