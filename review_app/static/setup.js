@@ -204,6 +204,7 @@ async function uploadFiles(kind, files) {
     try {
       const url = `${API_BASE}/clients/${encodeURIComponent(selected.client_id)}/${kind}?filename=${encodeURIComponent(file.name)}`;
       workspace = await fetchJSON(url, { method: "PUT", headers: { "Content-Type": "text/csv" }, body: file });
+      Object.keys(columnCache).forEach((k) => delete columnCache[k]);
       logUpload(file.name, "done", kind === "dictionary" ? "- data dictionary saved" : "- table saved");
     } catch (error) {
       logUpload(file.name, "error", `- ${error.message}`);
@@ -266,6 +267,7 @@ function setupDropZone(zoneId, inputId, kind) {
 // ---------------------------------------------------------------------------
 
 function render() {
+  closePicker();
   const selection = el("clientSelection");
   const dataStep = el("dataStep");
   const locked = !selected;
@@ -302,7 +304,7 @@ function render() {
   const tables = workspace?.tables || [];
   el("tablesState").innerHTML = tables.length ? `
     <table class="files-table">
-      <thead><tr><th>Table</th><th>Uploaded file</th><th>Rows</th><th>Columns</th><th>Uploaded</th><th></th></tr></thead>
+      <thead><tr><th>Table</th><th>Uploaded file</th><th>Rows</th><th>Columns</th><th>Uploaded</th><th title="Columns shown beside flagged records on the review page, to help decide. Every column is still analysed.">Helper columns</th><th></th></tr></thead>
       <tbody>
         ${tables.map((t) => `
           <tr>
@@ -311,12 +313,15 @@ function render() {
             <td>${Number(t.rows).toLocaleString("en-IN")}</td>
             <td>${t.columns}</td>
             <td>${escapeHtml(formatWhen(t.uploaded_at))}</td>
+            <td><button class="helper-btn" data-helper-table="${escapeHtml(t.table)}" aria-haspopup="dialog" title="Choose columns to show beside flagged records on the review page">${escapeHtml(helperLabel(t))} ▾</button></td>
             <td><button class="btn-remove" data-remove-table="${escapeHtml(t.table)}" aria-label="Remove ${escapeHtml(t.table)}">Remove</button></td>
           </tr>`).join("")}
       </tbody>
     </table>` : "";
   el("tablesState").querySelectorAll("[data-remove-table]").forEach((btn) =>
     btn.addEventListener("click", () => removeTable(btn.dataset.removeTable)));
+  el("tablesState").querySelectorAll("[data-helper-table]").forEach((btn) =>
+    btn.addEventListener("click", (event) => { event.stopPropagation(); togglePicker(btn.dataset.helperTable, btn); }));
 
   const missing = [];
   if (!selected) missing.push("choose a client");
@@ -335,6 +340,166 @@ function proceed() {
   try { localStorage.setItem(CLIENT_STORAGE_KEY, selected.client_id); } catch { /* convenience only */ }
   window.location.href = `review.html?client=${encodeURIComponent(selected.client_id)}`;
 }
+
+// ---------------------------------------------------------------------------
+// Helper columns: which columns of a table the reviewer sees beside flagged records
+// ---------------------------------------------------------------------------
+// Saved per client and table. Nothing about the analysis changes - every column is still
+// profiled; these are only shown next to findings on the review page so a decision is informed.
+
+const columnCache = {};  // table -> [{name, description, data_type}]
+let picker = null;       // {table, button, panel, selected:Set, saveTimer}
+
+function helperLabel(t) {
+  const n = (t.helper_columns || []).length;
+  return n ? `${n} of ${t.columns} selected` : "None selected";
+}
+
+function closePicker() {
+  if (!picker) return;
+  clearTimeout(picker.saveTimer);
+  picker.panel.remove();
+  picker = null;
+}
+
+function togglePicker(table, button) {
+  if (picker && picker.table === table) { closePicker(); return; }
+  openPicker(table, button);
+}
+
+async function openPicker(table, button) {
+  closePicker();
+  const info = (workspace?.tables || []).find((t) => t.table === table);
+  const panel = document.createElement("div");
+  panel.className = "ms-panel";
+  panel.setAttribute("role", "dialog");
+  panel.setAttribute("aria-label", `Helper columns for ${table}`);
+  panel.innerHTML = '<p class="hint-text ms-loading">Loading columns…</p>';
+  document.body.appendChild(panel);
+  picker = { table, button, panel, selected: new Set(info?.helper_columns || []), saveTimer: null };
+  // A button below the fold would leave the panel with nothing to anchor to: bring it into view first.
+  const at = button.getBoundingClientRect();
+  if (at.top < 0 || at.bottom > window.innerHeight) button.scrollIntoView({ block: "center" });
+  positionPicker();
+  const mine = picker;
+  try {
+    if (!columnCache[table]) {
+      const data = await fetchJSON(`${API_BASE}/clients/${encodeURIComponent(selected.client_id)}/tables/${encodeURIComponent(table)}/columns`);
+      columnCache[table] = data.columns;
+      mine.selected = new Set(data.helper_columns);
+    }
+  } catch (error) {
+    panel.innerHTML = `<p class="run-explorer-error">Could not load the columns: ${escapeHtml(error.message)}</p>`;
+    return;
+  }
+  if (picker !== mine) return;  // closed while loading
+  renderPicker();
+  positionPicker();
+}
+
+// Keep the whole panel inside the window: below the button if it fits, else above it, else centred.
+// The column list takes whatever height is left, so a short window scrolls the list, not the page.
+function positionPicker() {
+  if (!picker) return;
+  const { panel, button } = picker;
+  const margin = 12;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const width = Math.min(400, vw - 2 * margin);
+  panel.style.width = `${width}px`;
+
+  const list = panel.querySelector(".ms-list");
+  if (list) {
+    list.style.maxHeight = "300px";  // measure the chrome around the list at its natural size
+    const chrome = panel.offsetHeight - list.offsetHeight;
+    list.style.maxHeight = `${Math.max(120, Math.min(300, vh - 2 * margin - chrome))}px`;
+  }
+  const height = panel.offsetHeight;
+  const rect = button.getBoundingClientRect();
+  const below = vh - rect.bottom - margin;
+  const above = rect.top - margin;
+  let top;
+  if (height + 6 <= below) top = rect.bottom + 6;
+  else if (height + 6 <= above) top = rect.top - height - 6;
+  else top = (vh - height) / 2;  // fits neither side: centre it
+  top = Math.max(margin, Math.min(top, vh - height - margin));  // never past a window edge
+  panel.style.top = `${top}px`;
+  panel.style.left = `${Math.max(margin, Math.min(rect.right - width, vw - width - margin))}px`;
+}
+
+function renderPicker() {
+  const { table, panel, selected: chosen } = picker;
+  const columns = columnCache[table];
+  panel.innerHTML = `
+    <div class="ms-head"><strong>${escapeHtml(table)} · helper columns</strong><span class="ms-count"></span></div>
+    <input type="search" class="ms-search" placeholder="Search columns or descriptions…" aria-label="Search columns">
+    <div class="ms-tools">
+      <button type="button" data-ms="all">Select all</button>
+      <button type="button" data-ms="none">Clear</button>
+      <span class="ms-saved" aria-live="polite"></span>
+    </div>
+    <div class="ms-list">
+      ${columns.map((c) => `
+        <label class="ms-item" data-search="${escapeHtml((c.name + " " + c.description + " " + c.data_type).toLowerCase())}">
+          <input type="checkbox" value="${escapeHtml(c.name)}" ${chosen.has(c.name) ? "checked" : ""}>
+          <span class="ms-name">${escapeHtml(c.name)}</span>
+          ${c.data_type ? `<span class="ms-type">${escapeHtml(c.data_type)}</span>` : ""}
+          <span class="ms-desc">${escapeHtml(c.description || "no description in the data dictionary")}</span>
+        </label>`).join("")}
+    </div>
+    <p class="hint-text ms-foot">Shown beside flagged records on the review page. Every column is still analysed.</p>`;
+
+  const boxes = () => Array.from(panel.querySelectorAll(".ms-item input"));
+  const visible = () => boxes().filter((b) => !b.closest(".ms-item").hidden);
+  const updateCount = () => { panel.querySelector(".ms-count").textContent = `${chosen.size} of ${columns.length}`; };
+  updateCount();
+
+  panel.querySelector(".ms-search").addEventListener("input", (event) => {
+    const q = event.target.value.trim().toLowerCase();
+    panel.querySelectorAll(".ms-item").forEach((item) => { item.hidden = q !== "" && !item.dataset.search.includes(q); });
+  });
+  panel.querySelectorAll("[data-ms]").forEach((btn) => btn.addEventListener("click", () => {
+    const on = btn.dataset.ms === "all";
+    visible().forEach((b) => { b.checked = on; on ? chosen.add(b.value) : chosen.delete(b.value); });
+    updateCount();
+    scheduleSave();
+  }));
+  panel.querySelector(".ms-list").addEventListener("change", (event) => {
+    const box = event.target;
+    if (!(box instanceof HTMLInputElement)) return;
+    box.checked ? chosen.add(box.value) : chosen.delete(box.value);
+    updateCount();
+    scheduleSave();
+  });
+}
+
+function scheduleSave() {
+  const mine = picker;
+  if (!mine) return;
+  const note = mine.panel.querySelector(".ms-saved");
+  if (note) note.textContent = "Saving…";
+  clearTimeout(mine.saveTimer);
+  mine.saveTimer = setTimeout(async () => {
+    try {
+      const result = await fetchJSON(
+        `${API_BASE}/clients/${encodeURIComponent(selected.client_id)}/tables/${encodeURIComponent(mine.table)}/helper-columns`,
+        { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ columns: [...mine.selected] }) });
+      workspace = result;
+      const info = workspace.tables.find((t) => t.table === mine.table);
+      if (mine.button.isConnected && info) mine.button.textContent = `${helperLabel(info)} ▾`;
+      if (note && note.isConnected) note.textContent = "Saved ✓";
+    } catch (error) {
+      if (note && note.isConnected) note.textContent = `Not saved: ${error.message}`;
+    }
+  }, 350);
+}
+
+document.addEventListener("click", (event) => {
+  if (picker && !picker.panel.contains(event.target) && !picker.button.contains(event.target)) closePicker();
+});
+document.addEventListener("keydown", (event) => { if (event.key === "Escape") closePicker(); });
+window.addEventListener("resize", positionPicker);
+window.addEventListener("scroll", positionPicker, true);  // follow the button when the page scrolls
 
 (async function init() {
   el("clearFilesBtn").addEventListener("click", clearAllFiles);

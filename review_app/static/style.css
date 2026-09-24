@@ -1843,3 +1843,36 @@ header .btn-icon:hover {
 .run-usage.hidden {
   display: none;
 }
+
+/* Helper columns (page 1 picker + review page context columns) */
+.helper-btn {
+  font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 8px; cursor: pointer;
+  background: #fff; color: #4338ca; border: 1px solid #c7d2fe; white-space: nowrap;
+}
+.helper-btn:hover { background: #eef2ff; }
+.ms-panel {
+  position: fixed; z-index: 1000; width: 400px; max-width: calc(100vw - 24px);
+  background: #fff; border: 1px solid #d1d5db; border-radius: 12px; padding: 12px 14px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.22);
+}
+.ms-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.ms-count { font-size: 12px; color: #6b7280; }
+.ms-search { width: 100%; padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 8px; font: inherit; font-size: 13px; }
+.ms-tools { display: flex; gap: 10px; align-items: center; margin: 8px 0 6px; font-size: 13px; }
+.ms-tools button { background: none; border: none; color: #4338ca; cursor: pointer; padding: 0; font: inherit; font-size: 13px; }
+.ms-tools button:hover { text-decoration: underline; }
+.ms-saved { margin-left: auto; font-size: 12px; color: #047857; }
+.ms-list { max-height: 300px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
+.ms-item {
+  display: grid; grid-template-columns: auto minmax(70px, auto) auto 1fr; gap: 8px; align-items: baseline;
+  padding: 6px 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 13px;
+}
+.ms-item[hidden] { display: none; }
+.ms-item:hover { background: #f8fafc; }
+.ms-name { font-weight: 600; color: #1e1b4b; }
+.ms-type { font-size: 11px; color: #4b5563; background: #eef2ff; border-radius: 4px; padding: 1px 6px; }
+.ms-desc { color: #6b7280; font-size: 12px; overflow-wrap: anywhere; }
+.ms-foot { margin: 8px 0 0; }
+th.helper-col { background: #f0f9ff; color: #075985; font-weight: 600; }
+td.helper-col { background: #f8fcff; color: #0f172a; }
+.helper-note { margin: 6px 0; }

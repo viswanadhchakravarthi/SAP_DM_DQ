@@ -22,13 +22,13 @@ import tempfile
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
 from . import client_knowledge
 from .config import Config
-from .data_loader import DICTIONARY_REQUIRED_COLUMNS, table_name_from_filename
+from .data_loader import DICTIONARY_REQUIRED_COLUMNS, load_data_dictionary_structured, table_name_from_filename
 
 _lock = threading.Lock()
 
@@ -160,13 +160,19 @@ def save_table(client_id: str, original_filename: str, tmp_path: Path,
             # or discovery would see the same table under two paths and refuse the run.
             if previous and previous != target:
                 (workspace_dir(client_id) / previous).unlink(missing_ok=True)
-            meta.setdefault("tables", {})[table] = {
+            entry = {
                 "file": target,
                 "original_name": Path(original_filename).name,
                 "rows": int(df.shape[0]),
                 "columns": int(df.shape[1]),
                 "uploaded_at": datetime.now(timezone.utc).isoformat(),
             }
+            # A re-upload keeps the reviewer's helper columns that still exist in the new file.
+            kept = [c for c in (meta.get("tables", {}).get(table) or {}).get("helper_columns", [])
+                    if c in set(map(str, df.columns))]
+            if kept:
+                entry["helper_columns"] = kept
+            meta.setdefault("tables", {})[table] = entry
             _write_metadata(client_id, meta)
         return get_workspace(client_id)
     finally:
@@ -263,6 +269,91 @@ def seed_from_folder(client_id: str, source_dir: str, dictionary_file: str) -> D
             shutil.copyfile(path, tmp)
             save_table(client_id, path.name, tmp, subdir=None if folder == "." else folder)
     return get_workspace(client_id)
+
+
+# --------------------------------------------------------------------------- #
+# Helper columns: context columns a reviewer wants to see next to flagged records
+# --------------------------------------------------------------------------- #
+# Chosen per table on page 1 and saved here. They change nothing about what is analysed
+# (every column still is); the review page only shows their values beside each flagged
+# record, read from the uploaded CSV at display time and never sent to an LLM.
+
+_helper_cache: Dict[Tuple[str, int, Tuple[str, ...]], pd.DataFrame] = {}
+
+
+def _table_info(client_id: str, table: str) -> Tuple[Dict[str, Any], Path]:
+    info = _read_metadata(client_id).get("tables", {}).get(table.upper())
+    if not info:
+        raise KeyError(table)
+    path = workspace_dir(client_id) / info["file"]
+    if not path.exists():
+        raise KeyError(table)
+    return info, path
+
+
+def get_table_columns(client_id: str, table: str) -> Dict[str, Any]:
+    """Every column of an uploaded table with what the data dictionary says about it, for the picker."""
+    info, path = _table_info(client_id, table)
+    header = [str(c) for c in pd.read_csv(path, nrows=0).columns]
+    described: Dict[str, Dict[str, str]] = {}
+    dictionary = dictionary_path(client_id)
+    if dictionary:
+        try:
+            for full, entry in load_data_dictionary_structured(str(dictionary)).items():
+                tbl, _, field = full.partition(".")
+                if tbl == table.upper():
+                    described[field] = entry
+        except Exception:  # a dictionary that can't be read must not block the picker
+            described = {}
+    return {
+        "table": table.upper(),
+        "columns": [{"name": c, "description": described.get(c.upper(), {}).get("description", ""),
+                     "data_type": described.get(c.upper(), {}).get("data_type", "")} for c in header],
+        "helper_columns": [c for c in info.get("helper_columns", []) if c in header],
+    }
+
+
+def set_helper_columns(client_id: str, table: str, columns: List[str]) -> Dict[str, Any]:
+    """Save the helper columns of a table (must be columns of the uploaded file; order kept)."""
+    with _lock:
+        meta = _read_metadata(client_id)
+        info = meta.get("tables", {}).get(table.upper())
+        if not info:
+            raise KeyError(table)
+        header = [str(c) for c in pd.read_csv(workspace_dir(client_id) / info["file"], nrows=0).columns]
+        unknown = [c for c in columns if c not in header]
+        if unknown:
+            raise WorkspaceError(f"Not columns of {table.upper()}: {', '.join(unknown[:5])}")
+        chosen = [c for c in header if c in set(columns)]
+        if chosen:
+            info["helper_columns"] = chosen
+        else:
+            info.pop("helper_columns", None)
+        _write_metadata(client_id, meta)
+    return get_workspace(client_id)
+
+
+def helper_values(client_id: str, table: str, row_indexes: List[int], columns: List[str]
+                  ) -> Dict[int, Dict[str, str]]:
+    """{row_index: {column: value}} straight from the uploaded CSV (text, so zero-padded keys survive).
+
+    ``row_index`` is the dataframe position the run used: the loader reads the same file in the same
+    order, so position N here is row N there."""
+    if not columns or not row_indexes:
+        return {}
+    _, path = _table_info(client_id, table)
+    key = (str(path), path.stat().st_mtime_ns, tuple(columns))
+    df = _helper_cache.get(key)
+    if df is None:
+        df = pd.read_csv(path, dtype=str, usecols=columns, keep_default_na=False)
+        if len(_helper_cache) >= 8:
+            _helper_cache.clear()
+        _helper_cache[key] = df
+    out: Dict[int, Dict[str, str]] = {}
+    for i in row_indexes:
+        if 0 <= i < len(df):
+            out[i] = {c: str(df.iat[i, df.columns.get_loc(c)]) for c in columns}
+    return out
 
 
 def dictionary_path(client_id: str) -> Optional[Path]:

@@ -82,6 +82,10 @@ class AutoFillRequest(BaseModel):
     fix_value: str
 
 
+class HelperColumnsRequest(BaseModel):
+    columns: List[str] = []
+
+
 class RunExplorerRequest(BaseModel):
     # Data folder, dictionary and tables all come from this client's workspace.
     client_id: str
@@ -172,6 +176,29 @@ def delete_table(client_id: str, table: str):
         workspace = client_workspace.remove_table(client_id, table)
     except KeyError:
         raise HTTPException(status_code=404, detail=f"Table {table} is not uploaded for this client")
+    return {"client": client, **workspace}
+
+
+@app.get("/api/clients/{client_id}/tables/{table}/columns")
+def get_table_columns(client_id: str, table: str):
+    """Columns of an uploaded table with data dictionary description and type, plus the chosen helper columns."""
+    _require_client(client_id)
+    try:
+        return client_workspace.get_table_columns(client_id, table)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"Table {table} is not uploaded for this client")
+
+
+@app.put("/api/clients/{client_id}/tables/{table}/helper-columns")
+def put_helper_columns(client_id: str, table: str, body: HelperColumnsRequest):
+    """Save which columns of a table the reviewer wants to see beside flagged records (page 1)."""
+    client = _require_client(client_id)
+    try:
+        workspace = client_workspace.set_helper_columns(client_id, table, body.columns)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"Table {table} is not uploaded for this client")
+    except client_workspace.WorkspaceError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     return {"client": client, **workspace}
 
 
@@ -267,6 +294,41 @@ def get_config_options():
         "default_llm_provider": Config.LLM_PROVIDER,
         "gemini_model_default": Config.GEMINI_MODEL,
     }
+
+
+@app.get("/api/findings/{finding_id}/helper-columns")
+def get_finding_helper_columns(finding_id: str):
+    """Values of the client's helper columns for every flagged record of a finding.
+
+    Read from the uploaded CSV at display time (never stored, never sent to an LLM). Hidden when the table
+    was uploaded again after the run, because the row positions may no longer line up."""
+    finding = store.get_finding(finding_id)
+    if not finding:
+        raise HTTPException(status_code=404, detail="Finding not found")
+    empty = {"table": finding["table_name"], "columns": [], "rows": {}, "stale": False, "note": None}
+    run = store.get_run(finding["run_id"]) or {}
+    client_id = run.get("client_id")
+    if not client_id:
+        return empty
+    table = finding["table_name"].upper()
+    try:
+        details = client_workspace.get_table_columns(client_id, table)
+        info = next((t for t in client_workspace.get_workspace(client_id)["tables"] if t["table"] == table), None)
+    except (KeyError, client_workspace.WorkspaceError):
+        return empty
+    chosen = details["helper_columns"]
+    if not chosen or not info:
+        return empty
+    meta = {c["name"]: c for c in details["columns"]}
+    columns = [meta[c] for c in chosen]
+    if (info.get("uploaded_at") or "") > (run.get("started_at") or ""):
+        return {**empty, "columns": columns, "stale": True,
+                "note": f"{table} was uploaded again after this run, so its helper columns are hidden "
+                        "(the rows may have moved). Run the explorer again to see them."}
+    items = [i for i in store.get_finding_items(finding_id) if i.get("row_index") is not None]
+    values = client_workspace.helper_values(client_id, table, sorted({int(i["row_index"]) for i in items}), chosen)
+    rows = {i["id"]: values[int(i["row_index"])] for i in items if int(i["row_index"]) in values}
+    return {**empty, "columns": columns, "rows": rows}
 
 
 @app.get("/api/findings/{finding_id}")

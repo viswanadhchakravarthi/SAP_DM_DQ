@@ -464,8 +464,46 @@ function attachLazyLoadHandlers(id, finding, codeLabel) {
   }
 }
 
+// Helper columns: the client's chosen context columns (page 1), read from the uploaded CSV by
+// row position. Display only - nothing here is analysed or sent to an LLM.
+const HELPER_CACHE = {}; // findingId -> {columns:[{name, description, data_type}], rows:{itemId:{col:value}}, stale, note}
+
+async function loadHelper(findingId) {
+  try {
+    HELPER_CACHE[findingId] = await fetchJSON(`${API_BASE}/findings/${encodeURIComponent(findingId)}/helper-columns`);
+  } catch {
+    HELPER_CACHE[findingId] = { columns: [], rows: {}, stale: false, note: null };
+  }
+  return HELPER_CACHE[findingId];
+}
+
+function helperColumnsFor(findingId, skip = []) {
+  const helper = HELPER_CACHE[findingId];
+  return helper && !helper.stale ? helper.columns.filter((c) => !skip.includes(c.name)) : [];
+}
+
+function helperHeader(col) {
+  const tip = [col.description, col.data_type].filter(Boolean).join(" · ");
+  return `<th class="helper-col" title="${escapeHtml(tip || "Helper column")}">${escapeHtml(col.name)}</th>`;
+}
+
+function helperCell(findingId, itemId, col) {
+  const value = HELPER_CACHE[findingId]?.rows?.[itemId]?.[col.name];
+  return `<td class="helper-col">${value ? escapeHtml(value) : '<span class="blank-cell">—</span>'}</td>`;
+}
+
+function helperNote(findingId) {
+  const helper = HELPER_CACHE[findingId];
+  if (!helper) return "";
+  if (helper.stale) return `<p class="hint-text helper-note">${escapeHtml(helper.note || "")}</p>`;
+  if (!helper.columns.length) return "";
+  return `<p class="hint-text helper-note">Helper columns from ${escapeHtml(helper.table)}: ${helper.columns.map((c) => escapeHtml(c.name)).join(", ")}
+    - shaded, to help you decide. Change them on page 1 (Change client / data).</p>`;
+}
+
 async function reopenRecordsSection(findingId, finding) {
   const items = await fetchJSON(`${API_BASE}/findings/${encodeURIComponent(findingId)}/items`);
+  await loadHelper(findingId);
   const usingSyntheticRow = items.length === 0;
   const effectiveItems = usingSyntheticRow ? [syntheticRowFor(finding)] : items;
   const workflowKey = getWorkflowKey(finding);
@@ -565,6 +603,7 @@ function verdictButton(itemId, verdict, label) {
 
 function renderWorkflowItemsTable(finding, items, isSynthetic, workflowKey) {
   const cfg = PILLAR_WORKFLOWS[workflowKey];
+  const helperCols = isSynthetic ? [] : helperColumnsFor(finding.id);
   const isAutoFixable = cfg.showAutofill && finding.fix_type === "AUTO_FIXABLE" && finding.auto_fix_value;
 
   const bulkBar = isSynthetic ? "" : `
@@ -583,17 +622,18 @@ function renderWorkflowItemsTable(finding, items, isSynthetic, workflowKey) {
         ${escapeHtml(cfg.title)} ${isSynthetic ? "(no row-level detail captured)" : `(${items.length})`}
       </div>
       ${bulkBar}
+      ${isSynthetic ? "" : helperNote(finding.id)}
       <table class="items-table">
         <thead>
           <tr>
             ${cfg.mode === "decision" ? "<th></th>" : ""}
-            <th>Row</th><th>Key Field</th><th>Details</th>
+            <th>Row</th><th>Key Field</th><th>Details</th>${helperCols.map(helperHeader).join("")}
             ${cfg.showCorrectedInput ? `<th>${escapeHtml(cfg.correctedLabel || "Corrected Data")}</th>` : ""}
             <th>${cfg.mode === "decision" ? "Status" : "Disposition"}</th>
           </tr>
         </thead>
         <tbody>
-          ${items.map((item) => renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable)).join("")}
+          ${items.map((item) => renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helperCols)).join("")}
         </tbody>
       </table>
       ${isSynthetic ? `<p class="hint-text">This check did not produce row-level detail. Use "Approve Finding" / "Reject Finding" below.</p>` : ""}
@@ -601,7 +641,7 @@ function renderWorkflowItemsTable(finding, items, isSynthetic, workflowKey) {
   `;
 }
 
-function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable) {
+function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helperCols = []) {
   const disabled = isSynthetic || item.status !== "PENDING";
   const keyCell = item.key_field ? wrapTableColumnRef(finding.table_name, item.key_field, "") : "";
   const detailsCell = linkifyTableColumnRefs(escapeHtml(item.issue_detail || "")) +
@@ -629,6 +669,7 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable) {
       <td>${escapeHtml(item.row_index ?? "-")}</td>
       <td>${keyCell}${item.key_value ? `: ${escapeHtml(item.key_value)}` : ""}</td>
       <td>${detailsCell}</td>
+      ${helperCols.map((c) => helperCell(finding.id, item.id, c)).join("")}
       ${cfg.showCorrectedInput ? `<td><input type="text" class="corrected-input" placeholder="Enter value..." value="${escapeHtml(item.corrected_data || "")}" ${disabled ? "disabled" : ""}></td>` : ""}
       <td>${dispositionCell}</td>
     </tr>
@@ -756,6 +797,7 @@ async function loadDuplicateReview(findingId) {
   const container = document.getElementById("duplicateReview");
   try {
     const groups = await fetchJSON(`${API_BASE}/findings/${encodeURIComponent(findingId)}/duplicate-groups`);
+    await loadHelper(findingId);
     const keepFilter = dupReview?.findingId === findingId ? dupReview.filter : "all";
     dupReview = { findingId, groups, filter: keepFilter, drafts: {} };
     groups.forEach((g) => { dupReview.drafts[g.duplicate_group_id] = initialDraft(g); });
@@ -848,6 +890,7 @@ function renderDuplicateReview() {
       </div>
     </div>
     ${renderClientMemoryNote()}
+    ${helperNote(dupReview.findingId)}
     <p class="hint-text dup-hint"><strong>★ Golden record</strong> is the record the others merge into (pre-selected:
       highest quality score). Every other record is a <em>Duplicate</em> of it unless you mark it <em>Unique</em> - a
       separate entity. Nothing is saved until you click <strong>Accept</strong>, which locks the cluster;
@@ -881,6 +924,8 @@ function renderDuplicateGroup(group) {
   const columns = [];
   group.members.forEach((m) => Object.keys(m.record || {}).forEach((c) => { if (!columns.includes(c)) columns.push(c); }));
   const legacy = columns.length === 0; // rows saved before record_data existed
+  // Helper columns the comparison doesn't already show.
+  const helperCols = legacy ? [] : helperColumnsFor(dupReview.findingId, columns);
 
   // A value is highlighted when another record in the same group has it too.
   const valueCounts = {};
@@ -938,6 +983,7 @@ function renderDuplicateGroup(group) {
               <th title="Record quality score 0-100 (hover a score for its parts)">Score</th>
               ${legacy ? "<th>Details</th>" : columns.map((c) => `
                 <th><span class="sap-ref" data-table="${escapeHtml(currentDupTable())}" data-column="${escapeHtml(c)}" data-context="">${escapeHtml(c)}</span></th>`).join("")}
+              ${helperCols.map(helperHeader).join("")}
               <th>Action</th>
               <th class="dup-decision-col">Decision</th>
             </tr>
@@ -961,6 +1007,7 @@ function renderDuplicateGroup(group) {
                         const shared = raw.trim() && valueCounts[c][raw.trim().toLowerCase()] > 1;
                         return `<td class="${shared ? "match-cell" : ""}">${raw ? escapeHtml(raw) : '<span class="blank-cell">—</span>'}</td>`;
                       }).join("")}
+                  ${helperCols.map((c) => helperCell(dupReview.findingId, m.id, c)).join("")}
                   <td class="dup-action">${escapeHtml(actionText(m, verdict, survivor?.key_value || ""))}</td>
                   <td class="dup-decision-col">
                     <div class="verdict-seg" role="group" aria-label="Decision for ${escapeHtml(m.key_value)}">
