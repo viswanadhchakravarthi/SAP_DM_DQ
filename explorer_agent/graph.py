@@ -80,6 +80,11 @@ For EACH check, provide TWO code fields:
 1. `code` (REQUIRED): must set `result` to an AGGREGATE value (count/pct/bool/small dict).
    This is sent to an LLM for review - never include raw row values here.
 
+MISSING VALUES: empty cells are NaN (a float), so a string operation on one crashes the check (`x.startswith(...)`, \
+`'.' in x`, `len(x)`). In `code` and `detail_code`, never call a string method or `in` on a raw column value: use \
+the vectorized `.str` accessor with `na=False` (e.g. `df['IBAN'].str.startswith('DE', na=False)`), or `.dropna()` / \
+`.astype(str)` first, and decide explicitly whether a blank counts as a defect for this check.
+
 2. `detail_code` (STRONGLY RECOMMENDED): pandas code that sets `result` to a list of dicts, one per offending row.
    Keys:
    - row_index (int): dataframe index
