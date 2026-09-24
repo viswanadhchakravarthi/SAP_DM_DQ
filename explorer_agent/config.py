@@ -174,6 +174,11 @@ class Config:
         "EXPLORER_MAX_CHECKS_PER_TABLE", _get("profiling.max_checks_per_table", 25)
     )
 
+    # "Why was this record flagged": the exact explanation is always available; the plain-language one uses the
+    # LOCAL model and is the one place record values reach an LLM (explain.py). Off by default.
+    EXPLAIN_LOCAL_LLM_ENABLED = _env_bool("EXPLORER_EXPLAIN_LOCAL_LLM", _get("explain.local_llm.enabled", False))
+    EXPLAIN_MAX_TOKENS = _env_int("EXPLORER_EXPLAIN_MAX_TOKENS", _get("explain.local_llm.max_tokens", 220))
+
     # Bounded repair loop (graph.py, repair.py): rounds in which planner checks that failed to run are
     # sent back to the planner once, together. 0 = off. Each round is at most ONE extra LLM call per table.
     MAX_REPAIR_ROUNDS = _env_int("EXPLORER_MAX_REPAIR_ROUNDS", _get("profiling.max_repair_rounds", 1))

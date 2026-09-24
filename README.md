@@ -180,6 +180,7 @@ D:\GitHub\SAP_DM_DQ\.venv\Lib\site-packages\llama_cpp\__init__.py
   * `column_mapping.py`, `sap_rules.py`, `anomaly_rules.py`, `rule_packs/` — column meaning and the deterministic SAP rule engines.
   * `survivorship.py`, `scorecard.py` — golden-record recommendation and the DQ scorecard.
   * `structural_profile.py`, `contracts.py`, `events.py` — pipeline handoff documents and events.
+  * `explain.py` — "Why flagged?": the exact reason per record, plus an optional local-model paraphrase (off by default).
   * `privacy_guard.py` — heuristic scrubbing of check results before they reach an LLM; `table_profiler.py` — allowlisted statistical profile.
   * `sandbox.py`, `check_executor.py` — isolated execution of LLM-generated checks; `preflight.py` — free static checks that reject code that can't run; `repair.py` — the bounded loop that sends failed checks back to the planner once.
   * `episodic_store.py` — SQLite run/finding history and human review state; `client_knowledge.py`, `client_workspace.py` — per-client memory and uploaded data.

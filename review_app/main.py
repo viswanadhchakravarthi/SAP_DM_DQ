@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from explorer_agent import client_knowledge, client_workspace, data_loader, episodic_store as store
+from explorer_agent import client_knowledge, client_workspace, data_loader, explain, episodic_store as store
 from explorer_agent.config import Config
 from . import job_manager
 
@@ -291,9 +291,75 @@ def get_config_options():
     return {
         "llm_providers": list(Config.SUPPORTED_LLM_PROVIDERS),
         "default_max_repair_rounds": Config.MAX_REPAIR_ROUNDS,
+        "explain_local_llm_enabled": Config.EXPLAIN_LOCAL_LLM_ENABLED,
         "default_llm_provider": Config.LLM_PROVIDER,
         "gemini_model_default": Config.GEMINI_MODEL,
     }
+
+
+def _explanation_context(item_id: str):
+    item = store.get_finding_item(item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Record not found")
+    finding = store.get_finding(item["finding_id"])
+    if finding["category"] == "DUPLICATE":
+        raise HTTPException(status_code=400, detail="Duplicate records are explained by the group's 'Why matched' "
+                                                    "note and score, not here.")
+    return item, finding
+
+
+def _build_item_explanation(item: dict, finding: dict) -> dict:
+    """The deterministic explanation, with the record's values read from the uploaded CSV when they still line up."""
+    run = store.get_run(finding["run_id"]) or {}
+    client_id, table = run.get("client_id"), finding["table_name"].upper()
+    meta, values, stale, note = {}, {}, False, None
+    if client_id and item.get("row_index") is not None:
+        try:
+            details = client_workspace.get_table_columns(client_id, table)
+            info = next((t for t in client_workspace.get_workspace(client_id)["tables"] if t["table"] == table), None)
+            meta = {c["name"]: c for c in details["columns"]}
+            cols = explain.evidence_columns(finding, item, list(meta))
+            if info and (info.get("uploaded_at") or "") > (run.get("started_at") or ""):
+                stale, note = True, (f"{table} was uploaded again after this run, so the record's values are hidden "
+                                     "(the rows may have moved). Run the explorer again to see them.")
+            elif info and cols:
+                values = client_workspace.helper_values(client_id, table, [int(item["row_index"])], cols) \
+                    .get(int(item["row_index"]), {})
+        except (KeyError, client_workspace.WorkspaceError):
+            note = "The uploaded table is no longer in this client's workspace, so the record's values are not shown."
+    return explain.build_explanation(finding, item, meta, values, stale, note)
+
+
+@app.get("/api/finding-items/{item_id}/explanation")
+def get_item_explanation(item_id: str):
+    """Why this record was flagged: rule, reason, meaning of the columns and this record's values. Deterministic
+    (no LLM); includes the cached plain-language text if one was generated."""
+    item, finding = _explanation_context(item_id)
+    body = _build_item_explanation(item, finding)
+    cached = store.get_explanation(item_id)
+    body["plain_language"] = ({"text": cached["text"], "model": cached["model"], "created_at": cached["created_at"]}
+                              if cached else None)
+    body["plain_language_enabled"] = Config.EXPLAIN_LOCAL_LLM_ENABLED
+    return body
+
+
+@app.post("/api/finding-items/{item_id}/explanation/plain-language")
+async def generate_item_explanation(item_id: str, force: bool = False):
+    """Ask the LOCAL model for a two-to-three sentence explanation (cached). Off unless explain.local_llm.enabled."""
+    item, finding = _explanation_context(item_id)
+    if not Config.EXPLAIN_LOCAL_LLM_ENABLED:
+        raise HTTPException(status_code=403, detail="Plain-language explanations are off (explain.local_llm.enabled "
+                                                    "in config.yaml).")
+    cached = store.get_explanation(item_id)
+    if cached and not force:
+        return {"text": cached["text"], "model": cached["model"], "created_at": cached["created_at"], "cached": True}
+    expl = _build_item_explanation(item, finding)
+    try:
+        result = await run_in_threadpool(explain.generate_plain_language, expl)
+    except explain.ExplainUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    store.save_explanation(item_id, result["text"], result["model"], result["input_tokens"], result["output_tokens"])
+    return {"text": result["text"], "model": result["model"], "cached": False}
 
 
 @app.get("/api/findings/{finding_id}/helper-columns")

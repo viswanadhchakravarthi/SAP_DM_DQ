@@ -237,6 +237,41 @@ def _migrate_llm_calls(conn: sqlite3.Connection) -> None:
     conn.execute("CREATE INDEX IF NOT EXISTS idx_llm_calls_run ON llm_calls(run_id)")
 
 
+def _migrate_explanations(conn: sqlite3.Connection) -> None:
+    """Plain-language explanations written by the local model, one per flagged record (explain.py). Derived
+    text that may quote record values: it stays on this machine like finding_items."""
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS explanations (
+        item_id TEXT PRIMARY KEY,
+        text TEXT NOT NULL,
+        model TEXT,
+        input_tokens INTEGER,
+        output_tokens INTEGER,
+        created_at TEXT NOT NULL
+    )""")
+
+
+def get_finding_item(item_id: str) -> Optional[Dict[str, Any]]:
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM finding_items WHERE id = ?", (item_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def get_explanation(item_id: str) -> Optional[Dict[str, Any]]:
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM explanations WHERE item_id = ?", (item_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def save_explanation(item_id: str, text: str, model: str, input_tokens: Optional[int],
+                     output_tokens: Optional[int]) -> None:
+    with get_connection() as conn:
+        conn.execute(
+            """INSERT OR REPLACE INTO explanations (item_id, text, model, input_tokens, output_tokens, created_at)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (item_id, text, model, input_tokens, output_tokens, datetime.now(timezone.utc).isoformat()))
+
+
 def save_llm_call(run_id: str, record: Dict[str, Any]) -> None:
     with get_connection() as conn:
         conn.execute(
@@ -283,6 +318,7 @@ def init_db():
         _migrate_runs(conn)
         _migrate_scorecards(conn)
         _migrate_llm_calls(conn)
+        _migrate_explanations(conn)
         _backfill_finding_status(conn)
 
 

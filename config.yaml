@@ -258,6 +258,16 @@ profiling:
   # per round and table, and only when a check failed. The loop ends on this counter, never on the model.
   max_repair_rounds: 1 # EXPLORER_MAX_REPAIR_ROUNDS
 
+explain:
+  local_llm:
+    # "Explain in plain language" on a flagged record (review page). The exact rule-based explanation is always
+    # shown; this adds two or three sentences written by the LOCAL model (llm.local.model_path, in-process, no
+    # network). It is the only feature where record VALUES reach an LLM, which is why it only ever uses the local
+    # model, never a hosted one (the code default is off; it is switched on here). Answers are cached per record.
+    # EXPLORER_EXPLAIN_LOCAL_LLM overrides.
+    enabled: true
+    max_tokens: 220
+
 sandbox:
   timeout_seconds: 10          # per check, from the moment the check starts
   mem_limit_mb: 512            # Unix only: headroom on top of the loaded data
