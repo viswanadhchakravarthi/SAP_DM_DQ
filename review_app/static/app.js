@@ -501,9 +501,30 @@ function helperNote(findingId) {
     - shaded, to help you decide. Change them on page 1 (Change client / data).</p>`;
 }
 
+// The server may have rolled the finding's status up from its records: mirror it in the open modal and mark
+// the card list for a reload when the modal closes.
+async function refreshFindingStatus(findingId) {
+  try {
+    const fresh = await fetchJSON(`${API_BASE}/findings/${encodeURIComponent(findingId)}`);
+    const cached = currentFindings.find((f) => f.id === findingId);
+    if (cached && cached.status !== fresh.status) {
+      cached.status = fresh.status;
+      cached.reviewed_at = fresh.reviewed_at;
+      cached.reviewer_comment = fresh.reviewer_comment;
+      findingsDirty = true;
+    }
+    const badge = document.querySelector("#modalBody .detail-top-meta .badge[class*='status-']");
+    if (badge) {
+      badge.textContent = fresh.status;
+      badge.className = `badge status-${fresh.status}`;
+    }
+  } catch { /* the badge just stays as it was */ }
+}
+
 async function reopenRecordsSection(findingId, finding) {
   const items = await fetchJSON(`${API_BASE}/findings/${encodeURIComponent(findingId)}/items`);
   await loadHelper(findingId);
+  refreshFindingStatus(findingId);
   const usingSyntheticRow = items.length === 0;
   const effectiveItems = usingSyntheticRow ? [syntheticRowFor(finding)] : items;
   const workflowKey = getWorkflowKey(finding);
@@ -1128,6 +1149,7 @@ function attachDuplicateReviewHandlers() {
       if (result.group && i >= 0) dupReview.groups[i] = result.group;
       dupReview.drafts[groupId] = initialDraft(dupReview.groups[i]);
       findingsDirty = true;
+      refreshFindingStatus(dupReview.findingId);
       rerenderKeepingScroll();
     });
   });
@@ -1161,6 +1183,7 @@ async function saveGroup(groupId, endpoint, body, applyLocally) {
   }
   dupReview.drafts[groupId] = initialDraft(group);
   findingsDirty = true;
+  refreshFindingStatus(dupReview.findingId);
   rerenderKeepingScroll();
 }
 
@@ -1395,7 +1418,20 @@ function initDqWindow() {
 // Overall finding decision (not shown for DUPLICATE - see openDetail)
 // ---------------------------------------------------------------------------
 
+// A finding has a decision of its own only when approving it means something: a reusable LLM check that can be
+// promoted into the skill library (that approval is the human gate before reuse). Built-in rule findings and
+// duplicates can never become skills, so their status simply follows the record decisions above - the server
+// marks the finding reviewed once every record is decided (episodic_store._sync_finding_status).
+function isPromotable(finding) {
+  return Boolean(finding.reusable) && Boolean(finding.has_check_code);
+}
+
 function renderFindingDecisionRow(finding) {
+  if (!isPromotable(finding) && finding.item_count > 0) {
+    return `<p class="hint-text finding-status-note">This finding's status follows your decisions on the records above:
+      it is marked reviewed once every record is decided.</p>`;
+  }
+  const promotable = isPromotable(finding);
   const decided = finding.status !== "PENDING";
   const reviewedAt = formatIST(finding.reviewed_at);
   const comment = finding.reviewer_comment
@@ -1404,13 +1440,15 @@ function renderFindingDecisionRow(finding) {
 
   return `
     <div class="detail-row finding-decision-row">
-      <div class="detail-label">Overall Finding Decision</div>
+      <div class="detail-label">${promotable ? "Reusable check" : "Finding decision"}</div>
+      ${promotable ? `<p class="hint-text">Approving adds this check to the pool that <strong>Promote Approved Skills</strong>
+        turns into a reusable skill for future runs. It is separate from your decisions on the individual records.</p>` : ""}
       ${decided
-        ? `<span class="decided-note">Reviewed ${reviewedAt}${comment}</span>`
+        ? `<span class="decided-note">${promotable ? "Decided" : "Reviewed"} ${reviewedAt}${comment}</span>`
         : `
           <div class="decision-buttons">
-            <button class="btn-approve" data-finding-action="approve">Approve Finding</button>
-            <button class="btn-reject" data-finding-action="reject">Reject Finding</button>
+            <button class="btn-approve" data-finding-action="approve">${promotable ? "Approve as reusable check" : "Approve Finding"}</button>
+            <button class="btn-reject" data-finding-action="reject">${promotable ? "Reject check" : "Reject Finding"}</button>
           </div>
         `}
     </div>

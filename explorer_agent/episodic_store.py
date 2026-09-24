@@ -283,6 +283,7 @@ def init_db():
         _migrate_runs(conn)
         _migrate_scorecards(conn)
         _migrate_llm_calls(conn)
+        _backfill_finding_status(conn)
 
 
 # --- Per-pillar review-verdict vocabulary -----------------------------------
@@ -418,7 +419,8 @@ def get_findings(run_id: Optional[str] = None, status: Optional[str] = None,
 # profile-result/check-code payload over the wire (see CR3: lazy loading).
 _LIGHT_COLUMNS = (
     "id, run_id, table_name, column_name, hypothesis, result_summary, severity, "
-    "confidence, reusable, created_at, status, reviewed_at, reviewer_comment, promoted_at, "
+    "confidence, reusable, (CASE WHEN check_code IS NOT NULL AND check_code != '' THEN 1 ELSE 0 END) AS has_check_code, "
+    "created_at, status, reviewed_at, reviewer_comment, promoted_at, "
     "category, sub_type, rule_scope, industry, fix_type, auto_fix_value, is_anomaly, "
     # Row-level review progress, shown on the finding cards.
     "(SELECT COUNT(*) FROM finding_items fi WHERE fi.finding_id = findings.id) AS item_count, "
@@ -604,6 +606,43 @@ def get_finding_items(finding_id: str) -> List[Dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
+# A finding that can never become a skill (built-in rules, duplicates) has no decision of its own:
+# its status follows its records. It is marked reviewed once every record is decided, and goes back to
+# pending if a decision is undone or reopened. A reusable LLM check keeps a manual Approve/Reject,
+# because that status is the human gate before promotion (get_promotable_findings).
+ROLLUP_NOTE = "All records reviewed"
+
+
+def _sync_finding_status(conn: sqlite3.Connection, finding_id: str) -> None:
+    f = conn.execute("SELECT status, reusable, check_code, reviewer_comment FROM findings WHERE id = ?",
+                     (finding_id,)).fetchone()
+    if not f or (f["reusable"] and f["check_code"]):
+        return  # promotable: the reviewer's own decision, never rolled up
+    total, pending = conn.execute(
+        "SELECT COUNT(*), COALESCE(SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END), 0) "
+        "FROM finding_items WHERE finding_id = ?", (finding_id,)).fetchone()
+    if not total:
+        return  # no records to roll up from: the finding keeps its manual decision
+    if pending == 0 and f["status"] == "PENDING":
+        conn.execute("UPDATE findings SET status = 'APPROVED', reviewed_at = ?, reviewer_comment = ? WHERE id = ?",
+                     (datetime.now(timezone.utc).isoformat(), ROLLUP_NOTE, finding_id))
+    elif pending > 0 and f["status"] == "APPROVED" and f["reviewer_comment"] == ROLLUP_NOTE:
+        conn.execute("UPDATE findings SET status = 'PENDING', reviewed_at = NULL, reviewer_comment = NULL "
+                     "WHERE id = ?", (finding_id,))  # only undoes a roll-up, never a manual decision
+
+
+def _sync_for_item(conn: sqlite3.Connection, item_id: str) -> None:
+    row = conn.execute("SELECT finding_id FROM finding_items WHERE id = ?", (item_id,)).fetchone()
+    if row:
+        _sync_finding_status(conn, row["finding_id"])
+
+
+def _backfill_finding_status(conn: sqlite3.Connection) -> None:
+    """Bring findings decided before roll-up existed in line (idempotent, cheap)."""
+    for row in conn.execute("SELECT DISTINCT finding_id FROM finding_items").fetchall():
+        _sync_finding_status(conn, row["finding_id"])
+
+
 def update_item_decision(item_id: str, status: str, corrected_data: str = "", comment: str = "") -> bool:
     if status not in ("APPROVED", "REJECTED"):
         raise ValueError(f"Invalid status: {status}")
@@ -613,6 +652,7 @@ def update_item_decision(item_id: str, status: str, corrected_data: str = "", co
                reviewed_at = ?, reviewer_comment = ? WHERE id = ?""",
             (status, corrected_data, datetime.now(timezone.utc).isoformat(), comment, item_id),
         )
+        _sync_for_item(conn, item_id)
         return cur.rowcount > 0
 
 
@@ -630,6 +670,7 @@ def update_item_verdict(item_id: str, verdict: str, comment: str = "", corrected
             (verdict, status, corrected_data, corrected_data,
              datetime.now(timezone.utc).isoformat(), comment, item_id),
         )
+        _sync_for_item(conn, item_id)
         return cur.rowcount > 0
 
 
@@ -662,6 +703,7 @@ def undo_cluster(finding_id: str, group_id: str) -> int:
             fields = [f for f in _UNDO_FIELDS if f in before]
             conn.execute(f"UPDATE finding_items SET {', '.join(f'{f} = ?' for f in fields)}, undo_state = NULL "
                          "WHERE id = ?", [before[f] for f in fields] + [r["id"]])
+        _sync_finding_status(conn, finding_id)
         return len(rows)
 
 
@@ -698,6 +740,7 @@ def accept_cluster(finding_id: str, group_id: str, survivor_id: Optional[str], s
                    suggested_action = ?, reviewed_at = ?, reviewer_comment = ?, reviewer = ?,
                    decision_source = 'HUMAN' WHERE id = ?""",
                 (verdict, golden, action, now, comment, reviewer or None, r["id"]))
+        _sync_finding_status(conn, finding_id)
         return len(rows)
 
 
@@ -715,6 +758,7 @@ def set_cluster_verdict(finding_id: str, group_id: str, verdict: str, comment: s
                decision_source = 'HUMAN' WHERE finding_id = ? AND duplicate_group_id = ?""",
             (verdict, status, datetime.now(timezone.utc).isoformat(), comment, reviewer, finding_id, group_id),
         )
+        _sync_finding_status(conn, finding_id)
         return cur.rowcount
 
 
@@ -778,6 +822,7 @@ def apply_auto_fix(item_id: str, fix_value: str) -> bool:
                WHERE id = ?""",
             (fix_value, datetime.now(timezone.utc).isoformat(), item_id),
         )
+        _sync_for_item(conn, item_id)
         return cur.rowcount > 0
 
 
