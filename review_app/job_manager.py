@@ -16,6 +16,7 @@ import subprocess
 import sys
 import threading
 import uuid
+from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -70,10 +71,31 @@ def _outputs(result: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
             "events_url": f"/api/handoff/events?client_id={client}&type=profiling.completed"}
 
 
+def _open_output_log(job: JobState):
+    """One file per run under logs/ holding the child's full stdout+stderr (the in-memory
+    tail is capped and lost on restart; explorer_agent.log only has logging records)."""
+    try:
+        log_dir = Path(Config.LOG_DIR)
+        log_dir.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        path = log_dir / f"output_{stamp}_{job.job_id[:8]}.log"
+        f = open(path, "w", encoding="utf-8", buffering=1)
+        f.write("# python -m explorer_agent.main " + " ".join(job.cli_args) + "\n")
+        return f
+    except OSError:
+        return None
+
+
 def _stream_output(job: JobState) -> None:
     proc = job.process
     assert proc is not None and proc.stdout is not None
+    log_file = _open_output_log(job)
     for line in proc.stdout:
+        if log_file is not None:
+            try:
+                log_file.write(line)
+            except OSError:
+                log_file = None  # disk problem must not kill the run's status tracking
         with job.lock:
             job.log_lines.append(line.rstrip("\n"))
             if line.startswith("RESULT_JSON: "):
@@ -82,6 +104,8 @@ def _stream_output(job: JobState) -> None:
                 except ValueError:
                     pass
     return_code = proc.wait()
+    if log_file is not None:
+        log_file.close()
     with job.lock:
         job.return_code = return_code
         if job.stop_requested:
