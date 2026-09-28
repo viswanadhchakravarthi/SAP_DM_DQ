@@ -1749,6 +1749,22 @@ header .btn-icon:hover {
 
 .btn-undo:hover { background: #f1f5f9; border-color: #94a3b8; }
 
+.btn-undo-sm {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #cbd5e1;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.btn-undo-sm:hover { background: #f1f5f9; border-color: #94a3b8; }
+
 /* Composite DQ scorecard */
 .scorecard-panel {
   margin: 16px 24px 0;

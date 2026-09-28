@@ -710,7 +710,10 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helpe
     const verdict = item.review_verdict || "PENDING";
     if (disabled) {
       const tone = VERDICT_TONE[verdict] || "warning";
-      dispositionCell = `<span class="verdict-badge verdict-tone-${tone}">${escapeHtml(verdict)}</span>`;
+      const undoButton = !isSynthetic && item.id
+        ? `<button type="button" class="btn-undo-sm" data-undo-item="${escapeHtml(item.id)}"
+             aria-label="Undo - back to pending" data-tooltip="Undo - back to pending">↺</button>` : "";
+      dispositionCell = `<span class="verdict-badge verdict-tone-${tone}">${escapeHtml(verdict)}</span>${undoButton}`;
     } else {
       dispositionCell = cfg.dispositions.map((d) => verdictButton(item.id, d.verdict, d.label)).join(" ");
     }
@@ -909,6 +912,23 @@ function attachPillarWorkflowHandlers(findingId, finding, isSynthetic) {
         await reopenRecordsSection(findingId, finding);
       } catch (err) {
         alert(`Failed to set verdict: ${err.message}`);
+      }
+    });
+  });
+
+  section.querySelectorAll("[data-undo-item]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const itemId = btn.dataset.undoItem;
+      try {
+        await fetchJSON(`${API_BASE}/finding-items/${encodeURIComponent(itemId)}/verdict`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ verdict: "PENDING" }),
+        });
+        await loadFindings();
+        await reopenRecordsSection(findingId, finding);
+      } catch (err) {
+        alert(`Failed to undo: ${err.message}`);
       }
     });
   });
