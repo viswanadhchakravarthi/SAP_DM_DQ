@@ -608,9 +608,14 @@ const PILLAR_WORKFLOWS = {
   },
   CORRECTNESS_VALUE_ERROR: {
     title: "Individual Issues",
-    mode: "decision",
+    mode: "verdict",
     showCorrectedInput: true,
-    correctedLabel: "Corrected Data",
+    correctedLabel: "Corrected Value",
+    dispositions: [
+      { verdict: "CORRECTED", label: "Enter Corrected Value", requiresCorrectedInput: true },
+      { verdict: "FALSE_POSITIVE", label: "False Positive" },
+      { verdict: "REQUIRES_BUSINESS_REVIEW", label: "Requires Business Review" },
+    ],
   },
   CORRECTNESS_RELATIONSHIP: {
     title: "Relationship / Integrity Issues",
@@ -636,12 +641,16 @@ const PILLAR_WORKFLOWS = {
 };
 
 function getWorkflowKey(finding) {
-  if (finding.is_anomaly) return "ANOMALY";
   if (finding.category === "ACTIVENESS") return "ACTIVENESS";
   if (finding.category === "COMPLETENESS") {
     return finding.fix_type === "AUTO_FIXABLE" ? "COMPLETENESS_AUTO" : "COMPLETENESS_MANUAL";
   }
   if (finding.category === "CORRECTNESS") {
+    // is_anomaly only redirects within Correctness - it's only ever paired with CORRECTNESS
+    // by the built-in rule pack (anomaly_rules.py), but an LLM-proposed check can set it on
+    // any category; letting it override Completeness/Activeness there dropped their disposition
+    // vocabulary and (for Completeness) the Corrected Value field entirely.
+    if (finding.is_anomaly) return "ANOMALY";
     return finding.effective_sub_type === "RELATIONSHIP_INTEGRITY"
       ? "CORRECTNESS_RELATIONSHIP" : "CORRECTNESS_VALUE_ERROR";
   }
