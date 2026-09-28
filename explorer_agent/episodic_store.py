@@ -330,7 +330,12 @@ def init_db():
 ITEM_DISPOSITIONS = {
     "DUPLICATE": {"DUPLICATE", "UNIQUE", "TO_BE_CONFIRMED"},
     "ACTIVENESS": {"ALLOWED_ACTIVE", "CONFIRMED_INACTIVE"},
-    "COMPLETENESS": {"MISSING_VALUE", "NOT_APPLICABLE", "INTENTIONALLY_BLANK", "REQUIRES_BUSINESS_INPUT"},
+    # Collapsed from 4 to 3: NOT_APPLICABLE/INTENTIONALLY_BLANK were behaviorally identical
+    # (both terminal, both "not an issue"), and MISSING_VALUE only differed from
+    # REQUIRES_BUSINESS_INPUT in staying open vs. closing - reviewers weren't using that
+    # distinction. CORRECTED replaces MISSING_VALUE: it closes the item AND captures the
+    # actual value via corrected_data, instead of just flagging that one is missing.
+    "COMPLETENESS": {"LEGITIMATE_BLANK", "CORRECTED", "REQUIRES_BUSINESS_INPUT"},
     "CORRECTNESS_RELATIONSHIP": {
         "CONFIRMED_ISSUE", "FALSE_POSITIVE", "REQUIRES_MASTER_DATA_CORRECTION",
         "REQUIRES_BUSINESS_REVIEW", "EXCLUDE_FROM_PROFILING",

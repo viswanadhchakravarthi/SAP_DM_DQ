@@ -568,11 +568,14 @@ async function reopenRecordsSection(findingId, finding) {
 
 const VERDICT_TONE = {
   ALLOWED_ACTIVE: "positive", UNIQUE: "positive", FALSE_POSITIVE: "positive", LEGITIMATE: "positive",
-  NOT_APPLICABLE: "positive", INTENTIONALLY_BLANK: "positive", APPROVED: "positive",
+  LEGITIMATE_BLANK: "positive", CORRECTED: "positive", APPROVED: "positive",
   TO_BE_CONFIRMED: "warning", REQUIRES_BUSINESS_INPUT: "warning", REQUIRES_BUSINESS_REVIEW: "warning",
   REQUIRES_MASTER_DATA_CORRECTION: "warning", NEEDS_INVESTIGATION: "warning", PENDING: "warning",
   CONFIRMED_INACTIVE: "negative", DUPLICATE: "negative", CONFIRMED_ISSUE: "negative",
-  MISSING_VALUE: "negative", EXCLUDE_FROM_PROFILING: "negative", REJECTED: "negative",
+  EXCLUDE_FROM_PROFILING: "negative", REJECTED: "negative",
+  // Legacy verdicts from before the Completeness disposition set was collapsed to 3 options -
+  // kept only so records already decided under the old vocabulary still render a sensible tone.
+  NOT_APPLICABLE: "positive", INTENTIONALLY_BLANK: "positive", MISSING_VALUE: "negative",
 };
 
 const PILLAR_WORKFLOWS = {
@@ -596,12 +599,11 @@ const PILLAR_WORKFLOWS = {
     title: "Missing / Incomplete Records",
     mode: "verdict",
     showCorrectedInput: true,
-    correctedLabel: "Business Input (optional)",
+    correctedLabel: "Corrected Value",
     dispositions: [
-      { verdict: "MISSING_VALUE", label: "Missing Value" },
-      { verdict: "NOT_APPLICABLE", label: "Not Applicable" },
-      { verdict: "INTENTIONALLY_BLANK", label: "Intentionally Blank" },
-      { verdict: "REQUIRES_BUSINESS_INPUT", label: "Requires Business Input" },
+      { verdict: "LEGITIMATE_BLANK", label: "Legitimate Blank" },
+      { verdict: "CORRECTED", label: "Enter Corrected Value", requiresCorrectedInput: true },
+      { verdict: "REQUIRES_BUSINESS_INPUT", label: "Business to Confirm" },
     ],
   },
   CORRECTNESS_VALUE_ERROR: {
@@ -646,9 +648,10 @@ function getWorkflowKey(finding) {
   return "CORRECTNESS_VALUE_ERROR";
 }
 
-function verdictButton(itemId, verdict, label) {
+function verdictButton(itemId, verdict, label, requiresCorrectedInput) {
   const tone = VERDICT_TONE[verdict] || "warning";
-  return `<button class="btn-action btn-tone-${tone}" data-verdict="${escapeHtml(verdict)}" data-item-id="${escapeHtml(itemId)}">${escapeHtml(label)}</button>`;
+  return `<button class="btn-action btn-tone-${tone}" data-verdict="${escapeHtml(verdict)}" data-item-id="${escapeHtml(itemId)}"
+    ${requiresCorrectedInput ? 'data-requires-corrected="true"' : ""}>${escapeHtml(label)}</button>`;
 }
 
 function renderWorkflowItemsTable(finding, items, isSynthetic, workflowKey) {
@@ -715,7 +718,7 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helpe
              aria-label="Undo - back to pending" data-tooltip="Undo - back to pending">↺</button>` : "";
       dispositionCell = `<span class="verdict-badge verdict-tone-${tone}">${escapeHtml(verdict)}</span>${undoButton}`;
     } else {
-      dispositionCell = cfg.dispositions.map((d) => verdictButton(item.id, d.verdict, d.label)).join(" ");
+      dispositionCell = cfg.dispositions.map((d) => verdictButton(item.id, d.verdict, d.label, d.requiresCorrectedInput)).join(" ");
     }
   }
 
@@ -901,7 +904,12 @@ function attachPillarWorkflowHandlers(findingId, finding, isSynthetic) {
       const verdict = btn.dataset.verdict;
       const row = btn.closest("tr");
       const correctedInput = row ? row.querySelector(".corrected-input") : null;
-      const correctedData = correctedInput ? correctedInput.value : "";
+      const correctedData = correctedInput ? correctedInput.value.trim() : "";
+      if (btn.dataset.requiresCorrected === "true" && !correctedData) {
+        alert("Enter the corrected value first.");
+        correctedInput?.focus();
+        return;
+      }
       try {
         await fetchJSON(`${API_BASE}/finding-items/${encodeURIComponent(itemId)}/verdict`, {
           method: "POST",
