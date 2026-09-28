@@ -1765,6 +1765,12 @@ header .btn-icon:hover {
 
 .btn-undo-sm:hover { background: #f1f5f9; border-color: #94a3b8; }
 
+.open-verdict-flag {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
 /* Composite DQ scorecard */
 .scorecard-panel {
   margin: 16px 24px 0;

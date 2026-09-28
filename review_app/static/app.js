@@ -711,14 +711,21 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helpe
     dispositionCell = `<span class="badge status-${escapeHtml(item.status)}">${escapeHtml(item.status)}</span>`;
   } else {
     const verdict = item.review_verdict || "PENDING";
+    const tone = VERDICT_TONE[verdict] || "warning";
+    const undoButton = !isSynthetic && item.id
+      ? `<button type="button" class="btn-undo-sm" data-undo-item="${escapeHtml(item.id)}"
+           aria-label="Undo - back to pending" data-tooltip="Undo - back to pending">↺</button>` : "";
+    const buttons = cfg.dispositions.map((d) => verdictButton(item.id, d.verdict, d.label, d.requiresCorrectedInput)).join(" ");
     if (disabled) {
-      const tone = VERDICT_TONE[verdict] || "warning";
-      const undoButton = !isSynthetic && item.id
-        ? `<button type="button" class="btn-undo-sm" data-undo-item="${escapeHtml(item.id)}"
-             aria-label="Undo - back to pending" data-tooltip="Undo - back to pending">↺</button>` : "";
       dispositionCell = `<span class="verdict-badge verdict-tone-${tone}">${escapeHtml(verdict)}</span>${undoButton}`;
+    } else if (verdict !== "PENDING") {
+      // Status stayed PENDING on purpose here (an "open" disposition - Needs Investigation,
+      // Business to Confirm, Requires Business Review, Requires Master Data Correction: flagged,
+      // but still needs a human follow-up before it closes, see _OPEN_VERDICTS). Without this
+      // badge the row looked identical before and after clicking one of these, as if it did nothing.
+      dispositionCell = `<div class="open-verdict-flag"><span class="verdict-badge verdict-tone-${tone}">${escapeHtml(verdict)}</span>${undoButton}</div>${buttons}`;
     } else {
-      dispositionCell = cfg.dispositions.map((d) => verdictButton(item.id, d.verdict, d.label, d.requiresCorrectedInput)).join(" ");
+      dispositionCell = buttons;
     }
   }
 
