@@ -340,11 +340,11 @@ ITEM_DISPOSITIONS = {
         "CONFIRMED_ISSUE", "FALSE_POSITIVE", "REQUIRES_MASTER_DATA_CORRECTION",
         "REQUIRES_BUSINESS_REVIEW", "EXCLUDE_FROM_PROFILING",
     },
-    # Same 3-way shape as COMPLETENESS (fix it / not an issue / needs someone else), for the
-    # plain value-error correctness checks (invalid country/postal/tax format, etc.) that used
-    # to be stuck on the older generic decision-mode UI while CORRECTNESS_RELATIONSHIP and
-    # ANOMALY already had a disposition vocabulary.
-    "CORRECTNESS_VALUE_ERROR": {"CORRECTED", "FALSE_POSITIVE", "REQUIRES_BUSINESS_REVIEW"},
+    # Same vocabulary as ANOMALY (a value-format violation is a judgment call - is this really
+    # wrong or not - not something with a "corrected value" to type in), used for the plain
+    # value-error correctness checks (invalid country/postal/tax format, etc.) that used to be
+    # stuck on the older generic decision-mode UI.
+    "CORRECTNESS_VALUE_ERROR": {"LEGITIMATE", "NEEDS_INVESTIGATION"},
     "ANOMALY": {"LEGITIMATE", "NEEDS_INVESTIGATION"},
 }
 ALL_VALID_VERDICTS = {"PENDING", "APPROVED", "REJECTED"}.union(*ITEM_DISPOSITIONS.values())

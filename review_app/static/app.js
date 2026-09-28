@@ -609,12 +609,10 @@ const PILLAR_WORKFLOWS = {
   CORRECTNESS_VALUE_ERROR: {
     title: "Individual Issues",
     mode: "verdict",
-    showCorrectedInput: true,
-    correctedLabel: "Corrected Value",
+    showCorrectedInput: false,
     dispositions: [
-      { verdict: "CORRECTED", label: "Enter Corrected Value", requiresCorrectedInput: true },
-      { verdict: "FALSE_POSITIVE", label: "False Positive" },
-      { verdict: "REQUIRES_BUSINESS_REVIEW", label: "Requires Business Review" },
+      { verdict: "LEGITIMATE", label: "Legitimate Value" },
+      { verdict: "NEEDS_INVESTIGATION", label: "Needs Investigation" },
     ],
   },
   CORRECTNESS_RELATIONSHIP: {
