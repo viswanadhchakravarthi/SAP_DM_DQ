@@ -285,6 +285,13 @@ def list_findings(
     )
 
 
+@app.get("/api/findings/completeness-by-table")
+def get_completeness_by_table_endpoint(run_id: str, table: str):
+    """Manual-review COMPLETENESS findings for one table in one run, pivoted by record instead
+    of by column - see episodic_store.get_completeness_by_table."""
+    return store.get_completeness_by_table(run_id, table)
+
+
 @app.get("/api/dictionary")
 def get_dictionary(client_id: str):
     """Business meanings for a client's tables/columns (its uploaded data dictionary), for hover tooltips."""

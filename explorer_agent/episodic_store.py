@@ -663,6 +663,62 @@ def get_finding_items(finding_id: str) -> List[Dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
+def get_completeness_by_table(run_id: str, table_name: str) -> Dict[str, Any]:
+    """Every manual-review COMPLETENESS finding's items for one table in one run, pivoted by
+    physical record (row_index - stable within a run, since every check on a table reads the
+    same loaded DataFrame) instead of by column. Lets a reviewer see every missing field of one
+    record together instead of hopping between separate per-column findings to find the same row
+    again. AUTO_FIXABLE columns are excluded: they already have a fast one-click bulk-autofill
+    path on their own finding card, and their card is 'Approve/Reject', not a disposition."""
+    with get_connection() as conn:
+        findings = conn.execute(
+            "SELECT id, column_name, hypothesis FROM findings WHERE run_id = ? AND table_name = ? "
+            "AND category = 'COMPLETENESS' AND COALESCE(fix_type, 'MANUAL_FIX') != 'AUTO_FIXABLE' "
+            "ORDER BY column_name",
+            (run_id, table_name),
+        ).fetchall()
+        fields = [dict(f) for f in findings]
+        finding_ids = [f["id"] for f in fields]
+        if not finding_ids:
+            return {"table_name": table_name, "fields": [], "records": []}
+
+        placeholders = ",".join("?" * len(finding_ids))
+        items = conn.execute(
+            f"SELECT * FROM finding_items WHERE finding_id IN ({placeholders}) ORDER BY row_index",
+            finding_ids,
+        ).fetchall()
+
+    column_by_finding = {f["id"]: f["column_name"] for f in fields}
+    used_finding_ids = set()
+    records: Dict[Any, Dict[str, Any]] = {}
+    for row in items:
+        it = dict(row)
+        col = column_by_finding.get(it["finding_id"])
+        if not col:
+            continue
+        used_finding_ids.add(it["finding_id"])
+        # row_index ties records together (same DataFrame row within this run); key_value alone
+        # is a fallback only for the rare item that somehow has no row_index.
+        group_key = it["row_index"] if it["row_index"] is not None else f"kv:{it['key_value']}"
+        rec = records.setdefault(group_key, {
+            "row_index": it["row_index"], "key_field": it["key_field"], "key_value": it["key_value"], "cells": {},
+        })
+        rec["cells"][col] = {
+            # "id" (not "item_id") to match finding_items.id's usual key everywhere else in the
+            # frontend, so the shared verdictButton()/renderInlineCorrected() helpers work as-is.
+            "id": it["id"], "finding_id": it["finding_id"], "issue_detail": it["issue_detail"],
+            "status": it["status"], "review_verdict": it.get("review_verdict") or "PENDING",
+            "corrected_data": it.get("corrected_data") or "",
+        }
+
+    # A finding with no row-level items at all (a "synthetic" whole-table check, reviewed via its
+    # own card's Approve/Reject, not a disposition) must not become a column here - every record
+    # would render it as "not flagged", which would misreport a real, still-open check as clear.
+    fields = [f for f in fields if f["id"] in used_finding_ids]
+    ordered = sorted(records.values(), key=lambda r: (r["row_index"] is None, r["row_index"]))
+    return {"table_name": table_name, "fields": fields, "records": ordered}
+
+
 # A finding that can never become a skill (built-in rules, duplicates) has no decision of its own:
 # its status follows its records. It is marked reviewed once every record is decided, and goes back to
 # pending if a decision is undone or reopened. A reusable LLM check keeps a manual Approve/Reject,

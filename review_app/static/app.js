@@ -304,8 +304,9 @@ async function loadFindings() {
       return;
     }
 
-    container.innerHTML = findings.map(renderCard).join("");
+    container.innerHTML = renderGroupedBanner(findings, runId) + findings.map(renderCard).join("");
     attachCardHandlers();
+    attachGroupedBannerHandlers();
   } catch (error) {
     container.innerHTML = `<p class="empty-state">Unable to load findings: ${escapeHtml(error.message)}</p>`;
   }
@@ -379,6 +380,183 @@ function renderReviewProgress(finding) {
 function attachCardHandlers() {
   document.querySelectorAll(".finding-card").forEach((card) => {
     card.querySelector('[data-action="detail"]').addEventListener("click", () => openDetail(card.dataset.id));
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Completeness "club a table's findings together": the same physical record is
+// often flagged by more than one per-column Completeness check (LFBK.BANKL,
+// LFBK.IBAN, ...). Reviewing those one finding at a time means re-finding the
+// same row over and over. This pivots every manual-review Completeness finding
+// on one table into a single grid - one row per record, one column per flagged
+// field - so a reviewer clears a whole record in one pass. AUTO_FIXABLE fields
+// are excluded (see episodic_store.get_completeness_by_table); they already
+// have a fast one-click bulk-autofill path on their own card.
+// ---------------------------------------------------------------------------
+
+function renderGroupedBanner(findings, runId) {
+  const byTable = {};
+  findings.forEach((f) => {
+    // item_count > 0: a synthetic (whole-table, no row-level detail) finding never becomes a
+    // grid column - see get_completeness_by_table - so it shouldn't inflate this count either.
+    if (f.category === "COMPLETENESS" && f.fix_type !== "AUTO_FIXABLE" && f.item_count > 0) {
+      (byTable[f.table_name] = byTable[f.table_name] || []).push(f);
+    }
+  });
+  const multi = Object.entries(byTable).filter(([, fs]) => fs.length > 1);
+  if (!multi.length) return "";
+  return `
+    <div class="grouped-banner">
+      <span>Some records here are flagged by more than one Completeness check - review a table's missing fields together instead of one check at a time:</span>
+      <div class="grouped-banner-buttons">
+        ${multi.map(([table, fs]) => `
+          <button type="button" class="btn-grouped" data-grouped-table="${escapeHtml(table)}" data-grouped-run="${escapeHtml(runId)}">
+            🗂 ${escapeHtml(table)} (${fs.length} fields)
+          </button>`).join("")}
+      </div>
+    </div>`;
+}
+
+function attachGroupedBannerHandlers() {
+  document.querySelectorAll("[data-grouped-table]").forEach((btn) => {
+    btn.addEventListener("click", () => openGroupedRecords(btn.dataset.groupedRun, btn.dataset.groupedTable));
+  });
+}
+
+let groupedRecordsState = null; // {runId, table} of the currently open grouped-records modal
+
+async function openGroupedRecords(runId, table) {
+  groupedRecordsState = { runId, table };
+  document.getElementById("groupedRecordsTitle").textContent = `Missing Fields by Record - ${table}`;
+  document.getElementById("groupedRecordsModal").classList.remove("hidden");
+  await refreshGroupedRecords();
+}
+
+async function refreshGroupedRecords() {
+  if (!groupedRecordsState) return;
+  const { runId, table } = groupedRecordsState;
+  const body = document.getElementById("groupedRecordsModalBody");
+  body.innerHTML = '<p class="empty-state">Loading records...</p>';
+  try {
+    const data = await fetchJSON(
+      `${API_BASE}/findings/completeness-by-table?run_id=${encodeURIComponent(runId)}&table=${encodeURIComponent(table)}`);
+    body.innerHTML = renderGroupedRecordsTable(data);
+    attachGroupedRecordHandlers();
+  } catch (error) {
+    body.innerHTML = `<p class="empty-state">Unable to load records: ${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function renderGroupedRecordsTable(data) {
+  if (!data.records.length) {
+    return '<p class="empty-state">No pending manual-review records for this table.</p>';
+  }
+  return `
+    <p class="hint-text">${data.records.length} record${data.records.length === 1 ? "" : "s"},
+      ${data.fields.length} field${data.fields.length === 1 ? "" : "s"} flagged. A ✓ cell means that
+      field wasn't flagged for that record.</p>
+    <div class="grouped-records-scroll">
+      <table class="items-table grouped-records-table">
+        <thead>
+          <tr>
+            <th>Row</th><th>Key</th>
+            ${data.fields.map((f) => `<th title="${escapeHtml(f.hypothesis || "")}">${escapeHtml(f.column_name)}</th>`).join("")}
+          </tr>
+        </thead>
+        <tbody>
+          ${data.records.map((r) => `
+            <tr>
+              <td>${escapeHtml(r.row_index ?? "-")}</td>
+              <td>${escapeHtml(r.key_value || "")}</td>
+              ${data.fields.map((f) => renderGroupedCell(r.cells[f.column_name], f.column_name)).join("")}
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderGroupedCell(item, fieldName) {
+  if (!item) {
+    return `<td class="grouped-cell grouped-cell-ok" title="Not flagged for ${escapeHtml(fieldName)}">✓</td>`;
+  }
+  const disabled = item.status !== "PENDING";
+  const verdict = item.review_verdict || "PENDING";
+  const tone = VERDICT_TONE[verdict] || "warning";
+  const undoButton = `<button type="button" class="btn-undo-sm" data-undo-item="${escapeHtml(item.id)}"
+    aria-label="Undo - back to pending" data-tooltip="Undo - back to pending">↺</button>`;
+  let body;
+  if (disabled) {
+    body = `<span class="verdict-badge verdict-tone-${tone}">${escapeHtml(verdict)}</span>${undoButton}${renderInlineCorrected(item, true, fieldName)}`;
+  } else {
+    const inlineCorrected = renderInlineCorrected(item, false, fieldName);
+    const buttons = PILLAR_WORKFLOWS.COMPLETENESS_MANUAL.dispositions
+      .map((d) => verdictButton(item.id, d.verdict, d.label, d.requiresCorrectedInput)).join(" ");
+    body = verdict !== "PENDING"
+      ? `<div class="open-verdict-flag"><span class="verdict-badge verdict-tone-${tone}">${escapeHtml(verdict)}</span>${undoButton}</div>${buttons}`
+      : inlineCorrected + buttons;
+  }
+  return `<td class="grouped-cell">${body}</td>`;
+}
+
+// Scoped to the clicked button's own <td>, not the <tr> - a grouped-view row has one
+// .corrected-input per flagged field, so a <tr>-wide query would grab the wrong cell's input.
+function attachGroupedRecordHandlers() {
+  const container = document.getElementById("groupedRecordsModalBody");
+
+  container.querySelectorAll("[data-edit-toggle]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const cell = btn.closest("td");
+      const input = cell ? cell.querySelector(".corrected-input") : null;
+      if (!input) return;
+      input.style.display = "";
+      btn.style.display = "none";
+      input.focus();
+    });
+  });
+
+  container.querySelectorAll("[data-verdict]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const itemId = btn.dataset.itemId;
+      const verdict = btn.dataset.verdict;
+      const cell = btn.closest("td");
+      const correctedInput = cell ? cell.querySelector(".corrected-input") : null;
+      const correctedData = correctedInput ? correctedInput.value.trim() : null;
+      if (btn.dataset.requiresCorrected === "true" && !correctedData) {
+        const editToggle = cell ? cell.querySelector("[data-edit-toggle]") : null;
+        if (editToggle && editToggle.style.display !== "none") editToggle.click();
+        alert("Enter the corrected value first.");
+        correctedInput?.focus();
+        return;
+      }
+      try {
+        await fetchJSON(`${API_BASE}/finding-items/${encodeURIComponent(itemId)}/verdict`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ verdict, corrected_data: correctedData }),
+        });
+        findingsDirty = true;
+        await refreshGroupedRecords();
+      } catch (err) {
+        alert(`Failed to set verdict: ${err.message}`);
+      }
+    });
+  });
+
+  container.querySelectorAll("[data-undo-item]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const itemId = btn.dataset.undoItem;
+      try {
+        await fetchJSON(`${API_BASE}/finding-items/${encodeURIComponent(itemId)}/verdict`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ verdict: "PENDING" }),
+        });
+        findingsDirty = true;
+        await refreshGroupedRecords();
+      } catch (err) {
+        alert(`Failed to undo: ${err.message}`);
+      }
+    });
   });
 }
 
@@ -1924,6 +2102,15 @@ async function resumeJobIfRunning() {
 document.getElementById("closeModal").addEventListener("click", () => {
   document.getElementById("detailModal").classList.add("hidden");
   dupReview = null;
+  if (findingsDirty) {
+    findingsDirty = false;
+    loadFindings(); // refresh the cards' review progress
+  }
+});
+
+document.getElementById("closeGroupedRecordsModal").addEventListener("click", () => {
+  document.getElementById("groupedRecordsModal").classList.add("hidden");
+  groupedRecordsState = null;
   if (findingsDirty) {
     findingsDirty = false;
     loadFindings(); // refresh the cards' review progress
