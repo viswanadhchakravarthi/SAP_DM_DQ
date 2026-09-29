@@ -523,8 +523,8 @@ function renderGroupedRecordsTable(data) {
   const colCount = 2 + data.fields.length + helperCols.length;
   return `
     <p class="hint-text">${data.records.length} record${data.records.length === 1 ? "" : "s"}. A shaded cell
-      shows that field's current value for context - it wasn't the one flagged for that record. A record
-      flagged on more than one field shows its status per field here - click "Set dispositions" to decide them.
+      shows that field's current value for context - it wasn't the one flagged for that record. Click
+      "Set disposition(s)" to decide a record's flagged field(s), whether it's one or several.
       ${helperCols.length ? `Helper columns from ${escapeHtml(data.table_name)}: ${helperCols.map((c) => escapeHtml(c.name)).join(", ")}.` : ""}</p>
     ${staleNote}
     <div class="grouped-records-scroll">
@@ -539,25 +539,25 @@ function renderGroupedRecordsTable(data) {
         <tbody>
           ${data.records.map((r) => {
             const values = r.values || {};
+            // Same disposition UI for every record regardless of how many fields it's flagged on -
+            // even k=1 gets the 3xk matrix (k=1 here), not a different inline-button design. Which
+            // one column that is varies per record (whichever field that specific row was flagged
+            // on), so this can't be computed once for the whole table - each row builds its own.
             const flaggedFields = data.fields.filter((f) => r.cells[f.column_name]);
-            const multi = flaggedFields.length > 1;
             const recKey = `row-${r.row_index}`;
-            const toggle = multi
-              ? `<button type="button" class="btn-dispo-toggle" data-dispo-toggle="${escapeHtml(recKey)}" aria-expanded="false">
-                   ⚙ Set ${flaggedFields.length} dispositions</button>` : "";
+            const toggle = `<button type="button" class="btn-dispo-toggle" data-dispo-toggle="${escapeHtml(recKey)}" aria-expanded="false">
+              ⚙ Set disposition${flaggedFields.length === 1 ? "" : "s"}</button>`;
             const mainRow = `
               <tr>
                 <td>${escapeHtml(r.row_index ?? "-")}</td>
                 <td>${escapeHtml(r.key_value || "")}${toggle}</td>
-                ${data.fields.map((f) => multi
-                  ? renderCompactStatusCell(r.cells[f.column_name], f.column_name, values[f.column_name])
-                  : renderGroupedCell(r.cells[f.column_name], f.column_name, values[f.column_name])).join("")}
+                ${data.fields.map((f) => renderCompactStatusCell(r.cells[f.column_name], f.column_name, values[f.column_name])).join("")}
                 ${helperCols.map((c) => `<td class="helper-col">${values[c.name] ? escapeHtml(values[c.name]) : '<span class="blank-cell">—</span>'}</td>`).join("")}
               </tr>`;
-            const matrixRow = multi ? `
+            const matrixRow = `
               <tr class="dispo-matrix-row hidden" data-dispo-panel="${escapeHtml(recKey)}">
                 <td colspan="${colCount}">${renderDispositionMatrix(r, flaggedFields)}</td>
-              </tr>` : "";
+              </tr>`;
             return mainRow + matrixRow;
           }).join("")}
         </tbody>
@@ -565,10 +565,10 @@ function renderGroupedRecordsTable(data) {
     </div>`;
 }
 
-// A record flagged on 2+ fields gets a compact status-only cell here (badge, or the corrected
-// value if one was entered) instead of repeating the full 3-button disposition set once per
-// flagged field - that reads as a wall of identical buttons once a row has more than one issue.
-// Actually setting the disposition happens in the expandable matrix below (renderDispositionMatrix).
+// A flagged field gets a compact status-only cell here (badge, or the corrected value if one was
+// entered) instead of the full 3-button disposition set inline - the same design applies whether
+// this record has one flagged field or several. Actually setting the disposition happens in the
+// expandable matrix below (renderDispositionMatrix), reached via the row's "Set disposition(s)" toggle.
 function renderCompactStatusCell(item, fieldName, rawValue) {
   if (!item) {
     const shown = rawValue ? escapeHtml(rawValue) : '<span class="blank-cell">—</span>';
@@ -638,32 +638,6 @@ function renderDispoMatrixCell(item, disposition, fieldName) {
     : `<button type="button" class="dispo-dot-btn${activeClass}" data-verdict="${escapeHtml(disposition.verdict)}"
         data-item-id="${escapeHtml(item.id)}" title="${escapeHtml(disposition.label)}">${isActive ? "●" : "○"}</button>`;
   return `<td class="dispo-cell">${dot}</td>`;
-}
-
-function renderGroupedCell(item, fieldName, rawValue) {
-  if (!item) {
-    // Not flagged for this record: show the field's real value (same source as helper columns),
-    // not a bare checkmark - a reviewer deciding on another column needs to see it for context.
-    const shown = rawValue ? escapeHtml(rawValue) : '<span class="blank-cell">—</span>';
-    return `<td class="grouped-cell grouped-cell-ok" title="Not flagged for ${escapeHtml(fieldName)}">${shown}</td>`;
-  }
-  const disabled = item.status !== "PENDING";
-  const verdict = item.review_verdict || "PENDING";
-  const tone = VERDICT_TONE[verdict] || "warning";
-  const undoButton = `<button type="button" class="btn-undo-sm" data-undo-item="${escapeHtml(item.id)}"
-    aria-label="Undo - back to pending" data-tooltip="Undo - back to pending">↺</button>`;
-  let body;
-  if (disabled) {
-    body = `<span class="verdict-badge verdict-tone-${tone}">${escapeHtml(verdict)}</span>${undoButton}${renderInlineCorrected(item, true, fieldName)}`;
-  } else {
-    const inlineCorrected = renderInlineCorrected(item, false, fieldName);
-    const buttons = PILLAR_WORKFLOWS.COMPLETENESS_MANUAL.dispositions
-      .map((d) => verdictButton(item.id, d.verdict, d.label, d.requiresCorrectedInput)).join(" ");
-    body = verdict !== "PENDING"
-      ? `<div class="open-verdict-flag"><span class="verdict-badge verdict-tone-${tone}">${escapeHtml(verdict)}</span>${undoButton}</div>${buttons}`
-      : inlineCorrected + buttons;
-  }
-  return `<td class="grouped-cell">${body}</td>`;
 }
 
 // Scoped to the clicked button's own <td>, not the <tr> - a grouped-view row has one
