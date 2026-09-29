@@ -288,8 +288,47 @@ def list_findings(
 @app.get("/api/findings/completeness-by-table")
 def get_completeness_by_table_endpoint(run_id: str, table: str):
     """Manual-review COMPLETENESS findings for one table in one run, pivoted by record instead
-    of by column - see episodic_store.get_completeness_by_table."""
-    return store.get_completeness_by_table(run_id, table)
+    of by column - see episodic_store.get_completeness_by_table - enriched with raw values read
+    from the uploaded CSV (same source as GET /findings/{id}/helper-columns): the client's chosen
+    helper columns, plus every flagged field's own value for the records where that field ISN'T
+    the one flagged, so a "not flagged" cell shows the real value instead of a bare checkmark."""
+    data = store.get_completeness_by_table(run_id, table)
+    data["helper_columns"] = []
+    data["stale"] = False
+    data["stale_note"] = None
+    if not data["records"]:
+        return data
+
+    table_up = table.upper()
+    run = store.get_run(run_id) or {}
+    client_id = run.get("client_id")
+    if not client_id:
+        return data
+    try:
+        details = client_workspace.get_table_columns(client_id, table_up)
+        info = next((t for t in client_workspace.get_workspace(client_id)["tables"] if t["table"] == table_up), None)
+    except (KeyError, client_workspace.WorkspaceError):
+        return data
+    if not info:
+        return data
+    if (info.get("uploaded_at") or "") > (run.get("started_at") or ""):
+        data["stale"] = True
+        data["stale_note"] = (f"{table_up} was uploaded again after this run, so field values are hidden "
+                               "(the rows may have moved). Run the explorer again to see them.")
+        return data
+
+    meta = {c["name"]: c for c in details["columns"]}
+    field_names = {f["column_name"] for f in data["fields"]}
+    helper_names = [c for c in details["helper_columns"] if c not in field_names]
+    all_columns = [f["column_name"] for f in data["fields"]] + helper_names
+    row_indexes = sorted({r["row_index"] for r in data["records"] if r["row_index"] is not None})
+    values = client_workspace.helper_values(client_id, table_up, row_indexes, all_columns)
+
+    data["helper_columns"] = [meta[c] for c in helper_names if c in meta]
+    for rec in data["records"]:
+        ri = rec["row_index"]
+        rec["values"] = values.get(ri, {}) if ri is not None else {}
+    return data
 
 
 @app.get("/api/dictionary")

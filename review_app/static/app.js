@@ -304,7 +304,7 @@ async function loadFindings() {
       return;
     }
 
-    container.innerHTML = findings.map(renderCard).join("");
+    container.innerHTML = renderFindingCards(findings);
     attachCardHandlers();
   } catch (error) {
     container.innerHTML = `<p class="empty-state">Unable to load findings: ${escapeHtml(error.message)}</p>`;
@@ -401,13 +401,61 @@ function attachCardHandlers() {
 // clicked finding's table has more than one qualifying field, instead of
 // requiring the reviewer to notice and click a separate "grouped view" entry
 // point. Hypothesis and check code are concatenated per field so nothing
-// about any individual check gets lost by merging the view.
+// about any individual check gets lost by merging the view. The findings
+// LIST is merged the same way: a table with several such fields would
+// otherwise show one near-identical card per column, each one's "View
+// Details" landing on the exact same grid - so renderFindingCards() below
+// collapses them into one card titled by table, not table.column.
 // ---------------------------------------------------------------------------
 
-function completenessSiblingCount(finding) {
+function completenessSiblings(finding) {
+  // isPromotable findings (a reusable LLM check with captured code) are never merged in either
+  // direction - merged or merging - because their own "Approve as reusable skill" decision (see
+  // renderFindingDecisionRow/isPromotable) only exists on their own single-finding modal. Sweeping
+  // one into the grouped grid would make the human skill-promotion gate unreachable for it.
   return currentFindings.filter((f) =>
-    f.category === "COMPLETENESS" && f.fix_type !== "AUTO_FIXABLE" &&
-    f.table_name === finding.table_name && f.item_count > 0).length;
+    f.category === "COMPLETENESS" && f.fix_type !== "AUTO_FIXABLE" && !isPromotable(f) &&
+    f.table_name === finding.table_name && f.item_count > 0);
+}
+
+function completenessSiblingCount(finding) {
+  return completenessSiblings(finding).length;
+}
+
+// A synthetic finding-shaped object so the existing renderCard() can render a merged card
+// without a parallel render function. column_name: null makes wrapTableColumnRef() title it by
+// table alone (no ".column" suffix) instead of trying to render a comma list as a column ref.
+function mergedCompletenessFinding(siblings) {
+  const first = siblings[0];
+  const allDecided = siblings.every((f) => f.status !== "PENDING");
+  const latestReviewedAt = siblings.map((f) => f.reviewed_at).filter(Boolean).sort().pop() || null;
+  const sameSource = siblings.every((f) => f.source === first.source) ? first.source : null;
+  return {
+    ...first,
+    column_name: null,
+    hypothesis: "",
+    result_summary: `${siblings.length} fields flagged: ${siblings.map((f) => f.column_name).join(", ")}.`,
+    item_count: siblings.reduce((sum, f) => sum + (f.item_count || 0), 0),
+    reviewed_count: siblings.reduce((sum, f) => sum + (f.reviewed_count || 0), 0),
+    status: allDecided ? "APPROVED" : "PENDING",
+    reviewed_at: allDecided ? latestReviewedAt : null,
+    reviewer_comment: allDecided ? "All records reviewed" : null,
+    source: sameSource,
+  };
+}
+
+function renderFindingCards(findings) {
+  const rendered = new Set(); // table names already rendered as a merged card
+  return findings.map((f) => {
+    if (f.category !== "COMPLETENESS" || f.fix_type === "AUTO_FIXABLE" || !(f.item_count > 0) || isPromotable(f)) {
+      return renderCard(f);
+    }
+    if (rendered.has(f.table_name)) return ""; // this table's card already rendered
+    const siblings = completenessSiblings(f);
+    if (siblings.length <= 1) return renderCard(f);
+    rendered.add(f.table_name);
+    return renderCard(mergedCompletenessFinding(siblings));
+  }).join("");
 }
 
 let groupedRecordsState = null; // {runId, table} of the currently open grouped-records modal
@@ -458,32 +506,45 @@ function renderGroupedRecordsTable(data) {
   if (!data.records.length) {
     return '<p class="empty-state">No pending manual-review records for this table.</p>';
   }
+  const helperCols = data.helper_columns || [];
+  const staleNote = data.stale
+    ? `<p class="hint-text helper-note">${escapeHtml(data.stale_note || "")}</p>` : "";
   return `
-    <p class="hint-text">${data.records.length} record${data.records.length === 1 ? "" : "s"}. A ✓ cell means that
-      field wasn't flagged for that record.</p>
+    <p class="hint-text">${data.records.length} record${data.records.length === 1 ? "" : "s"}. A shaded cell
+      shows that field's current value for context - it wasn't the one flagged for that record.
+      ${helperCols.length ? `Helper columns from ${escapeHtml(data.table_name)}: ${helperCols.map((c) => escapeHtml(c.name)).join(", ")}.` : ""}</p>
+    ${staleNote}
     <div class="grouped-records-scroll">
       <table class="items-table grouped-records-table">
         <thead>
           <tr>
             <th>Row</th><th>Key</th>
             ${data.fields.map((f) => `<th title="${escapeHtml(f.hypothesis || "")}">${escapeHtml(f.column_name)}</th>`).join("")}
+            ${helperCols.map(helperHeader).join("")}
           </tr>
         </thead>
         <tbody>
-          ${data.records.map((r) => `
+          ${data.records.map((r) => {
+            const values = r.values || {};
+            return `
             <tr>
               <td>${escapeHtml(r.row_index ?? "-")}</td>
               <td>${escapeHtml(r.key_value || "")}</td>
-              ${data.fields.map((f) => renderGroupedCell(r.cells[f.column_name], f.column_name)).join("")}
-            </tr>`).join("")}
+              ${data.fields.map((f) => renderGroupedCell(r.cells[f.column_name], f.column_name, values[f.column_name])).join("")}
+              ${helperCols.map((c) => `<td class="helper-col">${values[c.name] ? escapeHtml(values[c.name]) : '<span class="blank-cell">—</span>'}</td>`).join("")}
+            </tr>`;
+          }).join("")}
         </tbody>
       </table>
     </div>`;
 }
 
-function renderGroupedCell(item, fieldName) {
+function renderGroupedCell(item, fieldName, rawValue) {
   if (!item) {
-    return `<td class="grouped-cell grouped-cell-ok" title="Not flagged for ${escapeHtml(fieldName)}">✓</td>`;
+    // Not flagged for this record: show the field's real value (same source as helper columns),
+    // not a bare checkmark - a reviewer deciding on another column needs to see it for context.
+    const shown = rawValue ? escapeHtml(rawValue) : '<span class="blank-cell">—</span>';
+    return `<td class="grouped-cell grouped-cell-ok" title="Not flagged for ${escapeHtml(fieldName)}">${shown}</td>`;
   }
   const disabled = item.status !== "PENDING";
   const verdict = item.review_verdict || "PENDING";
@@ -629,9 +690,11 @@ async function openDetail(id) {
 
   // A Completeness finding whose table has other manual-review fields flagged opens the combined
   // per-record grid instead of this single-column modal - see the "club a table's findings
-  // together" block above. A table with only one such field (the common case) is unaffected.
+  // together" block above. A table with only one such field (the common case), or a promotable
+  // finding (its own "Approve as reusable skill" decision only exists on this modal), is
+  // unaffected.
   if (finding.category === "COMPLETENESS" && finding.fix_type !== "AUTO_FIXABLE"
-      && completenessSiblingCount(finding) > 1) {
+      && !isPromotable(finding) && completenessSiblingCount(finding) > 1) {
     await openGroupedRecords(finding.run_id, finding.table_name);
     return;
   }
