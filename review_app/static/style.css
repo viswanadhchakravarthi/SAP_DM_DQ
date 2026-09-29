@@ -1930,16 +1930,11 @@ tr.why-row > td { background: #f8fafc; padding: 0; }
 .grouped-cell-ok { text-align: center; color: #16a34a; background: #f0fdf4; }
 .dispo-pending { font-size: 12px; color: #94a3b8; }
 
-/* Disposition matrix: a record flagged on 2+ fields expands this instead of repeating the full
-   3-button set once per flagged cell - each disposition's label appears once (row header), each
-   flagged field is a column, one dot per (disposition, field) cell. */
-.btn-dispo-toggle {
-  display: block; margin-top: 4px; font: inherit; font-size: 12px; padding: 3px 9px; border-radius: 6px;
-  cursor: pointer; background: #fff; color: #4338ca; border: 1px solid #c7d2fe;
-}
-.btn-dispo-toggle:hover, .btn-dispo-toggle[aria-expanded="true"] { background: #eef2ff; }
-tr.dispo-matrix-row.hidden { display: none; }
-tr.dispo-matrix-row > td { background: #f8fafc; padding: 10px 14px; }
+/* Disposition matrix: every record's Disposition column (last, same as every other pillar) holds
+   this instead of repeating the full 3-button set once per flagged cell - each disposition's label
+   appears once (row header), each flagged field is a column (k=1 for a record flagged on just one
+   field), one dot per (disposition, field) cell. Always visible, no toggle. */
+.dispo-matrix-cell { white-space: normal; }
 .dispo-matrix-table { border-collapse: collapse; font-size: 13px; }
 .dispo-matrix-table th, .dispo-matrix-table td { padding: 5px 12px; text-align: center; white-space: nowrap; }
 .dispo-matrix-table thead th { font-weight: 600; color: #1f2937; border-bottom: 1px solid #e2e8f0; }
