@@ -330,11 +330,21 @@ def init_db():
 ITEM_DISPOSITIONS = {
     "DUPLICATE": {"DUPLICATE", "UNIQUE", "TO_BE_CONFIRMED"},
     "ACTIVENESS": {"ALLOWED_ACTIVE", "CONFIRMED_INACTIVE"},
-    "COMPLETENESS": {"MISSING_VALUE", "NOT_APPLICABLE", "INTENTIONALLY_BLANK", "REQUIRES_BUSINESS_INPUT"},
+    # Collapsed from 4 to 3: NOT_APPLICABLE/INTENTIONALLY_BLANK were behaviorally identical
+    # (both terminal, both "not an issue"), and MISSING_VALUE only differed from
+    # REQUIRES_BUSINESS_INPUT in staying open vs. closing - reviewers weren't using that
+    # distinction. CORRECTED replaces MISSING_VALUE: it closes the item AND captures the
+    # actual value via corrected_data, instead of just flagging that one is missing.
+    "COMPLETENESS": {"LEGITIMATE_BLANK", "CORRECTED", "REQUIRES_BUSINESS_INPUT"},
     "CORRECTNESS_RELATIONSHIP": {
         "CONFIRMED_ISSUE", "FALSE_POSITIVE", "REQUIRES_MASTER_DATA_CORRECTION",
         "REQUIRES_BUSINESS_REVIEW", "EXCLUDE_FROM_PROFILING",
     },
+    # Same vocabulary as ANOMALY (a value-format violation is a judgment call - is this really
+    # wrong or not - not something with a "corrected value" to type in), used for the plain
+    # value-error correctness checks (invalid country/postal/tax format, etc.) that used to be
+    # stuck on the older generic decision-mode UI.
+    "CORRECTNESS_VALUE_ERROR": {"LEGITIMATE", "NEEDS_INVESTIGATION"},
     "ANOMALY": {"LEGITIMATE", "NEEDS_INVESTIGATION"},
 }
 ALL_VALID_VERDICTS = {"PENDING", "APPROVED", "REJECTED"}.union(*ITEM_DISPOSITIONS.values())
@@ -653,6 +663,62 @@ def get_finding_items(finding_id: str) -> List[Dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
+def get_completeness_by_table(run_id: str, table_name: str) -> Dict[str, Any]:
+    """Every manual-review COMPLETENESS finding's items for one table in one run, pivoted by
+    physical record (row_index - stable within a run, since every check on a table reads the
+    same loaded DataFrame) instead of by column. Lets a reviewer see every missing field of one
+    record together instead of hopping between separate per-column findings to find the same row
+    again. AUTO_FIXABLE columns are excluded: they already have a fast one-click bulk-autofill
+    path on their own finding card, and their card is 'Approve/Reject', not a disposition."""
+    with get_connection() as conn:
+        findings = conn.execute(
+            "SELECT id, column_name, hypothesis, check_code FROM findings WHERE run_id = ? AND table_name = ? "
+            "AND category = 'COMPLETENESS' AND COALESCE(fix_type, 'MANUAL_FIX') != 'AUTO_FIXABLE' "
+            "ORDER BY column_name",
+            (run_id, table_name),
+        ).fetchall()
+        fields = [dict(f) for f in findings]
+        finding_ids = [f["id"] for f in fields]
+        if not finding_ids:
+            return {"table_name": table_name, "fields": [], "records": []}
+
+        placeholders = ",".join("?" * len(finding_ids))
+        items = conn.execute(
+            f"SELECT * FROM finding_items WHERE finding_id IN ({placeholders}) ORDER BY row_index",
+            finding_ids,
+        ).fetchall()
+
+    column_by_finding = {f["id"]: f["column_name"] for f in fields}
+    used_finding_ids = set()
+    records: Dict[Any, Dict[str, Any]] = {}
+    for row in items:
+        it = dict(row)
+        col = column_by_finding.get(it["finding_id"])
+        if not col:
+            continue
+        used_finding_ids.add(it["finding_id"])
+        # row_index ties records together (same DataFrame row within this run); key_value alone
+        # is a fallback only for the rare item that somehow has no row_index.
+        group_key = it["row_index"] if it["row_index"] is not None else f"kv:{it['key_value']}"
+        rec = records.setdefault(group_key, {
+            "row_index": it["row_index"], "key_field": it["key_field"], "key_value": it["key_value"], "cells": {},
+        })
+        rec["cells"][col] = {
+            # "id" (not "item_id") to match finding_items.id's usual key everywhere else in the
+            # frontend, so the shared verdictButton()/renderInlineCorrected() helpers work as-is.
+            "id": it["id"], "finding_id": it["finding_id"], "issue_detail": it["issue_detail"],
+            "status": it["status"], "review_verdict": it.get("review_verdict") or "PENDING",
+            "corrected_data": it.get("corrected_data") or "",
+        }
+
+    # A finding with no row-level items at all (a "synthetic" whole-table check, reviewed via its
+    # own card's Approve/Reject, not a disposition) must not become a column here - every record
+    # would render it as "not flagged", which would misreport a real, still-open check as clear.
+    fields = [f for f in fields if f["id"] in used_finding_ids]
+    ordered = sorted(records.values(), key=lambda r: (r["row_index"] is None, r["row_index"]))
+    return {"table_name": table_name, "fields": fields, "records": ordered}
+
+
 # A finding that can never become a skill (built-in rules, duplicates) has no decision of its own:
 # its status follows its records. It is marked reviewed once every record is decided, and goes back to
 # pending if a decision is undone or reopened. A reusable LLM check keeps a manual Approve/Reject,
@@ -703,20 +769,31 @@ def update_item_decision(item_id: str, status: str, corrected_data: str = "", co
         return cur.rowcount > 0
 
 
-def update_item_verdict(item_id: str, verdict: str, comment: str = "", corrected_data: str = "") -> bool:
-    """Updates the pillar-appropriate review verdict on a finding item (see ITEM_DISPOSITIONS)."""
+def update_item_verdict(item_id: str, verdict: str, comment: str = "",
+                        corrected_data: Optional[str] = None) -> bool:
+    """Updates the pillar-appropriate review verdict on a finding item (see ITEM_DISPOSITIONS).
+    corrected_data=None (default) leaves the stored value untouched - most dispositions never show
+    a corrected-value field, so their clicks must not blow away one set some other way. Pass "" to
+    deliberately clear it (e.g. the reviewer emptied Completeness's "Enter Corrected Value" field
+    and picked "Legitimate Blank" instead) - "" is a real value here, not "not provided"."""
     if verdict not in ALL_VALID_VERDICTS:
         raise ValueError(f"Invalid verdict: {verdict}")
 
     status = "PENDING" if verdict in _OPEN_VERDICTS else "APPROVED"
+    now = datetime.now(timezone.utc).isoformat()
     with get_connection() as conn:
-        cur = conn.execute(
-            """UPDATE finding_items SET review_verdict = ?, status = ?,
-               corrected_data = CASE WHEN ? != '' THEN ? ELSE corrected_data END,
-               reviewed_at = ?, reviewer_comment = ?, decision_source = 'HUMAN' WHERE id = ?""",
-            (verdict, status, corrected_data, corrected_data,
-             datetime.now(timezone.utc).isoformat(), comment, item_id),
-        )
+        if corrected_data is None:
+            cur = conn.execute(
+                """UPDATE finding_items SET review_verdict = ?, status = ?,
+                   reviewed_at = ?, reviewer_comment = ?, decision_source = 'HUMAN' WHERE id = ?""",
+                (verdict, status, now, comment, item_id),
+            )
+        else:
+            cur = conn.execute(
+                """UPDATE finding_items SET review_verdict = ?, status = ?, corrected_data = ?,
+                   reviewed_at = ?, reviewer_comment = ?, decision_source = 'HUMAN' WHERE id = ?""",
+                (verdict, status, corrected_data, now, comment, item_id),
+            )
         _sync_for_item(conn, item_id)
         return cur.rowcount > 0
 

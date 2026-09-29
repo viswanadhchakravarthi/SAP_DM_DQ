@@ -1749,6 +1749,28 @@ header .btn-icon:hover {
 
 .btn-undo:hover { background: #f1f5f9; border-color: #94a3b8; }
 
+.btn-undo-sm {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #cbd5e1;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.btn-undo-sm:hover { background: #f1f5f9; border-color: #94a3b8; }
+
+.open-verdict-flag {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
 /* Composite DQ scorecard */
 .scorecard-panel {
   margin: 16px 24px 0;
@@ -1885,6 +1907,49 @@ td.helper-col { background: #f8fcff; color: #0f172a; }
 .btn-why:hover, .btn-why[aria-expanded="true"] { background: #eef2ff; }
 tr.why-row > td { background: #f8fafc; padding: 0; }
 .why-panel { padding: 14px 16px; border-left: 3px solid #6366f1; font-size: 13px; line-height: 1.5; }
+
+/* Corrected-value edit, inline against the field it corrects (Completeness) */
+.inline-corrected { margin-top: 6px; }
+.btn-inline-edit {
+  font: inherit; font-size: 12px; padding: 3px 9px; border-radius: 6px; cursor: pointer;
+  background: #fff; color: #4338ca; border: 1px solid #c7d2fe;
+}
+.btn-inline-edit:hover { background: #eef2ff; }
+.inline-corrected .corrected-input { width: auto; min-width: 220px; display: inline-block; }
+.corrected-note { margin-top: 6px; font-size: 12px; color: #334155; }
+/* Sitting alone in its own helper-column cell rather than below Details text - no top margin needed */
+.helper-col-editable.helper-col { background: #fff7ed; }
+.helper-col-editable .inline-corrected, .helper-col-editable .corrected-note { margin-top: 0; }
+.helper-col-editable .inline-corrected .corrected-input { min-width: 160px; }
+
+/* Completeness "club a table's findings together" - grouped-records grid (opened automatically
+   from any of the table's finding cards via openDetail(), not a separate entry point) */
+.grouped-records-scroll { overflow-x: auto; margin-top: 10px; }
+.grouped-records-table { min-width: 100%; }
+.grouped-records-table th, .grouped-records-table td { white-space: nowrap; vertical-align: top; }
+.grouped-cell-ok { text-align: center; color: #16a34a; background: #f0fdf4; }
+.dispo-pending { font-size: 12px; color: #94a3b8; }
+
+/* Disposition matrix: every record's Disposition column (last, same as every other pillar) holds
+   this instead of repeating the full 3-button set once per flagged cell - each disposition's label
+   appears once (row header), each flagged field is a column (k=1 for a record flagged on just one
+   field), one dot per (disposition, field) cell. Always visible, no toggle. */
+.dispo-matrix-cell { white-space: normal; }
+.dispo-matrix-table { border-collapse: collapse; font-size: 13px; }
+.dispo-matrix-table th, .dispo-matrix-table td { padding: 5px 12px; text-align: center; white-space: nowrap; }
+.dispo-matrix-table thead th { font-weight: 600; color: #1f2937; border-bottom: 1px solid #e2e8f0; }
+.dispo-matrix-table tbody th { text-align: left; font-weight: 500; color: #475569; }
+.dispo-dot-btn, .dispo-dot {
+  display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px;
+  border-radius: 50%; font-size: 15px; line-height: 1;
+}
+.dispo-dot-btn { cursor: pointer; background: #fff; border: 1px solid #cbd5e1; color: #94a3b8; }
+.dispo-dot-btn:hover { border-color: #94a3b8; background: #f1f5f9; }
+.dispo-dot { border: 1px solid #e2e8f0; color: #cbd5e1; }
+.dispo-dot-off { color: #cbd5e1; }
+.dispo-dot-active { font-weight: 700; }
+.dispo-cell-input { text-align: left; }
+.dispo-cell-input .inline-corrected { display: inline-flex; align-items: center; gap: 6px; margin-top: 0; }
 .why-panel h4 { margin: 0 0 4px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #6b7280; }
 .why-panel p { margin: 0 0 6px; }
 .why-panel section { margin-bottom: 12px; }

@@ -304,7 +304,7 @@ async function loadFindings() {
       return;
     }
 
-    container.innerHTML = findings.map(renderCard).join("");
+    container.innerHTML = renderFindingCards(findings);
     attachCardHandlers();
   } catch (error) {
     container.innerHTML = `<p class="empty-state">Unable to load findings: ${escapeHtml(error.message)}</p>`;
@@ -382,6 +382,331 @@ function attachCardHandlers() {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Completeness "club a table's findings together": the same physical record is
+// often flagged by more than one per-column Completeness check (LFBK.BANKL,
+// LFBK.IBAN, ...). Reviewing those one finding at a time means re-finding the
+// same row over and over. This pivots every manual-review Completeness finding
+// on one table into a single grid - one row per record, one column per flagged
+// field - so a reviewer clears a whole record in one pass. AUTO_FIXABLE fields
+// are excluded (see episodic_store.get_completeness_by_table); they already
+// have a fast one-click bulk-autofill path on their own card.
+//
+// The underlying findings stay separate in the database - one per column, as
+// the pipeline generates them - because that's load-bearing, not just a
+// backend quirk: each check's own LLM "reusable" judgment, its own
+// promotable-skill status and its own audit trail depend on staying per-check
+// (see get_promotable_findings/_sync_finding_status). Only the presentation
+// merges: openDetail() below redirects here automatically whenever the
+// clicked finding's table has more than one qualifying field, instead of
+// requiring the reviewer to notice and click a separate "grouped view" entry
+// point. Hypothesis and check code are concatenated per field so nothing
+// about any individual check gets lost by merging the view. The findings
+// LIST is merged the same way: a table with several such fields would
+// otherwise show one near-identical card per column, each one's "View
+// Details" landing on the exact same grid - so renderFindingCards() below
+// collapses them into one card titled by table, not table.column.
+// ---------------------------------------------------------------------------
+
+function completenessSiblings(finding) {
+  // isPromotable findings (a reusable LLM check with captured code) are never merged in either
+  // direction - merged or merging - because their own "Approve as reusable skill" decision (see
+  // renderFindingDecisionRow/isPromotable) only exists on their own single-finding modal. Sweeping
+  // one into the grouped grid would make the human skill-promotion gate unreachable for it.
+  return currentFindings.filter((f) =>
+    f.category === "COMPLETENESS" && f.fix_type !== "AUTO_FIXABLE" && !isPromotable(f) &&
+    f.table_name === finding.table_name && f.item_count > 0);
+}
+
+function completenessSiblingCount(finding) {
+  return completenessSiblings(finding).length;
+}
+
+// A synthetic finding-shaped object so the existing renderCard() can render a merged card
+// without a parallel render function. column_name: null makes wrapTableColumnRef() title it by
+// table alone (no ".column" suffix) instead of trying to render a comma list as a column ref.
+function mergedCompletenessFinding(siblings) {
+  const first = siblings[0];
+  const allDecided = siblings.every((f) => f.status !== "PENDING");
+  const latestReviewedAt = siblings.map((f) => f.reviewed_at).filter(Boolean).sort().pop() || null;
+  const sameSource = siblings.every((f) => f.source === first.source) ? first.source : null;
+  return {
+    ...first,
+    column_name: null,
+    hypothesis: "",
+    result_summary: `${siblings.length} fields flagged: ${siblings.map((f) => f.column_name).join(", ")}.`,
+    item_count: siblings.reduce((sum, f) => sum + (f.item_count || 0), 0),
+    reviewed_count: siblings.reduce((sum, f) => sum + (f.reviewed_count || 0), 0),
+    status: allDecided ? "APPROVED" : "PENDING",
+    reviewed_at: allDecided ? latestReviewedAt : null,
+    reviewer_comment: allDecided ? "All records reviewed" : null,
+    source: sameSource,
+  };
+}
+
+function renderFindingCards(findings) {
+  const rendered = new Set(); // table names already rendered as a merged card
+  return findings.map((f) => {
+    if (f.category !== "COMPLETENESS" || f.fix_type === "AUTO_FIXABLE" || !(f.item_count > 0) || isPromotable(f)) {
+      return renderCard(f);
+    }
+    if (rendered.has(f.table_name)) return ""; // this table's card already rendered
+    const siblings = completenessSiblings(f);
+    if (siblings.length <= 1) return renderCard(f);
+    rendered.add(f.table_name);
+    return renderCard(mergedCompletenessFinding(siblings));
+  }).join("");
+}
+
+let groupedRecordsState = null;  // {runId, table} of the currently open grouped-records modal
+let groupedRecordsData = null;   // last-fetched payload, for the check-code toggle to read from
+
+async function openGroupedRecords(runId, table) {
+  groupedRecordsState = { runId, table };
+  document.getElementById("groupedRecordsTitle").textContent = `${table} - Completeness (all fields)`;
+  document.getElementById("groupedRecordsModal").classList.remove("hidden");
+  await refreshGroupedRecords();
+}
+
+async function refreshGroupedRecords() {
+  if (!groupedRecordsState) return;
+  const { runId, table } = groupedRecordsState;
+  const body = document.getElementById("groupedRecordsModalBody");
+  body.innerHTML = '<p class="empty-state">Loading records...</p>';
+  try {
+    groupedRecordsData = await fetchJSON(
+      `${API_BASE}/findings/completeness-by-table?run_id=${encodeURIComponent(runId)}&table=${encodeURIComponent(table)}`);
+    body.innerHTML = renderGroupedRecordsBody(groupedRecordsData);
+    attachGroupedRecordHandlers();
+  } catch (error) {
+    body.innerHTML = `<p class="empty-state">Unable to load records: ${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function renderGroupedRecordsBody(data) {
+  if (!data.fields.length) {
+    return '<p class="empty-state">No manual-review Completeness fields for this table.</p>';
+  }
+  const hypothesis = data.fields.map((f) =>
+    `<strong>${escapeHtml(f.column_name)}:</strong> ${linkifyTableColumnRefs(escapeHtml(f.hypothesis || "(not captured)"))}`
+  ).join("\n\n");
+  return `
+    <div class="detail-row">
+      <div class="detail-label">Hypothesis &amp; Rule Context (${data.fields.length} field${data.fields.length === 1 ? "" : "s"})</div>
+      <pre>${hypothesis}</pre>
+    </div>
+    <div class="detail-row lazy-section" id="groupedLazyCode">
+      <button class="btn-lazy-load" data-lazy="grouped-code">View Local Pandas Check Code</button>
+    </div>
+    ${renderGroupedRecordsTable(data)}
+  `;
+}
+
+function renderGroupedRecordsTable(data) {
+  if (!data.records.length) {
+    return '<p class="empty-state">No pending manual-review records for this table.</p>';
+  }
+  const helperCols = data.helper_columns || [];
+  const staleNote = data.stale
+    ? `<p class="hint-text helper-note">${escapeHtml(data.stale_note || "")}</p>` : "";
+  return `
+    <p class="hint-text">${data.records.length} record${data.records.length === 1 ? "" : "s"}. A shaded cell
+      shows that field's current value for context - it wasn't the one flagged for that record. The
+      Disposition column has one column per flagged field - k=1 for a record flagged on just one.
+      ${helperCols.length ? `Helper columns from ${escapeHtml(data.table_name)}: ${helperCols.map((c) => escapeHtml(c.name)).join(", ")}.` : ""}</p>
+    ${staleNote}
+    <div class="grouped-records-scroll">
+      <table class="items-table grouped-records-table">
+        <thead>
+          <tr>
+            <th>Row</th><th>Key</th>
+            ${data.fields.map((f) => `<th title="${escapeHtml(f.hypothesis || "")}">${escapeHtml(f.column_name)}</th>`).join("")}
+            ${helperCols.map(helperHeader).join("")}
+            <th>Disposition</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.records.map((r) => {
+            const values = r.values || {};
+            // Which field(s) a record is flagged on varies per record, so the matrix is built per
+            // row, not once for the whole table - always visible in the Disposition column, same
+            // as every other pillar's Disposition column, no click needed to reach it.
+            const flaggedFields = data.fields.filter((f) => r.cells[f.column_name]);
+            return `
+              <tr>
+                <td>${escapeHtml(r.row_index ?? "-")}</td>
+                <td>${escapeHtml(r.key_value || "")}</td>
+                ${data.fields.map((f) => renderCompactStatusCell(r.cells[f.column_name], f.column_name, values[f.column_name])).join("")}
+                ${helperCols.map((c) => `<td class="helper-col">${values[c.name] ? escapeHtml(values[c.name]) : '<span class="blank-cell">—</span>'}</td>`).join("")}
+                <td class="dispo-matrix-cell">${renderDispositionMatrix(r, flaggedFields)}</td>
+              </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// A flagged field gets a compact status-only cell here (badge, or the corrected value if one was
+// entered) in its own column - the same design applies whether this record has one flagged field
+// or several. Actually setting the disposition happens in the Disposition column, always visible
+// (renderDispositionMatrix), not repeated per field here.
+function renderCompactStatusCell(item, fieldName, rawValue) {
+  if (!item) {
+    const shown = rawValue ? escapeHtml(rawValue) : '<span class="blank-cell">—</span>';
+    return `<td class="grouped-cell grouped-cell-ok" title="Not flagged for ${escapeHtml(fieldName)}">${shown}</td>`;
+  }
+  const verdict = item.review_verdict || "PENDING";
+  const tone = VERDICT_TONE[verdict] || "warning";
+  const badge = verdict !== "PENDING"
+    ? `<span class="verdict-badge verdict-tone-${tone}">${escapeHtml(verdict)}</span>`
+    : `<span class="dispo-pending">Pending</span>`;
+  const correctedNote = item.corrected_data
+    ? `<div class="corrected-note">→ ${escapeHtml(item.corrected_data)}</div>` : "";
+  return `<td class="grouped-cell">${badge}${correctedNote}</td>`;
+}
+
+// The 3xN disposition matrix for one record: rows are the (shared, single source of truth)
+// Completeness dispositions, columns are that record's flagged fields - so each disposition's
+// label appears exactly once instead of once per flagged cell, and picking one is a single click
+// per column instead of hunting for the right button among three repeated per field.
+function renderDispositionMatrix(record, flaggedFields) {
+  const rows = PILLAR_WORKFLOWS.COMPLETENESS_MANUAL.dispositions;
+  return `
+    <div class="dispo-matrix">
+      <table class="dispo-matrix-table">
+        <thead>
+          <tr>
+            <th></th>
+            ${flaggedFields.map((f) => {
+              const item = record.cells[f.column_name];
+              const undo = item.status !== "PENDING"
+                ? `<button type="button" class="btn-undo-sm" data-undo-item="${escapeHtml(item.id)}"
+                     aria-label="Undo - back to pending" data-tooltip="Undo - back to pending">↺</button>` : "";
+              return `<th>${escapeHtml(f.column_name)}${undo}</th>`;
+            }).join("")}
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((d) => `
+            <tr>
+              <th>${escapeHtml(d.label)}</th>
+              ${flaggedFields.map((f) => renderDispoMatrixCell(record.cells[f.column_name], d, f.column_name)).join("")}
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderDispoMatrixCell(item, disposition, fieldName) {
+  const disabled = item.status !== "PENDING";
+  const isActive = item.review_verdict === disposition.verdict;
+  const tone = VERDICT_TONE[disposition.verdict] || "warning";
+  const activeClass = isActive ? ` dispo-dot-active verdict-tone-${tone}` : "";
+
+  if (disposition.requiresCorrectedInput) {
+    if (disabled) {
+      return `<td class="dispo-cell-input">${renderInlineCorrected(item, true, fieldName)}</td>`;
+    }
+    // A compact "set" dot instead of verdictButton()'s full label (already the row header) - same
+    // data-verdict/data-requires-corrected contract, so the existing [data-verdict] handler (which
+    // reveals+validates the input before submitting) needs no changes to work with it.
+    const setDot = `<button type="button" class="dispo-dot-btn${activeClass}" data-verdict="${escapeHtml(disposition.verdict)}"
+      data-item-id="${escapeHtml(item.id)}" data-requires-corrected="true" title="${escapeHtml(disposition.label)}">${isActive ? "●" : "○"}</button>`;
+    return `<td class="dispo-cell-input">${setDot}${renderInlineCorrected(item, false, fieldName)}</td>`;
+  }
+  const dot = disabled
+    ? `<span class="dispo-dot${activeClass || " dispo-dot-off"}">${isActive ? "●" : "○"}</span>`
+    : `<button type="button" class="dispo-dot-btn${activeClass}" data-verdict="${escapeHtml(disposition.verdict)}"
+        data-item-id="${escapeHtml(item.id)}" title="${escapeHtml(disposition.label)}">${isActive ? "●" : "○"}</button>`;
+  return `<td class="dispo-cell">${dot}</td>`;
+}
+
+// Scoped to the clicked button's own <td>, not the <tr> - a grouped-view row has one
+// .corrected-input per flagged field, so a <tr>-wide query would grab the wrong cell's input.
+function attachGroupedRecordHandlers() {
+  const container = document.getElementById("groupedRecordsModalBody");
+
+  // Toggle: first click builds and shows every field's check code, one after another under its
+  // own header comment; next click hides it. Same pattern as the single-finding modal's code
+  // toggle, except the code is already in hand (groupedRecordsData) - no separate fetch needed.
+  const codeBtn = document.querySelector('#groupedLazyCode [data-lazy="grouped-code"]');
+  if (codeBtn) {
+    codeBtn.addEventListener("click", () => {
+      const section = document.getElementById("groupedLazyCode");
+      let pre = section.querySelector("pre");
+      if (!pre) {
+        const combined = (groupedRecordsData.fields || [])
+          .map((f) => `# ── ${f.column_name} ──\n${f.check_code || "(not captured)"}`)
+          .join("\n\n");
+        pre = document.createElement("pre");
+        pre.className = "hidden";
+        pre.textContent = combined;
+        section.appendChild(pre);
+      }
+      const show = pre.classList.contains("hidden");
+      pre.classList.toggle("hidden", !show);
+      codeBtn.textContent = show ? "Hide Local Pandas Check Code" : "View Local Pandas Check Code";
+      codeBtn.setAttribute("aria-expanded", String(show));
+    });
+  }
+
+  container.querySelectorAll("[data-edit-toggle]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const cell = btn.closest("td");
+      const input = cell ? cell.querySelector(".corrected-input") : null;
+      if (!input) return;
+      input.style.display = "";
+      btn.style.display = "none";
+      input.focus();
+    });
+  });
+
+  container.querySelectorAll("[data-verdict]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const itemId = btn.dataset.itemId;
+      const verdict = btn.dataset.verdict;
+      const cell = btn.closest("td");
+      const correctedInput = cell ? cell.querySelector(".corrected-input") : null;
+      const correctedData = correctedInput ? correctedInput.value.trim() : null;
+      if (btn.dataset.requiresCorrected === "true" && !correctedData) {
+        const editToggle = cell ? cell.querySelector("[data-edit-toggle]") : null;
+        if (editToggle && editToggle.style.display !== "none") editToggle.click();
+        alert("Enter the corrected value first.");
+        correctedInput?.focus();
+        return;
+      }
+      try {
+        await fetchJSON(`${API_BASE}/finding-items/${encodeURIComponent(itemId)}/verdict`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ verdict, corrected_data: correctedData }),
+        });
+        findingsDirty = true;
+        await refreshGroupedRecords();
+      } catch (err) {
+        alert(`Failed to set verdict: ${err.message}`);
+      }
+    });
+  });
+
+  container.querySelectorAll("[data-undo-item]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const itemId = btn.dataset.undoItem;
+      try {
+        await fetchJSON(`${API_BASE}/finding-items/${encodeURIComponent(itemId)}/verdict`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ verdict: "PENDING" }),
+        });
+        findingsDirty = true;
+        await refreshGroupedRecords();
+      } catch (err) {
+        alert(`Failed to undo: ${err.message}`);
+      }
+    });
+  });
+}
+
 async function submitDecision(id, status) {
   const comment = status === "REJECTED"
     ? prompt("Optional: reason for rejection?") || ""
@@ -418,6 +743,17 @@ async function fetchFullFinding(id) {
 async function openDetail(id) {
   const finding = currentFindings.find((item) => item.id === id);
   if (!finding) return;
+
+  // A Completeness finding whose table has other manual-review fields flagged opens the combined
+  // per-record grid instead of this single-column modal - see the "club a table's findings
+  // together" block above. A table with only one such field (the common case), or a promotable
+  // finding (its own "Approve as reusable skill" decision only exists on this modal), is
+  // unaffected.
+  if (finding.category === "COMPLETENESS" && finding.fix_type !== "AUTO_FIXABLE"
+      && !isPromotable(finding) && completenessSiblingCount(finding) > 1) {
+    await openGroupedRecords(finding.run_id, finding.table_name);
+    return;
+  }
 
   const categoryLabel = {
     ACTIVENESS: "🕒 Activeness Check",
@@ -568,11 +904,14 @@ async function reopenRecordsSection(findingId, finding) {
 
 const VERDICT_TONE = {
   ALLOWED_ACTIVE: "positive", UNIQUE: "positive", FALSE_POSITIVE: "positive", LEGITIMATE: "positive",
-  NOT_APPLICABLE: "positive", INTENTIONALLY_BLANK: "positive", APPROVED: "positive",
+  LEGITIMATE_BLANK: "positive", CORRECTED: "positive", APPROVED: "positive",
   TO_BE_CONFIRMED: "warning", REQUIRES_BUSINESS_INPUT: "warning", REQUIRES_BUSINESS_REVIEW: "warning",
   REQUIRES_MASTER_DATA_CORRECTION: "warning", NEEDS_INVESTIGATION: "warning", PENDING: "warning",
   CONFIRMED_INACTIVE: "negative", DUPLICATE: "negative", CONFIRMED_ISSUE: "negative",
-  MISSING_VALUE: "negative", EXCLUDE_FROM_PROFILING: "negative", REJECTED: "negative",
+  EXCLUDE_FROM_PROFILING: "negative", REJECTED: "negative",
+  // Legacy verdicts from before the Completeness disposition set was collapsed to 3 options -
+  // kept only so records already decided under the old vocabulary still render a sensible tone.
+  NOT_APPLICABLE: "positive", INTENTIONALLY_BLANK: "positive", MISSING_VALUE: "negative",
 };
 
 const PILLAR_WORKFLOWS = {
@@ -595,20 +934,22 @@ const PILLAR_WORKFLOWS = {
   COMPLETENESS_MANUAL: {
     title: "Missing / Incomplete Records",
     mode: "verdict",
-    showCorrectedInput: true,
-    correctedLabel: "Business Input (optional)",
+    showCorrectedInput: false,
+    inlineCorrectedInput: true,
     dispositions: [
-      { verdict: "MISSING_VALUE", label: "Missing Value" },
-      { verdict: "NOT_APPLICABLE", label: "Not Applicable" },
-      { verdict: "INTENTIONALLY_BLANK", label: "Intentionally Blank" },
-      { verdict: "REQUIRES_BUSINESS_INPUT", label: "Requires Business Input" },
+      { verdict: "LEGITIMATE_BLANK", label: "Legitimate Blank" },
+      { verdict: "CORRECTED", label: "Enter Corrected Value", requiresCorrectedInput: true },
+      { verdict: "REQUIRES_BUSINESS_INPUT", label: "Business to Confirm" },
     ],
   },
   CORRECTNESS_VALUE_ERROR: {
     title: "Individual Issues",
-    mode: "decision",
-    showCorrectedInput: true,
-    correctedLabel: "Corrected Data",
+    mode: "verdict",
+    showCorrectedInput: false,
+    dispositions: [
+      { verdict: "LEGITIMATE", label: "Legitimate Value" },
+      { verdict: "NEEDS_INVESTIGATION", label: "Needs Investigation" },
+    ],
   },
   CORRECTNESS_RELATIONSHIP: {
     title: "Relationship / Integrity Issues",
@@ -634,21 +975,26 @@ const PILLAR_WORKFLOWS = {
 };
 
 function getWorkflowKey(finding) {
-  if (finding.is_anomaly) return "ANOMALY";
   if (finding.category === "ACTIVENESS") return "ACTIVENESS";
   if (finding.category === "COMPLETENESS") {
     return finding.fix_type === "AUTO_FIXABLE" ? "COMPLETENESS_AUTO" : "COMPLETENESS_MANUAL";
   }
   if (finding.category === "CORRECTNESS") {
+    // is_anomaly only redirects within Correctness - it's only ever paired with CORRECTNESS
+    // by the built-in rule pack (anomaly_rules.py), but an LLM-proposed check can set it on
+    // any category; letting it override Completeness/Activeness there dropped their disposition
+    // vocabulary and (for Completeness) the Corrected Value field entirely.
+    if (finding.is_anomaly) return "ANOMALY";
     return finding.effective_sub_type === "RELATIONSHIP_INTEGRITY"
       ? "CORRECTNESS_RELATIONSHIP" : "CORRECTNESS_VALUE_ERROR";
   }
   return "CORRECTNESS_VALUE_ERROR";
 }
 
-function verdictButton(itemId, verdict, label) {
+function verdictButton(itemId, verdict, label, requiresCorrectedInput) {
   const tone = VERDICT_TONE[verdict] || "warning";
-  return `<button class="btn-action btn-tone-${tone}" data-verdict="${escapeHtml(verdict)}" data-item-id="${escapeHtml(itemId)}">${escapeHtml(label)}</button>`;
+  return `<button class="btn-action btn-tone-${tone}" data-verdict="${escapeHtml(verdict)}" data-item-id="${escapeHtml(itemId)}"
+    ${requiresCorrectedInput ? 'data-requires-corrected="true"' : ""}>${escapeHtml(label)}</button>`;
 }
 
 function renderWorkflowItemsTable(finding, items, isSynthetic, workflowKey) {
@@ -691,10 +1037,39 @@ function renderWorkflowItemsTable(finding, items, isSynthetic, workflowKey) {
   `;
 }
 
+// The corrected value, entered against the field it actually corrects, instead of a standalone
+// "Corrected Value" column with no visible link to which field it's for. Used either inside the
+// matching helper column's own cell (when the reviewer chose the flagged field as a helper
+// column - the common case, since it's the one value they most want to see) or, failing that,
+// inline in the Details cell (renderWorkflowRow).
+function renderInlineCorrected(item, disabled, fieldName) {
+  if (disabled) {
+    return item.corrected_data
+      ? `<div class="corrected-note">→ Corrected ${escapeHtml(fieldName)} to: <strong>${escapeHtml(item.corrected_data)}</strong></div>` : "";
+  }
+  const hasValue = !!item.corrected_data;
+  return `
+    <div class="inline-corrected">
+      <button type="button" class="btn-inline-edit" data-edit-toggle="${escapeHtml(item.id)}" ${hasValue ? 'style="display:none"' : ""}>
+        ✏️ Edit ${escapeHtml(fieldName)}
+      </button>
+      <input type="text" class="corrected-input" placeholder="Enter ${escapeHtml(fieldName)}..."
+        value="${escapeHtml(item.corrected_data || "")}" ${hasValue ? "" : 'style="display:none"'}>
+    </div>`;
+}
+
 function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helperCols = []) {
   const disabled = isSynthetic || item.status !== "PENDING";
   const keyCell = item.key_field ? wrapTableColumnRef(finding.table_name, item.key_field, "") : "";
-  const detailsCell = linkifyTableColumnRefs(escapeHtml(item.issue_detail || "")) +
+  const fieldName = finding.column_name || "value";
+
+  // finding.column_name is the same field for every row of a Completeness finding (one finding =
+  // one column), so if it's among the chosen helper columns, edit it there; otherwise fall back
+  // to the Details cell so the edit control is never lost.
+  const targetHelperCol = cfg.inlineCorrectedInput ? helperCols.find((c) => c.name === fieldName) : null;
+  const inlineCorrected = cfg.inlineCorrectedInput ? renderInlineCorrected(item, disabled, fieldName) : "";
+
+  const detailsCell = linkifyTableColumnRefs(escapeHtml(item.issue_detail || "")) + (targetHelperCol ? "" : inlineCorrected) +
     (isAutoFixable && item.status === "PENDING" ? `
       <button class="btn-autofill" data-autofill-item="${escapeHtml(item.id)}" data-autofill-val="${escapeHtml(finding.auto_fix_value)}">
         ⚡ Autofill '${escapeHtml(finding.auto_fix_value)}'
@@ -708,11 +1083,21 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helpe
     dispositionCell = `<span class="badge status-${escapeHtml(item.status)}">${escapeHtml(item.status)}</span>`;
   } else {
     const verdict = item.review_verdict || "PENDING";
+    const tone = VERDICT_TONE[verdict] || "warning";
+    const undoButton = !isSynthetic && item.id
+      ? `<button type="button" class="btn-undo-sm" data-undo-item="${escapeHtml(item.id)}"
+           aria-label="Undo - back to pending" data-tooltip="Undo - back to pending">↺</button>` : "";
+    const buttons = cfg.dispositions.map((d) => verdictButton(item.id, d.verdict, d.label, d.requiresCorrectedInput)).join(" ");
     if (disabled) {
-      const tone = VERDICT_TONE[verdict] || "warning";
-      dispositionCell = `<span class="verdict-badge verdict-tone-${tone}">${escapeHtml(verdict)}</span>`;
+      dispositionCell = `<span class="verdict-badge verdict-tone-${tone}">${escapeHtml(verdict)}</span>${undoButton}`;
+    } else if (verdict !== "PENDING") {
+      // Status stayed PENDING on purpose here (an "open" disposition - Needs Investigation,
+      // Business to Confirm, Requires Business Review, Requires Master Data Correction: flagged,
+      // but still needs a human follow-up before it closes, see _OPEN_VERDICTS). Without this
+      // badge the row looked identical before and after clicking one of these, as if it did nothing.
+      dispositionCell = `<div class="open-verdict-flag"><span class="verdict-badge verdict-tone-${tone}">${escapeHtml(verdict)}</span>${undoButton}</div>${buttons}`;
     } else {
-      dispositionCell = cfg.dispositions.map((d) => verdictButton(item.id, d.verdict, d.label)).join(" ");
+      dispositionCell = buttons;
     }
   }
 
@@ -722,7 +1107,9 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helpe
       <td>${escapeHtml(item.row_index ?? "-")}</td>
       <td>${keyCell}${item.key_value ? `: ${escapeHtml(item.key_value)}` : ""}</td>
       <td>${detailsCell}${whyButton}</td>
-      ${helperCols.map((c) => helperCell(finding.id, item.id, c)).join("")}
+      ${helperCols.map((c) => c === targetHelperCol
+        ? `<td class="helper-col helper-col-editable">${inlineCorrected}</td>`
+        : helperCell(finding.id, item.id, c)).join("")}
       ${cfg.showCorrectedInput ? `<td><input type="text" class="corrected-input" placeholder="Enter value..." value="${escapeHtml(item.corrected_data || "")}" ${disabled ? "disabled" : ""}></td>` : ""}
       <td>${dispositionCell}</td>
     </tr>
@@ -892,13 +1279,34 @@ function attachPillarWorkflowHandlers(findingId, finding, isSynthetic) {
     });
   }
 
+  section.querySelectorAll("[data-edit-toggle]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const row = btn.closest("tr");
+      const input = row ? row.querySelector(".corrected-input") : null;
+      if (!input) return;
+      input.style.display = "";
+      btn.style.display = "none";
+      input.focus();
+    });
+  });
+
   section.querySelectorAll("[data-verdict]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const itemId = btn.dataset.itemId;
       const verdict = btn.dataset.verdict;
       const row = btn.closest("tr");
       const correctedInput = row ? row.querySelector(".corrected-input") : null;
-      const correctedData = correctedInput ? correctedInput.value : "";
+      // null (not "") when this row has no corrected-value field at all, so the request omits
+      // corrected_data and the server leaves it untouched - only a row that actually has the
+      // field sends "", which is a real, deliberate clear (see update_item_verdict).
+      const correctedData = correctedInput ? correctedInput.value.trim() : null;
+      if (btn.dataset.requiresCorrected === "true" && !correctedData) {
+        const editToggle = row ? row.querySelector("[data-edit-toggle]") : null;
+        if (editToggle && editToggle.style.display !== "none") editToggle.click();
+        alert("Enter the corrected value first.");
+        correctedInput?.focus();
+        return;
+      }
       try {
         await fetchJSON(`${API_BASE}/finding-items/${encodeURIComponent(itemId)}/verdict`, {
           method: "POST",
@@ -909,6 +1317,23 @@ function attachPillarWorkflowHandlers(findingId, finding, isSynthetic) {
         await reopenRecordsSection(findingId, finding);
       } catch (err) {
         alert(`Failed to set verdict: ${err.message}`);
+      }
+    });
+  });
+
+  section.querySelectorAll("[data-undo-item]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const itemId = btn.dataset.undoItem;
+      try {
+        await fetchJSON(`${API_BASE}/finding-items/${encodeURIComponent(itemId)}/verdict`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ verdict: "PENDING" }),
+        });
+        await loadFindings();
+        await reopenRecordsSection(findingId, finding);
+      } catch (err) {
+        alert(`Failed to undo: ${err.message}`);
       }
     });
   });
@@ -1835,6 +2260,15 @@ async function resumeJobIfRunning() {
 document.getElementById("closeModal").addEventListener("click", () => {
   document.getElementById("detailModal").classList.add("hidden");
   dupReview = null;
+  if (findingsDirty) {
+    findingsDirty = false;
+    loadFindings(); // refresh the cards' review progress
+  }
+});
+
+document.getElementById("closeGroupedRecordsModal").addEventListener("click", () => {
+  document.getElementById("groupedRecordsModal").classList.add("hidden");
+  groupedRecordsState = null;
   if (findingsDirty) {
     findingsDirty = false;
     loadFindings(); // refresh the cards' review progress
