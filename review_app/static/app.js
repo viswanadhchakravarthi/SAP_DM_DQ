@@ -598,8 +598,8 @@ const PILLAR_WORKFLOWS = {
   COMPLETENESS_MANUAL: {
     title: "Missing / Incomplete Records",
     mode: "verdict",
-    showCorrectedInput: true,
-    correctedLabel: "Corrected Value",
+    showCorrectedInput: false,
+    inlineCorrectedInput: true,
     dispositions: [
       { verdict: "LEGITIMATE_BLANK", label: "Legitimate Blank" },
       { verdict: "CORRECTED", label: "Enter Corrected Value", requiresCorrectedInput: true },
@@ -704,7 +704,30 @@ function renderWorkflowItemsTable(finding, items, isSynthetic, workflowKey) {
 function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helperCols = []) {
   const disabled = isSynthetic || item.status !== "PENDING";
   const keyCell = item.key_field ? wrapTableColumnRef(finding.table_name, item.key_field, "") : "";
-  const detailsCell = linkifyTableColumnRefs(escapeHtml(item.issue_detail || "")) +
+  const fieldName = finding.column_name || "value";
+
+  // The corrected value, entered against the field it actually corrects (finding.column_name is
+  // the same field for every row of a Completeness finding - one finding = one column), instead
+  // of a standalone "Corrected Value" column with no visible link to which field it's for.
+  let inlineCorrectedCell = "";
+  if (cfg.inlineCorrectedInput) {
+    if (disabled) {
+      inlineCorrectedCell = item.corrected_data
+        ? `<div class="corrected-note">→ Corrected ${escapeHtml(fieldName)} to: <strong>${escapeHtml(item.corrected_data)}</strong></div>` : "";
+    } else {
+      const hasValue = !!item.corrected_data;
+      inlineCorrectedCell = `
+        <div class="inline-corrected">
+          <button type="button" class="btn-inline-edit" data-edit-toggle="${escapeHtml(item.id)}" ${hasValue ? 'style="display:none"' : ""}>
+            ✏️ Edit ${escapeHtml(fieldName)}
+          </button>
+          <input type="text" class="corrected-input" placeholder="Enter ${escapeHtml(fieldName)}..."
+            value="${escapeHtml(item.corrected_data || "")}" ${hasValue ? "" : 'style="display:none"'}>
+        </div>`;
+    }
+  }
+
+  const detailsCell = linkifyTableColumnRefs(escapeHtml(item.issue_detail || "")) + inlineCorrectedCell +
     (isAutoFixable && item.status === "PENDING" ? `
       <button class="btn-autofill" data-autofill-item="${escapeHtml(item.id)}" data-autofill-val="${escapeHtml(finding.auto_fix_value)}">
         ⚡ Autofill '${escapeHtml(finding.auto_fix_value)}'
@@ -912,6 +935,17 @@ function attachPillarWorkflowHandlers(findingId, finding, isSynthetic) {
     });
   }
 
+  section.querySelectorAll("[data-edit-toggle]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const row = btn.closest("tr");
+      const input = row ? row.querySelector(".corrected-input") : null;
+      if (!input) return;
+      input.style.display = "";
+      btn.style.display = "none";
+      input.focus();
+    });
+  });
+
   section.querySelectorAll("[data-verdict]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const itemId = btn.dataset.itemId;
@@ -920,6 +954,8 @@ function attachPillarWorkflowHandlers(findingId, finding, isSynthetic) {
       const correctedInput = row ? row.querySelector(".corrected-input") : null;
       const correctedData = correctedInput ? correctedInput.value.trim() : "";
       if (btn.dataset.requiresCorrected === "true" && !correctedData) {
+        const editToggle = row ? row.querySelector("[data-edit-toggle]") : null;
+        if (editToggle && editToggle.style.display !== "none") editToggle.click();
         alert("Enter the corrected value first.");
         correctedInput?.focus();
         return;
