@@ -701,33 +701,39 @@ function renderWorkflowItemsTable(finding, items, isSynthetic, workflowKey) {
   `;
 }
 
+// The corrected value, entered against the field it actually corrects, instead of a standalone
+// "Corrected Value" column with no visible link to which field it's for. Used either inside the
+// matching helper column's own cell (when the reviewer chose the flagged field as a helper
+// column - the common case, since it's the one value they most want to see) or, failing that,
+// inline in the Details cell (renderWorkflowRow).
+function renderInlineCorrected(item, disabled, fieldName) {
+  if (disabled) {
+    return item.corrected_data
+      ? `<div class="corrected-note">→ Corrected ${escapeHtml(fieldName)} to: <strong>${escapeHtml(item.corrected_data)}</strong></div>` : "";
+  }
+  const hasValue = !!item.corrected_data;
+  return `
+    <div class="inline-corrected">
+      <button type="button" class="btn-inline-edit" data-edit-toggle="${escapeHtml(item.id)}" ${hasValue ? 'style="display:none"' : ""}>
+        ✏️ Edit ${escapeHtml(fieldName)}
+      </button>
+      <input type="text" class="corrected-input" placeholder="Enter ${escapeHtml(fieldName)}..."
+        value="${escapeHtml(item.corrected_data || "")}" ${hasValue ? "" : 'style="display:none"'}>
+    </div>`;
+}
+
 function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helperCols = []) {
   const disabled = isSynthetic || item.status !== "PENDING";
   const keyCell = item.key_field ? wrapTableColumnRef(finding.table_name, item.key_field, "") : "";
   const fieldName = finding.column_name || "value";
 
-  // The corrected value, entered against the field it actually corrects (finding.column_name is
-  // the same field for every row of a Completeness finding - one finding = one column), instead
-  // of a standalone "Corrected Value" column with no visible link to which field it's for.
-  let inlineCorrectedCell = "";
-  if (cfg.inlineCorrectedInput) {
-    if (disabled) {
-      inlineCorrectedCell = item.corrected_data
-        ? `<div class="corrected-note">→ Corrected ${escapeHtml(fieldName)} to: <strong>${escapeHtml(item.corrected_data)}</strong></div>` : "";
-    } else {
-      const hasValue = !!item.corrected_data;
-      inlineCorrectedCell = `
-        <div class="inline-corrected">
-          <button type="button" class="btn-inline-edit" data-edit-toggle="${escapeHtml(item.id)}" ${hasValue ? 'style="display:none"' : ""}>
-            ✏️ Edit ${escapeHtml(fieldName)}
-          </button>
-          <input type="text" class="corrected-input" placeholder="Enter ${escapeHtml(fieldName)}..."
-            value="${escapeHtml(item.corrected_data || "")}" ${hasValue ? "" : 'style="display:none"'}>
-        </div>`;
-    }
-  }
+  // finding.column_name is the same field for every row of a Completeness finding (one finding =
+  // one column), so if it's among the chosen helper columns, edit it there; otherwise fall back
+  // to the Details cell so the edit control is never lost.
+  const targetHelperCol = cfg.inlineCorrectedInput ? helperCols.find((c) => c.name === fieldName) : null;
+  const inlineCorrected = cfg.inlineCorrectedInput ? renderInlineCorrected(item, disabled, fieldName) : "";
 
-  const detailsCell = linkifyTableColumnRefs(escapeHtml(item.issue_detail || "")) + inlineCorrectedCell +
+  const detailsCell = linkifyTableColumnRefs(escapeHtml(item.issue_detail || "")) + (targetHelperCol ? "" : inlineCorrected) +
     (isAutoFixable && item.status === "PENDING" ? `
       <button class="btn-autofill" data-autofill-item="${escapeHtml(item.id)}" data-autofill-val="${escapeHtml(finding.auto_fix_value)}">
         ⚡ Autofill '${escapeHtml(finding.auto_fix_value)}'
@@ -765,7 +771,9 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helpe
       <td>${escapeHtml(item.row_index ?? "-")}</td>
       <td>${keyCell}${item.key_value ? `: ${escapeHtml(item.key_value)}` : ""}</td>
       <td>${detailsCell}${whyButton}</td>
-      ${helperCols.map((c) => helperCell(finding.id, item.id, c)).join("")}
+      ${helperCols.map((c) => c === targetHelperCol
+        ? `<td class="helper-col helper-col-editable">${inlineCorrected}</td>`
+        : helperCell(finding.id, item.id, c)).join("")}
       ${cfg.showCorrectedInput ? `<td><input type="text" class="corrected-input" placeholder="Enter value..." value="${escapeHtml(item.corrected_data || "")}" ${disabled ? "disabled" : ""}></td>` : ""}
       <td>${dispositionCell}</td>
     </tr>

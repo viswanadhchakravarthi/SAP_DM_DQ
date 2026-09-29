@@ -1917,6 +1917,10 @@ tr.why-row > td { background: #f8fafc; padding: 0; }
 .btn-inline-edit:hover { background: #eef2ff; }
 .inline-corrected .corrected-input { width: auto; min-width: 220px; display: inline-block; }
 .corrected-note { margin-top: 6px; font-size: 12px; color: #334155; }
+/* Sitting alone in its own helper-column cell rather than below Details text - no top margin needed */
+.helper-col-editable.helper-col { background: #fff7ed; }
+.helper-col-editable .inline-corrected, .helper-col-editable .corrected-note { margin-top: 0; }
+.helper-col-editable .inline-corrected .corrected-input { min-width: 160px; }
 .why-panel h4 { margin: 0 0 4px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #6b7280; }
 .why-panel p { margin: 0 0 6px; }
 .why-panel section { margin-bottom: 12px; }
