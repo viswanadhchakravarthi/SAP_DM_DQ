@@ -1928,6 +1928,33 @@ tr.why-row > td { background: #f8fafc; padding: 0; }
 .grouped-records-table { min-width: 100%; }
 .grouped-records-table th, .grouped-records-table td { white-space: nowrap; vertical-align: top; }
 .grouped-cell-ok { text-align: center; color: #16a34a; background: #f0fdf4; }
+.dispo-pending { font-size: 12px; color: #94a3b8; }
+
+/* Disposition matrix: a record flagged on 2+ fields expands this instead of repeating the full
+   3-button set once per flagged cell - each disposition's label appears once (row header), each
+   flagged field is a column, one dot per (disposition, field) cell. */
+.btn-dispo-toggle {
+  display: block; margin-top: 4px; font: inherit; font-size: 12px; padding: 3px 9px; border-radius: 6px;
+  cursor: pointer; background: #fff; color: #4338ca; border: 1px solid #c7d2fe;
+}
+.btn-dispo-toggle:hover, .btn-dispo-toggle[aria-expanded="true"] { background: #eef2ff; }
+tr.dispo-matrix-row.hidden { display: none; }
+tr.dispo-matrix-row > td { background: #f8fafc; padding: 10px 14px; }
+.dispo-matrix-table { border-collapse: collapse; font-size: 13px; }
+.dispo-matrix-table th, .dispo-matrix-table td { padding: 5px 12px; text-align: center; white-space: nowrap; }
+.dispo-matrix-table thead th { font-weight: 600; color: #1f2937; border-bottom: 1px solid #e2e8f0; }
+.dispo-matrix-table tbody th { text-align: left; font-weight: 500; color: #475569; }
+.dispo-dot-btn, .dispo-dot {
+  display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px;
+  border-radius: 50%; font-size: 15px; line-height: 1;
+}
+.dispo-dot-btn { cursor: pointer; background: #fff; border: 1px solid #cbd5e1; color: #94a3b8; }
+.dispo-dot-btn:hover { border-color: #94a3b8; background: #f1f5f9; }
+.dispo-dot { border: 1px solid #e2e8f0; color: #cbd5e1; }
+.dispo-dot-off { color: #cbd5e1; }
+.dispo-dot-active { font-weight: 700; }
+.dispo-cell-input { text-align: left; }
+.dispo-cell-input .inline-corrected { display: inline-flex; align-items: center; gap: 6px; margin-top: 0; }
 .why-panel h4 { margin: 0 0 4px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #6b7280; }
 .why-panel p { margin: 0 0 6px; }
 .why-panel section { margin-bottom: 12px; }

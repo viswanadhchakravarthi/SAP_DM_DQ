@@ -458,11 +458,17 @@ function renderFindingCards(findings) {
   }).join("");
 }
 
-let groupedRecordsState = null; // {runId, table} of the currently open grouped-records modal
-let groupedRecordsData = null;  // last-fetched payload, for the check-code toggle to read from
+let groupedRecordsState = null;  // {runId, table} of the currently open grouped-records modal
+let groupedRecordsData = null;   // last-fetched payload, for the check-code toggle to read from
+let groupedExpandedRows = new Set(); // recKeys of open disposition-matrix panels, kept across a
+                                      // refresh - every [data-verdict]/[data-undo-item] action
+                                      // inside the matrix rebuilds the whole body, so without this
+                                      // setting one field's disposition would collapse the panel
+                                      // before the reviewer can set the record's other fields.
 
 async function openGroupedRecords(runId, table) {
   groupedRecordsState = { runId, table };
+  groupedExpandedRows = new Set();
   document.getElementById("groupedRecordsTitle").textContent = `${table} - Completeness (all fields)`;
   document.getElementById("groupedRecordsModal").classList.remove("hidden");
   await refreshGroupedRecords();
@@ -477,6 +483,11 @@ async function refreshGroupedRecords() {
     groupedRecordsData = await fetchJSON(
       `${API_BASE}/findings/completeness-by-table?run_id=${encodeURIComponent(runId)}&table=${encodeURIComponent(table)}`);
     body.innerHTML = renderGroupedRecordsBody(groupedRecordsData);
+    groupedExpandedRows.forEach((key) => {
+      body.querySelector(`[data-dispo-panel="${key}"]`)?.classList.remove("hidden");
+      const toggle = body.querySelector(`[data-dispo-toggle="${key}"]`);
+      toggle?.setAttribute("aria-expanded", "true");
+    });
     attachGroupedRecordHandlers();
   } catch (error) {
     body.innerHTML = `<p class="empty-state">Unable to load records: ${escapeHtml(error.message)}</p>`;
@@ -509,9 +520,11 @@ function renderGroupedRecordsTable(data) {
   const helperCols = data.helper_columns || [];
   const staleNote = data.stale
     ? `<p class="hint-text helper-note">${escapeHtml(data.stale_note || "")}</p>` : "";
+  const colCount = 2 + data.fields.length + helperCols.length;
   return `
     <p class="hint-text">${data.records.length} record${data.records.length === 1 ? "" : "s"}. A shaded cell
-      shows that field's current value for context - it wasn't the one flagged for that record.
+      shows that field's current value for context - it wasn't the one flagged for that record. A record
+      flagged on more than one field shows its status per field here - click "Set dispositions" to decide them.
       ${helperCols.length ? `Helper columns from ${escapeHtml(data.table_name)}: ${helperCols.map((c) => escapeHtml(c.name)).join(", ")}.` : ""}</p>
     ${staleNote}
     <div class="grouped-records-scroll">
@@ -526,17 +539,105 @@ function renderGroupedRecordsTable(data) {
         <tbody>
           ${data.records.map((r) => {
             const values = r.values || {};
-            return `
-            <tr>
-              <td>${escapeHtml(r.row_index ?? "-")}</td>
-              <td>${escapeHtml(r.key_value || "")}</td>
-              ${data.fields.map((f) => renderGroupedCell(r.cells[f.column_name], f.column_name, values[f.column_name])).join("")}
-              ${helperCols.map((c) => `<td class="helper-col">${values[c.name] ? escapeHtml(values[c.name]) : '<span class="blank-cell">—</span>'}</td>`).join("")}
-            </tr>`;
+            const flaggedFields = data.fields.filter((f) => r.cells[f.column_name]);
+            const multi = flaggedFields.length > 1;
+            const recKey = `row-${r.row_index}`;
+            const toggle = multi
+              ? `<button type="button" class="btn-dispo-toggle" data-dispo-toggle="${escapeHtml(recKey)}" aria-expanded="false">
+                   ⚙ Set ${flaggedFields.length} dispositions</button>` : "";
+            const mainRow = `
+              <tr>
+                <td>${escapeHtml(r.row_index ?? "-")}</td>
+                <td>${escapeHtml(r.key_value || "")}${toggle}</td>
+                ${data.fields.map((f) => multi
+                  ? renderCompactStatusCell(r.cells[f.column_name], f.column_name, values[f.column_name])
+                  : renderGroupedCell(r.cells[f.column_name], f.column_name, values[f.column_name])).join("")}
+                ${helperCols.map((c) => `<td class="helper-col">${values[c.name] ? escapeHtml(values[c.name]) : '<span class="blank-cell">—</span>'}</td>`).join("")}
+              </tr>`;
+            const matrixRow = multi ? `
+              <tr class="dispo-matrix-row hidden" data-dispo-panel="${escapeHtml(recKey)}">
+                <td colspan="${colCount}">${renderDispositionMatrix(r, flaggedFields)}</td>
+              </tr>` : "";
+            return mainRow + matrixRow;
           }).join("")}
         </tbody>
       </table>
     </div>`;
+}
+
+// A record flagged on 2+ fields gets a compact status-only cell here (badge, or the corrected
+// value if one was entered) instead of repeating the full 3-button disposition set once per
+// flagged field - that reads as a wall of identical buttons once a row has more than one issue.
+// Actually setting the disposition happens in the expandable matrix below (renderDispositionMatrix).
+function renderCompactStatusCell(item, fieldName, rawValue) {
+  if (!item) {
+    const shown = rawValue ? escapeHtml(rawValue) : '<span class="blank-cell">—</span>';
+    return `<td class="grouped-cell grouped-cell-ok" title="Not flagged for ${escapeHtml(fieldName)}">${shown}</td>`;
+  }
+  const verdict = item.review_verdict || "PENDING";
+  const tone = VERDICT_TONE[verdict] || "warning";
+  const badge = verdict !== "PENDING"
+    ? `<span class="verdict-badge verdict-tone-${tone}">${escapeHtml(verdict)}</span>`
+    : `<span class="dispo-pending">Pending</span>`;
+  const correctedNote = item.corrected_data
+    ? `<div class="corrected-note">→ ${escapeHtml(item.corrected_data)}</div>` : "";
+  return `<td class="grouped-cell">${badge}${correctedNote}</td>`;
+}
+
+// The 3xN disposition matrix for one record: rows are the (shared, single source of truth)
+// Completeness dispositions, columns are that record's flagged fields - so each disposition's
+// label appears exactly once instead of once per flagged cell, and picking one is a single click
+// per column instead of hunting for the right button among three repeated per field.
+function renderDispositionMatrix(record, flaggedFields) {
+  const rows = PILLAR_WORKFLOWS.COMPLETENESS_MANUAL.dispositions;
+  return `
+    <div class="dispo-matrix">
+      <table class="dispo-matrix-table">
+        <thead>
+          <tr>
+            <th></th>
+            ${flaggedFields.map((f) => {
+              const item = record.cells[f.column_name];
+              const undo = item.status !== "PENDING"
+                ? `<button type="button" class="btn-undo-sm" data-undo-item="${escapeHtml(item.id)}"
+                     aria-label="Undo - back to pending" data-tooltip="Undo - back to pending">↺</button>` : "";
+              return `<th>${escapeHtml(f.column_name)}${undo}</th>`;
+            }).join("")}
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((d) => `
+            <tr>
+              <th>${escapeHtml(d.label)}</th>
+              ${flaggedFields.map((f) => renderDispoMatrixCell(record.cells[f.column_name], d, f.column_name)).join("")}
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderDispoMatrixCell(item, disposition, fieldName) {
+  const disabled = item.status !== "PENDING";
+  const isActive = item.review_verdict === disposition.verdict;
+  const tone = VERDICT_TONE[disposition.verdict] || "warning";
+  const activeClass = isActive ? ` dispo-dot-active verdict-tone-${tone}` : "";
+
+  if (disposition.requiresCorrectedInput) {
+    if (disabled) {
+      return `<td class="dispo-cell-input">${renderInlineCorrected(item, true, fieldName)}</td>`;
+    }
+    // A compact "set" dot instead of verdictButton()'s full label (already the row header) - same
+    // data-verdict/data-requires-corrected contract, so the existing [data-verdict] handler (which
+    // reveals+validates the input before submitting) needs no changes to work with it.
+    const setDot = `<button type="button" class="dispo-dot-btn${activeClass}" data-verdict="${escapeHtml(disposition.verdict)}"
+      data-item-id="${escapeHtml(item.id)}" data-requires-corrected="true" title="${escapeHtml(disposition.label)}">${isActive ? "●" : "○"}</button>`;
+    return `<td class="dispo-cell-input">${setDot}${renderInlineCorrected(item, false, fieldName)}</td>`;
+  }
+  const dot = disabled
+    ? `<span class="dispo-dot${activeClass || " dispo-dot-off"}">${isActive ? "●" : "○"}</span>`
+    : `<button type="button" class="dispo-dot-btn${activeClass}" data-verdict="${escapeHtml(disposition.verdict)}"
+        data-item-id="${escapeHtml(item.id)}" title="${escapeHtml(disposition.label)}">${isActive ? "●" : "○"}</button>`;
+  return `<td class="dispo-cell">${dot}</td>`;
 }
 
 function renderGroupedCell(item, fieldName, rawValue) {
@@ -569,6 +670,18 @@ function renderGroupedCell(item, fieldName, rawValue) {
 // .corrected-input per flagged field, so a <tr>-wide query would grab the wrong cell's input.
 function attachGroupedRecordHandlers() {
   const container = document.getElementById("groupedRecordsModalBody");
+
+  container.querySelectorAll("[data-dispo-toggle]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.dispoToggle;
+      const panel = container.querySelector(`[data-dispo-panel="${key}"]`);
+      if (!panel) return;
+      const show = panel.classList.contains("hidden");
+      panel.classList.toggle("hidden", !show);
+      btn.setAttribute("aria-expanded", String(show));
+      if (show) groupedExpandedRows.add(key); else groupedExpandedRows.delete(key);
+    });
+  });
 
   // Toggle: first click builds and shows every field's check code, one after another under its
   // own header comment; next click hides it. Same pattern as the single-finding modal's code
