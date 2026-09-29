@@ -672,7 +672,7 @@ def get_completeness_by_table(run_id: str, table_name: str) -> Dict[str, Any]:
     path on their own finding card, and their card is 'Approve/Reject', not a disposition."""
     with get_connection() as conn:
         findings = conn.execute(
-            "SELECT id, column_name, hypothesis FROM findings WHERE run_id = ? AND table_name = ? "
+            "SELECT id, column_name, hypothesis, check_code FROM findings WHERE run_id = ? AND table_name = ? "
             "AND category = 'COMPLETENESS' AND COALESCE(fix_type, 'MANUAL_FIX') != 'AUTO_FIXABLE' "
             "ORDER BY column_name",
             (run_id, table_name),

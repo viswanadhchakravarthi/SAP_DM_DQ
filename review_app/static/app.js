@@ -304,9 +304,8 @@ async function loadFindings() {
       return;
     }
 
-    container.innerHTML = renderGroupedBanner(findings, runId) + findings.map(renderCard).join("");
+    container.innerHTML = findings.map(renderCard).join("");
     attachCardHandlers();
-    attachGroupedBannerHandlers();
   } catch (error) {
     container.innerHTML = `<p class="empty-state">Unable to load findings: ${escapeHtml(error.message)}</p>`;
   }
@@ -392,42 +391,31 @@ function attachCardHandlers() {
 // field - so a reviewer clears a whole record in one pass. AUTO_FIXABLE fields
 // are excluded (see episodic_store.get_completeness_by_table); they already
 // have a fast one-click bulk-autofill path on their own card.
+//
+// The underlying findings stay separate in the database - one per column, as
+// the pipeline generates them - because that's load-bearing, not just a
+// backend quirk: each check's own LLM "reusable" judgment, its own
+// promotable-skill status and its own audit trail depend on staying per-check
+// (see get_promotable_findings/_sync_finding_status). Only the presentation
+// merges: openDetail() below redirects here automatically whenever the
+// clicked finding's table has more than one qualifying field, instead of
+// requiring the reviewer to notice and click a separate "grouped view" entry
+// point. Hypothesis and check code are concatenated per field so nothing
+// about any individual check gets lost by merging the view.
 // ---------------------------------------------------------------------------
 
-function renderGroupedBanner(findings, runId) {
-  const byTable = {};
-  findings.forEach((f) => {
-    // item_count > 0: a synthetic (whole-table, no row-level detail) finding never becomes a
-    // grid column - see get_completeness_by_table - so it shouldn't inflate this count either.
-    if (f.category === "COMPLETENESS" && f.fix_type !== "AUTO_FIXABLE" && f.item_count > 0) {
-      (byTable[f.table_name] = byTable[f.table_name] || []).push(f);
-    }
-  });
-  const multi = Object.entries(byTable).filter(([, fs]) => fs.length > 1);
-  if (!multi.length) return "";
-  return `
-    <div class="grouped-banner">
-      <span>Some records here are flagged by more than one Completeness check - review a table's missing fields together instead of one check at a time:</span>
-      <div class="grouped-banner-buttons">
-        ${multi.map(([table, fs]) => `
-          <button type="button" class="btn-grouped" data-grouped-table="${escapeHtml(table)}" data-grouped-run="${escapeHtml(runId)}">
-            🗂 ${escapeHtml(table)} (${fs.length} fields)
-          </button>`).join("")}
-      </div>
-    </div>`;
-}
-
-function attachGroupedBannerHandlers() {
-  document.querySelectorAll("[data-grouped-table]").forEach((btn) => {
-    btn.addEventListener("click", () => openGroupedRecords(btn.dataset.groupedRun, btn.dataset.groupedTable));
-  });
+function completenessSiblingCount(finding) {
+  return currentFindings.filter((f) =>
+    f.category === "COMPLETENESS" && f.fix_type !== "AUTO_FIXABLE" &&
+    f.table_name === finding.table_name && f.item_count > 0).length;
 }
 
 let groupedRecordsState = null; // {runId, table} of the currently open grouped-records modal
+let groupedRecordsData = null;  // last-fetched payload, for the check-code toggle to read from
 
 async function openGroupedRecords(runId, table) {
   groupedRecordsState = { runId, table };
-  document.getElementById("groupedRecordsTitle").textContent = `Missing Fields by Record - ${table}`;
+  document.getElementById("groupedRecordsTitle").textContent = `${table} - Completeness (all fields)`;
   document.getElementById("groupedRecordsModal").classList.remove("hidden");
   await refreshGroupedRecords();
 }
@@ -438,13 +426,32 @@ async function refreshGroupedRecords() {
   const body = document.getElementById("groupedRecordsModalBody");
   body.innerHTML = '<p class="empty-state">Loading records...</p>';
   try {
-    const data = await fetchJSON(
+    groupedRecordsData = await fetchJSON(
       `${API_BASE}/findings/completeness-by-table?run_id=${encodeURIComponent(runId)}&table=${encodeURIComponent(table)}`);
-    body.innerHTML = renderGroupedRecordsTable(data);
+    body.innerHTML = renderGroupedRecordsBody(groupedRecordsData);
     attachGroupedRecordHandlers();
   } catch (error) {
     body.innerHTML = `<p class="empty-state">Unable to load records: ${escapeHtml(error.message)}</p>`;
   }
+}
+
+function renderGroupedRecordsBody(data) {
+  if (!data.fields.length) {
+    return '<p class="empty-state">No manual-review Completeness fields for this table.</p>';
+  }
+  const hypothesis = data.fields.map((f) =>
+    `<strong>${escapeHtml(f.column_name)}:</strong> ${linkifyTableColumnRefs(escapeHtml(f.hypothesis || "(not captured)"))}`
+  ).join("\n\n");
+  return `
+    <div class="detail-row">
+      <div class="detail-label">Hypothesis &amp; Rule Context (${data.fields.length} field${data.fields.length === 1 ? "" : "s"})</div>
+      <pre>${hypothesis}</pre>
+    </div>
+    <div class="detail-row lazy-section" id="groupedLazyCode">
+      <button class="btn-lazy-load" data-lazy="grouped-code">View Local Pandas Check Code</button>
+    </div>
+    ${renderGroupedRecordsTable(data)}
+  `;
 }
 
 function renderGroupedRecordsTable(data) {
@@ -452,8 +459,7 @@ function renderGroupedRecordsTable(data) {
     return '<p class="empty-state">No pending manual-review records for this table.</p>';
   }
   return `
-    <p class="hint-text">${data.records.length} record${data.records.length === 1 ? "" : "s"},
-      ${data.fields.length} field${data.fields.length === 1 ? "" : "s"} flagged. A ✓ cell means that
+    <p class="hint-text">${data.records.length} record${data.records.length === 1 ? "" : "s"}. A ✓ cell means that
       field wasn't flagged for that record.</p>
     <div class="grouped-records-scroll">
       <table class="items-table grouped-records-table">
@@ -502,6 +508,30 @@ function renderGroupedCell(item, fieldName) {
 // .corrected-input per flagged field, so a <tr>-wide query would grab the wrong cell's input.
 function attachGroupedRecordHandlers() {
   const container = document.getElementById("groupedRecordsModalBody");
+
+  // Toggle: first click builds and shows every field's check code, one after another under its
+  // own header comment; next click hides it. Same pattern as the single-finding modal's code
+  // toggle, except the code is already in hand (groupedRecordsData) - no separate fetch needed.
+  const codeBtn = document.querySelector('#groupedLazyCode [data-lazy="grouped-code"]');
+  if (codeBtn) {
+    codeBtn.addEventListener("click", () => {
+      const section = document.getElementById("groupedLazyCode");
+      let pre = section.querySelector("pre");
+      if (!pre) {
+        const combined = (groupedRecordsData.fields || [])
+          .map((f) => `# ── ${f.column_name} ──\n${f.check_code || "(not captured)"}`)
+          .join("\n\n");
+        pre = document.createElement("pre");
+        pre.className = "hidden";
+        pre.textContent = combined;
+        section.appendChild(pre);
+      }
+      const show = pre.classList.contains("hidden");
+      pre.classList.toggle("hidden", !show);
+      codeBtn.textContent = show ? "Hide Local Pandas Check Code" : "View Local Pandas Check Code";
+      codeBtn.setAttribute("aria-expanded", String(show));
+    });
+  }
 
   container.querySelectorAll("[data-edit-toggle]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -596,6 +626,15 @@ async function fetchFullFinding(id) {
 async function openDetail(id) {
   const finding = currentFindings.find((item) => item.id === id);
   if (!finding) return;
+
+  // A Completeness finding whose table has other manual-review fields flagged opens the combined
+  // per-record grid instead of this single-column modal - see the "club a table's findings
+  // together" block above. A table with only one such field (the common case) is unaffected.
+  if (finding.category === "COMPLETENESS" && finding.fix_type !== "AUTO_FIXABLE"
+      && completenessSiblingCount(finding) > 1) {
+    await openGroupedRecords(finding.run_id, finding.table_name);
+    return;
+  }
 
   const categoryLabel = {
     ACTIVENESS: "🕒 Activeness Check",
