@@ -52,7 +52,11 @@ class DecisionRequest(BaseModel):
 class ItemVerdictRequest(BaseModel):
     verdict: str  # see explorer_agent.episodic_store.ALL_VALID_VERDICTS
     comment: Optional[str] = ""
-    corrected_data: Optional[str] = ""
+    # None (the default, e.g. the ACTIVENESS/CORRECTNESS_RELATIONSHIP/ANOMALY dispositions that
+    # never show a corrected-value field) leaves the stored value untouched; "" is a deliberate
+    # clear (COMPLETENESS's "Enter Corrected Value" field, cleared and a different disposition
+    # picked instead) and must not collapse into "leave untouched" - see update_item_verdict.
+    corrected_data: Optional[str] = None
 
 
 class ClusterVerdictRequest(BaseModel):
@@ -658,7 +662,7 @@ def decide_item(item_id: str, body: ItemDecisionRequest):
 def set_item_verdict_endpoint(item_id: str, body: ItemVerdictRequest):
     if body.verdict not in store.ALL_VALID_VERDICTS:
         raise HTTPException(status_code=400, detail="Invalid verdict")
-    ok = store.update_item_verdict(item_id, body.verdict, body.comment or "", body.corrected_data or "")
+    ok = store.update_item_verdict(item_id, body.verdict, body.comment or "", body.corrected_data)
     if not ok:
         raise HTTPException(status_code=404, detail="Item not found")
     memory = {"remembered": False}

@@ -960,7 +960,10 @@ function attachPillarWorkflowHandlers(findingId, finding, isSynthetic) {
       const verdict = btn.dataset.verdict;
       const row = btn.closest("tr");
       const correctedInput = row ? row.querySelector(".corrected-input") : null;
-      const correctedData = correctedInput ? correctedInput.value.trim() : "";
+      // null (not "") when this row has no corrected-value field at all, so the request omits
+      // corrected_data and the server leaves it untouched - only a row that actually has the
+      // field sends "", which is a real, deliberate clear (see update_item_verdict).
+      const correctedData = correctedInput ? correctedInput.value.trim() : null;
       if (btn.dataset.requiresCorrected === "true" && !correctedData) {
         const editToggle = row ? row.querySelector("[data-edit-toggle]") : null;
         if (editToggle && editToggle.style.display !== "none") editToggle.click();

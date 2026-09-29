@@ -713,20 +713,31 @@ def update_item_decision(item_id: str, status: str, corrected_data: str = "", co
         return cur.rowcount > 0
 
 
-def update_item_verdict(item_id: str, verdict: str, comment: str = "", corrected_data: str = "") -> bool:
-    """Updates the pillar-appropriate review verdict on a finding item (see ITEM_DISPOSITIONS)."""
+def update_item_verdict(item_id: str, verdict: str, comment: str = "",
+                        corrected_data: Optional[str] = None) -> bool:
+    """Updates the pillar-appropriate review verdict on a finding item (see ITEM_DISPOSITIONS).
+    corrected_data=None (default) leaves the stored value untouched - most dispositions never show
+    a corrected-value field, so their clicks must not blow away one set some other way. Pass "" to
+    deliberately clear it (e.g. the reviewer emptied Completeness's "Enter Corrected Value" field
+    and picked "Legitimate Blank" instead) - "" is a real value here, not "not provided"."""
     if verdict not in ALL_VALID_VERDICTS:
         raise ValueError(f"Invalid verdict: {verdict}")
 
     status = "PENDING" if verdict in _OPEN_VERDICTS else "APPROVED"
+    now = datetime.now(timezone.utc).isoformat()
     with get_connection() as conn:
-        cur = conn.execute(
-            """UPDATE finding_items SET review_verdict = ?, status = ?,
-               corrected_data = CASE WHEN ? != '' THEN ? ELSE corrected_data END,
-               reviewed_at = ?, reviewer_comment = ?, decision_source = 'HUMAN' WHERE id = ?""",
-            (verdict, status, corrected_data, corrected_data,
-             datetime.now(timezone.utc).isoformat(), comment, item_id),
-        )
+        if corrected_data is None:
+            cur = conn.execute(
+                """UPDATE finding_items SET review_verdict = ?, status = ?,
+                   reviewed_at = ?, reviewer_comment = ?, decision_source = 'HUMAN' WHERE id = ?""",
+                (verdict, status, now, comment, item_id),
+            )
+        else:
+            cur = conn.execute(
+                """UPDATE finding_items SET review_verdict = ?, status = ?, corrected_data = ?,
+                   reviewed_at = ?, reviewer_comment = ?, decision_source = 'HUMAN' WHERE id = ?""",
+                (verdict, status, corrected_data, now, comment, item_id),
+            )
         _sync_for_item(conn, item_id)
         return cur.rowcount > 0
 
