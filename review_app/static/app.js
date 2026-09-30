@@ -530,6 +530,7 @@ function renderGroupedRecordsTable(data) {
         <thead>
           <tr>
             <th>Row</th><th>Key Field${keyFieldNames ? `<div class="hint-text">${wrapTableColumnRef(data.table_name, keyFieldNames, "")}</div>` : ""}</th>
+            <th>Details</th>
             ${data.fields.map((f) => `<th title="${escapeHtml(f.hypothesis || "")}">${escapeHtml(f.column_name)}</th>`).join("")}
             ${helperCols.map(helperHeader).join("")}
             <th>Disposition</th>
@@ -546,6 +547,7 @@ function renderGroupedRecordsTable(data) {
               <tr>
                 <td>${escapeHtml(r.row_index ?? "-")}</td>
                 <td>${escapeHtml(r.key_value || "")}</td>
+                <td>${renderGroupedDetails(flaggedFields, r)}</td>
                 ${data.fields.map((f) => renderCompactStatusCell(r.cells[f.column_name], f.column_name, values[f.column_name])).join("")}
                 ${helperCols.map((c) => `<td class="helper-col">${values[c.name] ? escapeHtml(values[c.name]) : '<span class="blank-cell">—</span>'}</td>`).join("")}
                 <td class="dispo-matrix-cell">${renderDispositionMatrix(r, flaggedFields)}</td>
@@ -554,6 +556,18 @@ function renderGroupedRecordsTable(data) {
         </tbody>
       </table>
     </div>`;
+}
+
+// One entry per flagged field: its reason text plus a "Why flagged?" button (same explanation panel
+// as the single-field view; it is per record item, so a record flagged on several fields gets one each).
+function renderGroupedDetails(flaggedFields, record) {
+  const multi = flaggedFields.length > 1;
+  return flaggedFields.map((f) => {
+    const item = record.cells[f.column_name];
+    const text = linkifyTableColumnRefs(escapeHtml(item.issue_detail || ""));
+    return `<div class="grouped-detail">${multi ? `<strong>${escapeHtml(f.column_name)}:</strong> ` : ""}${text}
+      <div><button type="button" class="btn-why" data-why-item="${escapeHtml(item.id)}" aria-expanded="false">Why flagged?</button></div></div>`;
+  }).join("");
 }
 
 // A flagged field gets a compact status-only cell here (badge, or the corrected value if one was
@@ -668,6 +682,8 @@ function attachGroupedRecordHandlers() {
       codeBtn.setAttribute("aria-expanded", String(show));
     });
   }
+
+  container.querySelectorAll("[data-why-item]").forEach((btn) => btn.addEventListener("click", () => toggleWhy(btn)));
 
   container.querySelectorAll("[data-edit-toggle]").forEach((btn) => {
     btn.addEventListener("click", () => {
