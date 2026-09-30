@@ -560,8 +560,11 @@ function renderCompactStatusCell(item, fieldName, rawValue) {
   const badge = verdict !== "PENDING"
     ? `<span class="verdict-badge verdict-tone-${tone}">${escapeHtml(verdict)}</span>`
     : `<span class="dispo-pending">Pending</span>`;
-  const correctedNote = item.corrected_data
-    ? `<div class="corrected-note">→ ${escapeHtml(item.corrected_data)}</div>` : "";
+  // The corrected-value editor lives here, in the flagged field's own cell (one per flagged
+  // field); the matrix cell only holds the "set" dot that submits it.
+  const correctedNote = item.status === "PENDING"
+    ? renderInlineCorrected(item, false, fieldName)
+    : (item.corrected_data ? `<div class="corrected-note">→ ${escapeHtml(item.corrected_data)}</div>` : "");
   return `<td class="grouped-cell">${badge}${correctedNote}</td>`;
 }
 
@@ -605,14 +608,14 @@ function renderDispoMatrixCell(item, disposition, fieldName) {
 
   if (disposition.requiresCorrectedInput) {
     if (disabled) {
-      return `<td class="dispo-cell-input">${renderInlineCorrected(item, true, fieldName)}</td>`;
+      return `<td class="dispo-cell"><span class="dispo-dot${activeClass || " dispo-dot-off"}">${isActive ? "●" : "○"}</span></td>`;
     }
     // A compact "set" dot instead of verdictButton()'s full label (already the row header) - same
     // data-verdict/data-requires-corrected contract, so the existing [data-verdict] handler (which
     // reveals+validates the input before submitting) needs no changes to work with it.
     const setDot = `<button type="button" class="dispo-dot-btn${activeClass}" data-verdict="${escapeHtml(disposition.verdict)}"
       data-item-id="${escapeHtml(item.id)}" data-requires-corrected="true" title="${escapeHtml(disposition.label)}">${isActive ? "●" : "○"}</button>`;
-    return `<td class="dispo-cell-input">${setDot}${renderInlineCorrected(item, false, fieldName)}</td>`;
+    return `<td class="dispo-cell">${setDot}</td>`;
   }
   const dot = disabled
     ? `<span class="dispo-dot${activeClass || " dispo-dot-off"}">${isActive ? "●" : "○"}</span>`
@@ -665,11 +668,13 @@ function attachGroupedRecordHandlers() {
     btn.addEventListener("click", async () => {
       const itemId = btn.dataset.itemId;
       const verdict = btn.dataset.verdict;
-      const cell = btn.closest("td");
-      const correctedInput = cell ? cell.querySelector(".corrected-input") : null;
+      // The input sits in the flagged field's own column, not in this button's cell, so look it
+      // up by item id (an item id is unique per flagged field of a record).
+      const sel = (s) => container.querySelector(`${s}[data-item-id="${CSS.escape(itemId)}"]`);
+      const correctedInput = sel(".corrected-input");
       const correctedData = correctedInput ? correctedInput.value.trim() : null;
       if (btn.dataset.requiresCorrected === "true" && !correctedData) {
-        const editToggle = cell ? cell.querySelector("[data-edit-toggle]") : null;
+        const editToggle = container.querySelector(`[data-edit-toggle="${CSS.escape(itemId)}"]`);
         if (editToggle && editToggle.style.display !== "none") editToggle.click();
         alert("Enter the corrected value first.");
         correctedInput?.focus();
@@ -1053,7 +1058,7 @@ function renderInlineCorrected(item, disabled, fieldName) {
       <button type="button" class="btn-inline-edit" data-edit-toggle="${escapeHtml(item.id)}" ${hasValue ? 'style="display:none"' : ""}>
         ✏️ Edit ${escapeHtml(fieldName)}
       </button>
-      <input type="text" class="corrected-input" placeholder="Enter ${escapeHtml(fieldName)}..."
+      <input type="text" class="corrected-input" data-item-id="${escapeHtml(item.id)}" placeholder="Enter ${escapeHtml(fieldName)}..."
         value="${escapeHtml(item.corrected_data || "")}" ${hasValue ? "" : 'style="display:none"'}>
     </div>`;
 }
