@@ -24,6 +24,7 @@ from langgraph.graph import StateGraph, END
 
 from .schemas import CheckPlan, ReflectionBatch
 from .llm_providers import LLMChainExhaustedError
+from .preflight import other_tables_read
 from .repair import apply_repairs, build_repair_prompt, failed_indices
 from .check_executor import execute_checks, extract_detail_rows, sandbox_session
 from .config import Config
@@ -60,6 +61,8 @@ Structure checks across the FOUR MAJOR DATA PROFILING PILLARS:
      * fix_type="MANUAL_FIX" for anything financial or identifying (reconciliation account, payment terms/methods,
        bank data, tax numbers) - these must come from the business, never from a guessed default
    - Tag category="COMPLETENESS".
+   - Completeness means a value in THIS table is blank. A missing record in ANOTHER table (e.g. "vendor has no
+     row in LFBK") is a relationship check: tag it CORRECTNESS with sub_type="RELATIONSHIP_INTEGRITY" instead.
 
 4. CORRECTNESS & STATISTICAL ANOMALIES:
    - Format validation, invalid country codes (ISO length != 2), invalid special characters in names (e.g. '#', '$').
@@ -170,6 +173,24 @@ def build_explorer_graph(planner_structured, reflector_structured, repair_struct
         if len(checks) < len(plan.checks):
             logger.info("Discarded %d planner DUPLICATE check(s) for table %s (handled by duplicate_detector)",
                         len(plan.checks) - len(checks), state["table_name"])
+        # A COMPLETENESS check that looks something up in another table ("vendor has no row in
+        # LFBK") tests a relationship, not a blank value: there is nothing to type into the flagged
+        # column, only a business decision. The prompt says so, but models ignore it, so the
+        # category follows what the code actually does.
+        reclassified = []
+        for i, c in enumerate(checks):
+            if c.category != "COMPLETENESS":
+                continue
+            others = other_tables_read(c.code, state["table_name"])
+            if c.compare_table and c.compare_table.upper() != state["table_name"].upper():
+                others = sorted(set(others) | {c.compare_table})
+            if others:
+                checks[i] = c.model_copy(update={"category": "CORRECTNESS", "sub_type": "RELATIONSHIP_INTEGRITY",
+                                                 "fix_type": None, "auto_fix_value": None, "is_anomaly": False})
+                reclassified.append(f"{c.column} (reads {', '.join(others)})")
+        if reclassified:
+            logger.info("Reclassified %d planner COMPLETENESS check(s) for table %s as CORRECTNESS/"
+                        "RELATIONSHIP_INTEGRITY: %s", len(reclassified), state["table_name"], "; ".join(reclassified))
         # Same for checks that repeat a built-in SAP rule on the same column and
         # pillar: the prompt asks the planner not to, but models ignore it.
         coverage = state.get("rule_coverage")

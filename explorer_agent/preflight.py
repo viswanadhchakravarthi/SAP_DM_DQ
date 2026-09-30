@@ -35,6 +35,30 @@ _NULL_GUARDS = {"isna", "isnull", "notna", "notnull", "isinstance"}
 _SHAPE_CHANGERS = {"assign", "insert", "rename", "reindex", "join", "merge", "pivot", "melt", "stack", "unstack"}
 
 
+def other_tables_read(code: str, own_table: str) -> List[str]:
+    """Names of the OTHER tables a check reads (`tables['LFBK']`, `tables.get('LFBK')`), sorted.
+
+    A check that looks something up in another table tests a relationship, not whether a value is
+    filled, whatever category the model gave it. Empty when the code doesn't parse."""
+    try:
+        tree = ast.parse(code or "")
+    except SyntaxError:
+        return []
+    found: Set[str] = set()
+    for n in ast.walk(tree):
+        name = None
+        if (isinstance(n, ast.Subscript) and isinstance(n.value, ast.Name) and n.value.id == "tables"
+                and isinstance(n.slice, ast.Constant)):
+            name = n.slice.value
+        elif (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == "get"
+              and isinstance(n.func.value, ast.Name) and n.func.value.id == "tables"
+              and n.args and isinstance(n.args[0], ast.Constant)):
+            name = n.args[0].value
+        if isinstance(name, str) and name.upper() != own_table.upper():
+            found.add(name)
+    return sorted(found)
+
+
 def _const_names(node: ast.AST) -> Optional[List[str]]:
     """String constants of a subscript key: 'A' -> ['A'], ['A', 'B'] -> ['A', 'B']; None if not constant."""
     if isinstance(node, ast.Constant) and isinstance(node.value, str):

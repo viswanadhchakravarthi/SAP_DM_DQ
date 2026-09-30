@@ -319,7 +319,49 @@ def init_db():
         _migrate_scorecards(conn)
         _migrate_llm_calls(conn)
         _migrate_explanations(conn)
+        _reclassify_cross_table_completeness(conn)
         _backfill_finding_status(conn)
+
+
+# "Business to Confirm" and "Requires Business Review" both mean "the business must say"; "Legitimate
+# Blank" (leave it as it is) and "False Positive" both mean "not an issue". Both pairs have the same
+# open/closed behaviour, so a record's status needs no change.
+_COMPLETENESS_TO_RELATIONSHIP = {
+    "REQUIRES_BUSINESS_INPUT": "REQUIRES_BUSINESS_REVIEW",
+    "LEGITIMATE_BLANK": "FALSE_POSITIVE",
+}
+
+
+def _reclassify_cross_table_completeness(conn: sqlite3.Connection) -> None:
+    """Move stored COMPLETENESS checks that look something up in another table to CORRECTNESS /
+    RELATIONSHIP_INTEGRITY, the way graph.py now classifies them on a new run: "vendor has no row in
+    LFBK" is not a blank value, so "Enter Corrected Value" is meaningless for it. Idempotent (a moved
+    finding no longer matches). Decisions already made on its records move with it, to the closest
+    relationship option (_COMPLETENESS_TO_RELATIONSHIP; their status stays as it was, since open and
+    closed verdicts line up). Left alone: a finding that is itself decided or promoted to a skill, and
+    one with a CORRECTED record, because a value typed into the flagged column has no equivalent."""
+    from .preflight import other_tables_read   # local import: keeps pandas out of plain DB access
+    rows = conn.execute(
+        "SELECT id, table_name, check_code FROM findings WHERE category = 'COMPLETENESS' "
+        "AND status = 'PENDING' AND promoted_at IS NULL AND check_code IS NOT NULL "
+        "AND check_code NOT LIKE '# Built-in SAP rule%'").fetchall()
+    moved = 0
+    for r in rows:
+        if not other_tables_read(r["check_code"], r["table_name"]):
+            continue
+        if conn.execute("SELECT 1 FROM finding_items WHERE finding_id = ? AND review_verdict = 'CORRECTED' LIMIT 1",
+                        (r["id"],)).fetchone():
+            continue
+        for old, new in _COMPLETENESS_TO_RELATIONSHIP.items():
+            conn.execute("UPDATE finding_items SET review_verdict = ? WHERE finding_id = ? AND review_verdict = ?",
+                         (new, r["id"], old))
+        conn.execute("UPDATE findings SET category = 'CORRECTNESS', sub_type = 'RELATIONSHIP_INTEGRITY', "
+                     "fix_type = NULL, auto_fix_value = NULL, is_anomaly = 0 WHERE id = ?", (r["id"],))
+        moved += 1
+    if moved:
+        import logging
+        logging.getLogger(__name__).info("Reclassified %d stored COMPLETENESS finding(s) that read another "
+                                         "table as CORRECTNESS/RELATIONSHIP_INTEGRITY", moved)
 
 
 # --- Per-pillar review-verdict vocabulary -----------------------------------
