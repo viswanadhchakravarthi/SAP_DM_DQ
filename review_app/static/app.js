@@ -67,6 +67,13 @@ function wrapTableColumnRef(table, column, contextNote) {
   return `<span class="sap-ref" data-table="${escapeHtml(table)}" data-column="${escapeHtml(column)}" data-context="${escapeHtml(contextNote || "")}">${escapeHtml(table)}.${escapeHtml(column)}</span>`;
 }
 
+// Completeness findings are titled by table only: a single-field finding names its field in the
+// summary and the Disposition header, and the multi-field one already has no column. Other
+// pillars keep TABLE.COLUMN, which is what tells their findings apart.
+function findingTitleRef(finding) {
+  if (finding.category === "COMPLETENESS") return escapeHtml(finding.table_name || "");
+  return wrapTableColumnRef(finding.table_name, finding.column_name, finding.hypothesis || "");
+}
 const TABLE_COLUMN_REF_RE = /\b([A-Z][A-Z0-9_]{2,9})\.([A-Z][A-Z0-9_]{1,9})\b/g;
 
 function linkifyTableColumnRefs(escapedText) {
@@ -336,7 +343,7 @@ function renderCard(finding) {
   return `
     <div class="finding-card sev-${escapeHtml(finding.severity)}" data-id="${escapeHtml(finding.id)}">
       <div class="top-row">
-        <div class="table-col">${wrapTableColumnRef(finding.table_name, finding.column_name, finding.hypothesis || "")}</div>
+        <div class="table-col">${findingTitleRef(finding)}</div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           ${sourceBadge(finding)}
           <span class="badge badge-cat-${escapeHtml(finding.category)}">${escapeHtml(categoryLabel)}</span>
@@ -507,6 +514,9 @@ function renderGroupedRecordsTable(data) {
     return '<p class="empty-state">No pending manual-review records for this table.</p>';
   }
   const helperCols = data.helper_columns || [];
+  // Key column names (e.g. "LIFNR + BANKS + BANKL + BANKN") shown once in the header; the cells
+  // hold only the values. Every record of a table shares its key, so the first one is enough.
+  const keyFieldNames = (data.records.find((r) => r.key_field) || {}).key_field || "";
   const staleNote = data.stale
     ? `<p class="hint-text helper-note">${escapeHtml(data.stale_note || "")}</p>` : "";
   return `
@@ -519,7 +529,7 @@ function renderGroupedRecordsTable(data) {
       <table class="items-table grouped-records-table">
         <thead>
           <tr>
-            <th>Row</th><th>Key</th>
+            <th>Row</th><th>Key Field${keyFieldNames ? `<div class="hint-text">${wrapTableColumnRef(data.table_name, keyFieldNames, "")}</div>` : ""}</th>
             ${data.fields.map((f) => `<th title="${escapeHtml(f.hypothesis || "")}">${escapeHtml(f.column_name)}</th>`).join("")}
             ${helperCols.map(helperHeader).join("")}
             <th>Disposition</th>
@@ -555,17 +565,22 @@ function renderCompactStatusCell(item, fieldName, rawValue) {
     const shown = rawValue ? escapeHtml(rawValue) : '<span class="blank-cell">—</span>';
     return `<td class="grouped-cell grouped-cell-ok" title="Not flagged for ${escapeHtml(fieldName)}">${shown}</td>`;
   }
+  return `<td class="grouped-cell">${flaggedFieldStatusHtml(item, fieldName)}</td>`;
+}
+
+// Status badge plus the corrected-value editor (or the entered value) for one flagged field.
+// It sits in that field's own cell - in the grouped view and in the single-field view alike; the
+// disposition matrix only holds the dots that set the verdict.
+function flaggedFieldStatusHtml(item, fieldName) {
   const verdict = item.review_verdict || "PENDING";
   const tone = VERDICT_TONE[verdict] || "warning";
   const badge = verdict !== "PENDING"
     ? `<span class="verdict-badge verdict-tone-${tone}">${escapeHtml(verdict)}</span>`
     : `<span class="dispo-pending">Pending</span>`;
-  // The corrected-value editor lives here, in the flagged field's own cell (one per flagged
-  // field); the matrix cell only holds the "set" dot that submits it.
   const correctedNote = item.status === "PENDING"
     ? renderInlineCorrected(item, false, fieldName)
     : (item.corrected_data ? `<div class="corrected-note">→ ${escapeHtml(item.corrected_data)}</div>` : "");
-  return `<td class="grouped-cell">${badge}${correctedNote}</td>`;
+  return `${badge}${correctedNote}`;
 }
 
 // The 3xN disposition matrix for one record: rows are the (shared, single source of truth)
@@ -582,7 +597,8 @@ function renderDispositionMatrix(record, flaggedFields) {
             <th></th>
             ${flaggedFields.map((f) => {
               const item = record.cells[f.column_name];
-              const undo = item.status !== "PENDING"
+              // Also for open verdicts (Business to Confirm keeps status PENDING), else no way back.
+              const undo = (item.status !== "PENDING" || (item.review_verdict || "PENDING") !== "PENDING")
                 ? `<button type="button" class="btn-undo-sm" data-undo-item="${escapeHtml(item.id)}"
                      aria-label="Undo - back to pending" data-tooltip="Undo - back to pending">↺</button>` : "";
               return `<th>${escapeHtml(f.column_name)}${undo}</th>`;
@@ -592,7 +608,7 @@ function renderDispositionMatrix(record, flaggedFields) {
         <tbody>
           ${rows.map((d) => `
             <tr>
-              <th>${escapeHtml(d.label)}</th>
+              <th class="dispo-row-label btn-tone-${VERDICT_TONE[d.verdict] || "warning"}">${escapeHtml(d.label)}</th>
               ${flaggedFields.map((f) => renderDispoMatrixCell(record.cells[f.column_name], d, f.column_name)).join("")}
             </tr>`).join("")}
         </tbody>
@@ -613,13 +629,13 @@ function renderDispoMatrixCell(item, disposition, fieldName) {
     // A compact "set" dot instead of verdictButton()'s full label (already the row header) - same
     // data-verdict/data-requires-corrected contract, so the existing [data-verdict] handler (which
     // reveals+validates the input before submitting) needs no changes to work with it.
-    const setDot = `<button type="button" class="dispo-dot-btn${activeClass}" data-verdict="${escapeHtml(disposition.verdict)}"
+    const setDot = `<button type="button" class="dispo-dot-btn btn-tone-${tone}${activeClass}" data-verdict="${escapeHtml(disposition.verdict)}"
       data-item-id="${escapeHtml(item.id)}" data-requires-corrected="true" title="${escapeHtml(disposition.label)}">${isActive ? "●" : "○"}</button>`;
     return `<td class="dispo-cell">${setDot}</td>`;
   }
   const dot = disabled
     ? `<span class="dispo-dot${activeClass || " dispo-dot-off"}">${isActive ? "●" : "○"}</span>`
-    : `<button type="button" class="dispo-dot-btn${activeClass}" data-verdict="${escapeHtml(disposition.verdict)}"
+    : `<button type="button" class="dispo-dot-btn btn-tone-${tone}${activeClass}" data-verdict="${escapeHtml(disposition.verdict)}"
         data-item-id="${escapeHtml(item.id)}" title="${escapeHtml(disposition.label)}">${isActive ? "●" : "○"}</button>`;
   return `<td class="dispo-cell">${dot}</td>`;
 }
@@ -773,7 +789,7 @@ async function openDetail(id) {
   document.querySelector("#detailModal .modal-content").classList.toggle("modal-wide", isDuplicate);
   document.getElementById("modalBody").innerHTML = `
     <div class="detail-row detail-top-meta">
-      <span class="table-col">${wrapTableColumnRef(finding.table_name, finding.column_name, finding.hypothesis || "")}</span>
+      <span class="table-col">${findingTitleRef(finding)}</span>
       ${sourceBadge(finding)}
       <span class="badge badge-cat-${escapeHtml(finding.category)}">${escapeHtml(categoryLabel)}</span>
       <span class="badge ${escapeHtml(finding.severity)}">${escapeHtml(finding.severity)}</span>
@@ -1006,6 +1022,10 @@ function renderWorkflowItemsTable(finding, items, isSynthetic, workflowKey) {
   const cfg = PILLAR_WORKFLOWS[workflowKey];
   const helperCols = isSynthetic ? [] : helperColumnsFor(finding.id);
   const isAutoFixable = cfg.showAutofill && finding.fix_type === "AUTO_FIXABLE" && finding.auto_fix_value;
+  // Manual Completeness: key column names once in the header, values only in the cells - same
+  // as the grouped multi-field view.
+  const keyNamesInHeader = cfg === PILLAR_WORKFLOWS.COMPLETENESS_MANUAL && !isSynthetic
+    ? ((items.find((i) => i.key_field) || {}).key_field || "") : "";
 
   const bulkBar = isSynthetic ? "" : `
     <div class="item-actions-bar">
@@ -1028,7 +1048,7 @@ function renderWorkflowItemsTable(finding, items, isSynthetic, workflowKey) {
         <thead>
           <tr>
             ${cfg.mode === "decision" ? "<th></th>" : ""}
-            <th>Row</th><th>Key Field</th><th>Details</th>${helperCols.map(helperHeader).join("")}
+            <th>Row</th><th>Key Field${keyNamesInHeader ? `<div class="hint-text">${wrapTableColumnRef(finding.table_name, keyNamesInHeader, "")}</div>` : ""}</th><th>Details</th>${helperCols.map(helperHeader).join("")}
             ${cfg.showCorrectedInput ? `<th>${escapeHtml(cfg.correctedLabel || "Corrected Data")}</th>` : ""}
             <th>${cfg.mode === "decision" ? "Status" : "Disposition"}</th>
           </tr>
@@ -1072,7 +1092,9 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helpe
   // one column), so if it's among the chosen helper columns, edit it there; otherwise fall back
   // to the Details cell so the edit control is never lost.
   const targetHelperCol = cfg.inlineCorrectedInput ? helperCols.find((c) => c.name === fieldName) : null;
-  const inlineCorrected = cfg.inlineCorrectedInput ? renderInlineCorrected(item, disabled, fieldName) : "";
+  const useMatrix = cfg === PILLAR_WORKFLOWS.COMPLETENESS_MANUAL && !isSynthetic && item.id;
+  const inlineCorrected = !cfg.inlineCorrectedInput ? ""
+    : (useMatrix ? flaggedFieldStatusHtml(item, fieldName) : renderInlineCorrected(item, disabled, fieldName));
 
   const detailsCell = linkifyTableColumnRefs(escapeHtml(item.issue_detail || "")) + (targetHelperCol ? "" : inlineCorrected) +
     (isAutoFixable && item.status === "PENDING" ? `
@@ -1084,7 +1106,10 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helpe
     ? `<div><button type="button" class="btn-why" data-why-item="${escapeHtml(item.id)}" aria-expanded="false">Why flagged?</button></div>` : "";
 
   let dispositionCell;
-  if (cfg.mode === "decision") {
+  if (cfg === PILLAR_WORKFLOWS.COMPLETENESS_MANUAL && !isSynthetic && item.id) {
+    // Same 3xN matrix as the grouped multi-field view (k=1 here), so both look and behave alike.
+    dispositionCell = renderDispositionMatrix({ cells: { [fieldName]: item } }, [{ column_name: fieldName }]);
+  } else if (cfg.mode === "decision") {
     dispositionCell = `<span class="badge status-${escapeHtml(item.status)}">${escapeHtml(item.status)}</span>`;
   } else {
     const verdict = item.review_verdict || "PENDING";
@@ -1110,13 +1135,13 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helpe
     <tr data-item-id="${escapeHtml(item.id || "")}" class="item-row status-${escapeHtml(item.status)}${isSynthetic ? " synthetic-row" : ""}">
       ${cfg.mode === "decision" ? `<td><input type="checkbox" class="item-checkbox" ${disabled ? "disabled" : ""}></td>` : ""}
       <td>${escapeHtml(item.row_index ?? "-")}</td>
-      <td>${keyCell}${item.key_value ? `: ${escapeHtml(item.key_value)}` : ""}</td>
+      <td>${useMatrix ? escapeHtml(item.key_value || "") : `${keyCell}${item.key_value ? `: ${escapeHtml(item.key_value)}` : ""}`}</td>
       <td>${detailsCell}${whyButton}</td>
       ${helperCols.map((c) => c === targetHelperCol
         ? `<td class="helper-col helper-col-editable">${inlineCorrected}</td>`
         : helperCell(finding.id, item.id, c)).join("")}
       ${cfg.showCorrectedInput ? `<td><input type="text" class="corrected-input" placeholder="Enter value..." value="${escapeHtml(item.corrected_data || "")}" ${disabled ? "disabled" : ""}></td>` : ""}
-      <td>${dispositionCell}</td>
+      <td${cfg === PILLAR_WORKFLOWS.COMPLETENESS_MANUAL ? ' class="dispo-matrix-cell"' : ""}>${dispositionCell}</td>
     </tr>
   `;
 }
