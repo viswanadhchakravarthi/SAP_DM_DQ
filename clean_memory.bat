@@ -26,13 +26,17 @@ exit /b 1
 :UNLOCK
 echo Credentials confirmed. Deleting target files and directories...
 
-:: Delete directories
+:: Everything the agent creates lives under storage\ (perm = database, memory, client data,
+:: handoff; tmp = logs, vector index). This wipes BOTH. To drop only the disposable part,
+:: delete storage\tmp instead.
+if exist storage\tmp rmdir /s /q storage\tmp
+if exist storage\perm rmdir /s /q storage\perm
+
+:: Leftovers from before the storage\ layout (a first start of the new layout moves these).
 if exist logs rmdir /s /q logs
 if exist memory_store rmdir /s /q memory_store
 if exist handoff rmdir /s /q handoff
 if exist client_data rmdir /s /q client_data
-
-:: Delete file
 if exist episodic_memory.db del /f /q episodic_memory.db
 
 echo Clean completed successfully.

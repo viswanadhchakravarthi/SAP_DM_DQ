@@ -37,7 +37,7 @@ _RULE_MARK = "# Built-in SAP rule "
 
 
 def find_answer_key(client_id: str) -> Path:
-    base = Path(Config.PROJECT_ROOT) / "client_data"
+    base = Path(Config.CLIENT_DATA_DIR)
     for sep in ("_", "-"):
         for name in ("ANSWER_KEY", "Answer_Key"):
             path = base / f"{client_id}{sep}{name}.csv"

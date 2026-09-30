@@ -112,7 +112,7 @@ class LocalMiniLMEmbedding(ONNXMiniLM_L6_V2):
 
 class ChromaMemoryStore(MemoryStore):
     def __init__(self, persist_dir: Optional[str] = None, collection_name: Optional[str] = None):
-        persist_path = Path(persist_dir or Config.MEMORY_BASE_DIR) / "chroma"
+        persist_path = Path(persist_dir) / "chroma" if persist_dir else Path(Config.CHROMA_DIR)
         persist_path.mkdir(parents=True, exist_ok=True)
 
         self.embedding_model = LocalMiniLMEmbedding(_resolve_model_dir())

@@ -161,7 +161,7 @@ class Config:
         "EXPLORER_DICTIONARY_FILE", _get("data.dictionary_file", "Data_Dictionary.csv")
     )
     # Per-client uploaded data (review app page 1) - see explorer_agent/client_workspace.py.
-    CLIENT_DATA_DIR = _resolve_path(_env_str("EXPLORER_CLIENT_DATA_DIR", _get("data.client_data_dir", "client_data")))
+    CLIENT_DATA_DIR = _resolve_path(_env_str("EXPLORER_CLIENT_DATA_DIR", _get("data.client_data_dir", "storage/perm/client_data")))
     MAX_UPLOAD_MB = _env_int("EXPLORER_MAX_UPLOAD_MB", _get("data.max_upload_mb", 200))
     # One-line business meaning per table, for review_app's hover tooltips.
     SAP_TABLE_DESCRIPTIONS = _get("data.table_descriptions", {})
@@ -228,7 +228,7 @@ class Config:
     SCORECARD_BANDS = {k: float(v) for k, v in (_get("scorecard.bands", None) or {"good": 0.95, "fair": 0.85}).items()}
 
     # Handoff to / from the neighbouring agents (explorer_agent/contracts.py).
-    HANDOFF_DIR = _resolve_path(_env_str("EXPLORER_HANDOFF_DIR", _get("handoff.dir", "handoff")))
+    HANDOFF_DIR = _resolve_path(_env_str("EXPLORER_HANDOFF_DIR", _get("handoff.dir", "storage/perm/handoff")))
     HANDOFF_MAX_DOMAIN_VALUES = _env_int("EXPLORER_HANDOFF_MAX_DOMAIN", _get("handoff.max_domain_values", 200))
     HANDOFF_MAPPING_FILE = _env_str("EXPLORER_HANDOFF_MAPPING_FILE", _get("handoff.mapping_file", "field_mapping.json"))
     HANDOFF_MIN_CONFIDENCE = _env_float("EXPLORER_HANDOFF_MIN_CONFIDENCE", _get("handoff.min_confidence", 90))
@@ -287,7 +287,13 @@ class Config:
     # Memory and retrieval settings
     VECTOR_BACKEND = _env_str("EXPLORER_VECTOR_BACKEND", _get("memory.vector_backend", "chroma"))
     MEMORY_BASE_DIR = _resolve_path(
-        _env_str("EXPLORER_MEMORY_DIR", _get("memory.base_dir", "memory_store"))
+        _env_str("EXPLORER_MEMORY_DIR", _get("memory.base_dir", "storage/perm/memory_store"))
+    )
+    # The vector index is derived from the procedural registry (memory.reindex rebuilds it), so it
+    # is a separate folder from the source-of-truth memory_store/. It stays under storage/perm/ so
+    # that a rebuild (which needs the embedding model) is never forced on an offline server.
+    CHROMA_DIR = _resolve_path(
+        _env_str("EXPLORER_CHROMA_DIR", _get("memory.chroma_dir", "storage/perm/chroma"))
     )
     CHROMA_COLLECTION_NAME = _env_str(
         "EXPLORER_CHROMA_COLLECTION", _get("memory.chroma_collection", "procedural_skills")
@@ -295,7 +301,7 @@ class Config:
     RETRIEVAL_TOP_K = _env_int("EXPLORER_RETRIEVAL_TOP_K", _get("memory.retrieval_top_k", 3))
     # Per-client knowledge (explorer_agent/client_knowledge.py), e.g. remembered duplicate decisions.
     CLIENT_KNOWLEDGE_DIR = _resolve_path(
-        _env_str("EXPLORER_CLIENTS_DIR", _get("memory.clients_dir", "memory_store/clients"))
+        _env_str("EXPLORER_CLIENTS_DIR", _get("memory.clients_dir", "storage/perm/memory_store/clients"))
     )
     DEDUP_DISTANCE_THRESHOLD = _env_float(
         "EXPLORER_DEDUP_THRESHOLD", _get("memory.dedup_distance_threshold", 0.25)
@@ -317,12 +323,12 @@ class Config:
 
     # Storage - anchored to PROJECT_ROOT regardless of current working directory
     EPISODIC_DB_PATH = _resolve_path(
-        _env_str("EXPLORER_EPISODIC_DB", _get("storage.episodic_db_path", "episodic_memory.db"))
+        _env_str("EXPLORER_EPISODIC_DB", _get("storage.episodic_db_path", "storage/perm/episodic_memory.db"))
     )
 
     # Logging - anchored to PROJECT_ROOT regardless of current working directory
     LOG_LEVEL = _env_str("EXPLORER_LOG_LEVEL", _get("logging.level", "INFO"))
-    LOG_DIR = _resolve_path(_env_str("EXPLORER_LOG_DIR", _get("logging.dir", "logs")))
+    LOG_DIR = _resolve_path(_env_str("EXPLORER_LOG_DIR", _get("logging.dir", "storage/tmp/logs")))
 
     # Cache fast-path settings
     ENABLE_CACHE_FAST_PATH = _env_bool("EXPLORER_ENABLE_CACHE", _get("cache.enable_fast_path", True))
@@ -358,3 +364,19 @@ class Config:
                 "Set them in config.yaml (non-secret settings) or in the .env "
                 "file named by env_file in config.yaml (secrets)."
             )
+
+
+def _migrate_legacy_storage() -> None:
+    """Move state left in the project root by older versions into storage/ (once, before anything
+    opens the database or a log file - which is why it runs here, at the end of the first import
+    of Config). Idempotent and non-destructive; see storage_layout.py."""
+    if _env_bool("EXPLORER_SKIP_STORAGE_MIGRATION", False):
+        return
+    from .storage_layout import migrate_legacy_layout
+    migrate_legacy_layout(
+        PROJECT_ROOT, chroma_dir=Path(Config.CHROMA_DIR), memory_dir=Path(Config.MEMORY_BASE_DIR),
+        client_data_dir=Path(Config.CLIENT_DATA_DIR), handoff_dir=Path(Config.HANDOFF_DIR),
+        log_dir=Path(Config.LOG_DIR), episodic_db=Path(Config.EPISODIC_DB_PATH))
+
+
+_migrate_legacy_storage()

@@ -51,9 +51,9 @@ data:
   dictionary_file: Data_Dictionary.csv
 
   # Files uploaded on the review app's first page, one folder per client:
-  # client_data/<client_id>/ (the tables, the dictionary and workspace.json).
-  # Raw client data - gitignored. EXPLORER_CLIENT_DATA_DIR
-  client_data_dir: client_data
+  # <client_data_dir>/<client_id>/ (the tables, the dictionary and workspace.json).
+  # Raw client data - under storage/perm, gitignored. EXPLORER_CLIENT_DATA_DIR
+  client_data_dir: storage/perm/client_data
   max_upload_mb: 200 # per file; EXPLORER_MAX_UPLOAD_MB
 
   # One-line business meaning per SAP table, shown in the review app's
@@ -147,7 +147,7 @@ handoff:
   # distinct values of code columns) for the Mapping / Value Mapping Agent to
   # <dir>/<client_id>/<run_id>/structural_profile.json (+ structural_profile.latest.json).
   # It contains client values (code lists), so it is gitignored like client_data/.
-  dir: handoff # EXPLORER_HANDOFF_DIR
+  dir: storage/perm/handoff # EXPLORER_HANDOFF_DIR
   # A code column with more distinct values than this lists none of them.
   max_domain_values: 200 # EXPLORER_HANDOFF_MAX_DOMAIN
   # IN: the Mapping Agent's field/value mapping, picked up from the client's data
@@ -280,13 +280,17 @@ privacy:
 
 memory:
   vector_backend: chroma
-  base_dir: memory_store
+  base_dir: storage/perm/memory_store # skills, client knowledge, duplicate rules, column mappings
+  # Derived from the procedural registry (`python -m explorer_agent.memory.reindex` rebuilds it),
+  # but kept under storage/perm so a rebuild (which needs the embedding model) is never forced on
+  # an offline server. EXPLORER_CHROMA_DIR
+  chroma_dir: storage/perm/chroma
   chroma_collection: procedural_skills
   retrieval_top_k: 3
   dedup_distance_threshold: 0.25
   # Client-specific knowledge, one folder per client (company): human decisions
   # that must survive across runs, e.g. duplicate review verdicts.
-  clients_dir: memory_store/clients # EXPLORER_CLIENTS_DIR
+  clients_dir: storage/perm/memory_store/clients # EXPLORER_CLIENTS_DIR
 
   # Semantic-memory embeddings: all-MiniLM-L6-v2 as ONNX, run locally on CPU
   # via onnxruntime - free, no API calls, and never contacts Hugging Face.
@@ -307,12 +311,19 @@ memory:
     #    Set false on locked-down servers to fail fast instead of downloading.
     allow_download: true # EXPLORER_EMBEDDING_ALLOW_DOWNLOAD
 
+# Everything the agent creates at runtime lives under storage/ (gitignored), split by how much it
+# matters. Back up storage/perm; storage/tmp can be deleted at any time.
+#   storage/perm/  episodic_memory.db (+ backups), memory_store/, chroma/ (the vector index),
+#                  client_data/, handoff/
+#   storage/tmp/   logs/
+# Folders left in the project root by older versions are moved here once at startup
+# (explorer_agent/storage_layout.py); nothing is deleted.
 storage:
-  episodic_db_path: episodic_memory.db
+  episodic_db_path: storage/perm/episodic_memory.db # EXPLORER_EPISODIC_DB
 
 logging:
   level: INFO
-  dir: logs
+  dir: storage/tmp/logs # EXPLORER_LOG_DIR
 
 cache:
   enable_fast_path: true
