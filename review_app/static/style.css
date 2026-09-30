@@ -1950,6 +1950,10 @@ tr.why-row > td { background: #f8fafc; padding: 0; }
 .dispo-dot-active { font-weight: 700; }
 .dispo-cell-input { text-align: left; }
 .dispo-cell-input .inline-corrected { display: inline-flex; align-items: center; gap: 6px; margin-top: 0; }
+.dispo-matrix-table thead th.dispo-corner { text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
+#recordsBody.hidden { display: none; }
+.why-group-title { margin: 0; padding: 8px 14px 0; font-size: 13px; color: #4338ca; }
+.why-group-field + .why-group-field { border-top: 1px solid #e2e8f0; }
 .why-panel h4 { margin: 0 0 4px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #6b7280; }
 .why-panel p { margin: 0 0 6px; }
 .why-panel section { margin-bottom: 12px; }

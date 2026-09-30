@@ -562,12 +562,48 @@ function renderGroupedRecordsTable(data) {
 // as the single-field view; it is per record item, so a record flagged on several fields gets one each).
 function renderGroupedDetails(flaggedFields, record) {
   const multi = flaggedFields.length > 1;
-  return flaggedFields.map((f) => {
+  const text = flaggedFields.map((f) => {
     const item = record.cells[f.column_name];
-    const text = linkifyTableColumnRefs(escapeHtml(item.issue_detail || ""));
-    return `<div class="grouped-detail">${multi ? `<strong>${escapeHtml(f.column_name)}:</strong> ` : ""}${text}
-      <div><button type="button" class="btn-why" data-why-item="${escapeHtml(item.id)}" aria-expanded="false">Why flagged?</button></div></div>`;
+    return `<div class="grouped-detail">${multi ? `<strong>${escapeHtml(f.column_name)}:</strong> ` : ""}${linkifyTableColumnRefs(escapeHtml(item.issue_detail || ""))}</div>`;
   }).join("");
+  // ONE button per row; it opens every flagged field's explanation together.
+  const targets = flaggedFields.map((f) => ({ id: record.cells[f.column_name].id, field: f.column_name }));
+  return `${text}<div><button type="button" class="btn-why" data-why-group="${escapeHtml(JSON.stringify(targets))}" aria-expanded="false">Why flagged?</button></div>`;
+}
+
+// Same panel as toggleWhy(), once per flagged field of the row, each under its field name.
+async function toggleWhyGroup(button) {
+  const row = button.closest("tr");
+  const open = row.nextElementSibling;
+  if (open && open.classList.contains("why-row")) {
+    open.remove();
+    button.setAttribute("aria-expanded", "false");
+    return;
+  }
+  const targets = JSON.parse(button.dataset.whyGroup);
+  const whyRow = document.createElement("tr");
+  whyRow.className = "why-row";
+  const cell = document.createElement("td");
+  cell.colSpan = row.children.length;
+  cell.innerHTML = '<div class="why-panel"><p class="hint-text">Loading…</p></div>';
+  whyRow.appendChild(cell);
+  row.after(whyRow);
+  button.setAttribute("aria-expanded", "true");
+  const results = await Promise.all(targets.map(async (t) => {
+    try {
+      return { ...t, data: await fetchJSON(`${API_BASE}/finding-items/${encodeURIComponent(t.id)}/explanation`) };
+    } catch (error) {
+      return { ...t, error: error.message };
+    }
+  }));
+  cell.innerHTML = results.map((r) => `
+    <div class="why-group-field" data-why-field="${escapeHtml(r.id)}">
+      ${targets.length > 1 ? `<h4 class="why-group-title">${escapeHtml(r.field)}</h4>` : ""}
+      ${r.data ? renderWhy(r.data) : `<div class="why-panel"><p class="run-explorer-error">Could not load the explanation: ${escapeHtml(r.error)}</p></div>`}
+    </div>`).join("");
+  results.filter((r) => r.data).forEach((r) => {
+    attachPlainHandler(cell.querySelector(`[data-why-field="${CSS.escape(r.id)}"] .why-panel`), r.id);
+  });
 }
 
 // A flagged field gets a compact status-only cell here (badge, or the corrected value if one was
@@ -608,7 +644,7 @@ function renderDispositionMatrix(record, flaggedFields) {
       <table class="dispo-matrix-table">
         <thead>
           <tr>
-            <th></th>
+            <th class="dispo-corner">Decision / Column</th>
             ${flaggedFields.map((f) => {
               const item = record.cells[f.column_name];
               // Also for open verdicts (Business to Confirm keeps status PENDING), else no way back.
@@ -683,7 +719,7 @@ function attachGroupedRecordHandlers() {
     });
   }
 
-  container.querySelectorAll("[data-why-item]").forEach((btn) => btn.addEventListener("click", () => toggleWhy(btn)));
+  container.querySelectorAll("[data-why-group]").forEach((btn) => btn.addEventListener("click", () => toggleWhyGroup(btn)));
 
   container.querySelectorAll("[data-edit-toggle]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -821,7 +857,8 @@ async function openDetail(id) {
     ${isDuplicate
       ? `<div class="detail-row" id="duplicateReview"><p class="hint-text">Loading duplicate groups...</p></div>`
       : `<div class="detail-row lazy-section" id="lazySectionRecords">
-           <button class="btn-lazy-load" data-lazy="records">View Individual Records</button>
+           <button class="btn-lazy-load" data-lazy="records" aria-expanded="true">Hide Individual Records</button>
+           <div id="recordsBody"><p class="hint-text">Loading...</p></div>
          </div>
          ${renderFindingDecisionRow(finding)}`}
   `;
@@ -831,6 +868,15 @@ async function openDetail(id) {
     attachFindingDecisionHandlers(id);
   }
   document.getElementById("detailModal").classList.remove("hidden");
+  if (!isDuplicate) {
+    // Individual records are open by default; the button hides them.
+    try {
+      await reopenRecordsSection(id, finding);
+    } catch (error) {
+      document.getElementById("recordsBody").innerHTML =
+        `<p class="run-explorer-error">Could not load the records: ${escapeHtml(error.message)}</p>`;
+    }
+  }
   if (isDuplicate) {
     await loadDuplicateReview(id);
   }
@@ -859,9 +905,12 @@ function attachLazyLoadHandlers(id, finding, codeLabel) {
 
   const recordsBtn = document.querySelector('#lazySectionRecords [data-lazy="records"]');
   if (recordsBtn) {
-    recordsBtn.addEventListener("click", async () => {
-      document.getElementById("lazySectionRecords").innerHTML = '<p class="hint-text">Loading...</p>';
-      await reopenRecordsSection(id, finding);
+    recordsBtn.addEventListener("click", () => {
+      const body = document.getElementById("recordsBody");
+      const show = body.classList.contains("hidden");
+      body.classList.toggle("hidden", !show);
+      recordsBtn.textContent = show ? "Hide Individual Records" : "View Individual Records";
+      recordsBtn.setAttribute("aria-expanded", String(show));
     });
   }
 }
@@ -930,7 +979,7 @@ async function reopenRecordsSection(findingId, finding) {
   const usingSyntheticRow = items.length === 0;
   const effectiveItems = usingSyntheticRow ? [syntheticRowFor(finding)] : items;
   const workflowKey = getWorkflowKey(finding);
-  document.getElementById("lazySectionRecords").innerHTML =
+  document.getElementById("recordsBody").innerHTML =
     renderWorkflowItemsTable(finding, effectiveItems, usingSyntheticRow, workflowKey);
   attachPillarWorkflowHandlers(findingId, finding, usingSyntheticRow);
 }
