@@ -659,7 +659,16 @@ function renderCompactStatusCell(item, fieldName, rawValue, editor = true) {
     const shown = rawValue ? escapeHtml(rawValue) : '<span class="blank-cell">—</span>';
     return `<td class="grouped-cell grouped-cell-ok" title="Not flagged for ${escapeHtml(fieldName)}">${shown}</td>`;
   }
-  return `<td class="grouped-cell">${flaggedFieldStatusHtml(item, fieldName, editor)}</td>`;
+  // Correctness (no editor): the cell shows the value being judged, above its status. Completeness
+  // flags a blank, so there is nothing to show there. undefined = the value isn't available (a rule
+  // on several columns at once, e.g. "STCD1 + STCD2"): the Details text still quotes it.
+  return `<td class="grouped-cell">${editor ? "" : flaggedValueHtml(rawValue)}${flaggedFieldStatusHtml(item, fieldName, editor)}</td>`;
+}
+
+// The flagged value, shown above the status in a flagged field's cell (Correctness).
+function flaggedValueHtml(rawValue) {
+  if (rawValue === undefined || rawValue === null) return "";
+  return `<div class="flagged-value">${rawValue ? escapeHtml(rawValue) : '<span class="blank-cell">— (blank)</span>'}</div>`;
 }
 
 // Status badge plus (when `editor`, i.e. Completeness) the corrected-value editor or the entered
@@ -1211,7 +1220,7 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, helperCols = []) {
       <td>${useMatrix ? escapeHtml(item.key_value || "") : `${keyCell}${item.key_value ? `: ${escapeHtml(item.key_value)}` : ""}`}</td>
       <td>${detailsCell}${whyButton}</td>
       ${helperCols.map((c) => c === targetHelperCol
-        ? `<td class="helper-col helper-col-editable">${inlineCorrected}</td>`
+        ? `<td class="helper-col helper-col-editable">${cfg.inlineCorrectedInput ? "" : flaggedValueHtml(HELPER_CACHE[finding.id]?.rows?.[item.id]?.[c.name])}${inlineCorrected}</td>`
         : helperCell(finding.id, item.id, c)).join("")}
       <td${useMatrix ? ' class="dispo-matrix-cell"' : ""}>${dispositionCell}</td>
     </tr>

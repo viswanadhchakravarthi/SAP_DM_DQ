@@ -1919,6 +1919,8 @@ tr.why-row > td { background: #f8fafc; padding: 0; }
 .corrected-note { margin-top: 6px; font-size: 12px; color: #334155; }
 /* Sitting alone in its own helper-column cell rather than below Details text - no top margin needed */
 .helper-col-editable.helper-col { background: #fff7ed; }
+/* the value a Correctness record is flagged on, shown above its status in the field's cell */
+.flagged-value { font-weight: 600; color: #b91c1c; margin-bottom: 4px; overflow-wrap: anywhere; }
 .helper-col-editable .inline-corrected, .helper-col-editable .corrected-note { margin-top: 0; }
 .helper-col-editable .inline-corrected .corrected-input { min-width: 160px; }
 
