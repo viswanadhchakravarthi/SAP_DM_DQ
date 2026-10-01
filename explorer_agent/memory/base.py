@@ -28,6 +28,13 @@ class MemoryStore(ABC):
         """
         ...
 
+    def embed(self, texts: List[str]) -> List[List[float]]:
+        """L2-normalised embeddings of `texts` (so cosine similarity is a dot product), in the same space
+        as the stored vectors. Used to compare things that are not in the index, e.g. a new column against
+        every promoted skill. Backends that cannot do this may leave it unimplemented: callers must treat
+        NotImplementedError as 'similarity matching unavailable'."""
+        raise NotImplementedError(f"{type(self).__name__} does not expose embeddings")
+
     @abstractmethod
     def delete(self, id: str) -> None:
         ...

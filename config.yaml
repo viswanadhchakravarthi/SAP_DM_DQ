@@ -335,6 +335,19 @@ logging:
 cache:
   enable_fast_path: true
   skip_reflection_on_cache_hit: false
+  # Hybrid skill reuse. A promoted skill runs on the EXACT table + column it was learned on (above). For a
+  # column with no exact skill, it can also be matched by MEANING: the column (its name, its mapped concept
+  # such as POSTAL_CODE or EMAIL, and its dictionary text) is compared with what each promoted skill checks,
+  # using the local embedding model (free, offline). A skill that matches is adapted (its own column name is
+  # renamed to this column's; it is dropped unless every other column/table it reads exists here), run, judged by
+  # the reflector and reviewed like any finding - and skipped when it flags more than max_flag_ratio of the rows
+  # (a skill on the wrong kind of column flags nearly everything). Thresholds were set on a small sample
+  # (8 skills x 20 columns: 8/10 true matches kept at 0 false matches): raise min_score to be stricter.
+  similarity_reuse: true # EXPLORER_SIMILARITY_REUSE
+  similarity_min_score: 0.45 # cosine, EXPLORER_SIMILARITY_MIN_SCORE
+  similarity_min_margin: 0.10 # best skill must lead the runner-up by this much, EXPLORER_SIMILARITY_MIN_MARGIN
+  similarity_max_per_table: 8 # adapted skills run per table (each costs one reflector call), EXPLORER_SIMILARITY_MAX_PER_TABLE
+  similarity_max_flag_ratio: 0.5 # EXPLORER_SIMILARITY_MAX_FLAG_RATIO
 
 review_app:
   cors_origins:

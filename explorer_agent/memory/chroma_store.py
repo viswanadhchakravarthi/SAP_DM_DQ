@@ -142,6 +142,11 @@ class ChromaMemoryStore(MemoryStore):
     def _embed(self, text: str) -> List[float]:
         return self.embedding_model([text])[0].tolist()
 
+    def embed(self, texts: List[str]) -> List[List[float]]:
+        if not texts:
+            return []
+        return [v.tolist() for v in self.embedding_model(list(texts))]
+
     def add(self, id: str, text: str, metadata: Dict[str, Any]) -> None:
         self.collection.upsert(
             ids=[id],

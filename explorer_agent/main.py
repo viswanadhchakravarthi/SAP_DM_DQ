@@ -25,6 +25,7 @@ from .data_loader import load_data_dictionary_structured
 from . import client_knowledge
 from .memory.retriever import SkillRetriever
 from .memory import skill_registry as registry
+from .skill_reuse import reuse_by_similarity
 from . import episodic_store as store
 # from . import profiler_primitives as prim
 from .llm_usage import usage
@@ -58,9 +59,10 @@ def _known_findings_for(client_id: str, data_dir: str, table_file: Optional[str]
 
 
 def explore_table(graph, table_name, df, dictionary, all_tables, skill_retriever, reflector_single,
-                  rule_coverage=None, known_checks=None) -> list:
+                  rule_coverage=None, known_checks=None, column_mapping=None) -> list:
     """`known_checks`: {(COLUMN, category)} the client already has findings for on this table (same data):
-    no planner check is made for them, and the planner is told which they are."""
+    no planner check is made for them, and the planner is told which they are.
+    `column_mapping`: this table's mapping (what each column means), used to match skills by meaning."""
     known_checks = known_checks or set()
     logger.info("=== Exploring table %s (batch mode) ===", table_name)
     columns = list(df.columns)
@@ -78,6 +80,18 @@ def explore_table(graph, table_name, df, dictionary, all_tables, skill_retriever
                                            all_tables=all_tables)
             if col_cached:
                 cached_findings.extend(col_cached)
+        # Hybrid: a column with no EXACT skill may still get a promoted skill by meaning (its mapped concept,
+        # name and dictionary text against what each skill checks) - adapted to this column, run, and judged.
+        bindings = (column_mapping or {}).get("columns", {})
+        by_meaning, meaning_cover = reuse_by_similarity(
+            table_name, df, all_tables,
+            [c for c in columns if c not in columns_with_cache],
+            {c: (bindings.get(c) or {}).get("concept") for c in columns},
+            {c: get_field_description(dictionary, table_name, c) for c in columns},
+            getattr(skill_retriever, "memory_store", None), reflector_llm=reflector_single, covered=known_checks,
+            rule_coverage=rule_coverage)
+        cached_findings.extend(by_meaning)
+        skill_covered |= meaning_cover
     # Per-column cache_hits/cache_misses are recorded inside run_cached_skills()
     # itself (see cache_runner.py) - counting them again here at table
     # granularity would double-count hits against the same metric.
@@ -399,7 +413,8 @@ def main():
         if not no_planner:
             try:
                 findings += explore_table(graph, table_name, df, dictionary, tables, skill_retriever,
-                                          reflector_single, rule_coverage=rule_coverage, known_checks=known_checks)
+                                          reflector_single, rule_coverage=rule_coverage, known_checks=known_checks,
+                                          column_mapping=mappings.get(table_name))
             except LLMChainExhaustedError as exc:
                 # One table's LLM outage shouldn't discard the rest of the run.
                 logger.error("[%s] LLM exploration skipped - %s", table_name, exc)

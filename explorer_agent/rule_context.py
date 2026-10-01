@@ -105,15 +105,22 @@ class RuleCoverage:
     """
     lines: List[str] = field(default_factory=list)
     pairs: Set[Tuple[str, str, str]] = field(default_factory=set)
+    hard_pairs: Set[Tuple[str, str, str]] = field(default_factory=set)   # pairs from rules that VALIDATE something
 
-    def add(self, line: str, columns, category: str, sub_type: str = "*") -> None:
+    def add(self, line: str, columns, category: str, sub_type: str = "*", soft: bool = False) -> None:
+        """`soft=True` marks a statistical heuristic (rare codes, outliers): it says what looks unusual, not
+        what is valid, so it informs the planner but does not stop a more specific check on the column."""
         self.lines.append(line)
-        self.pairs.update((str(c).upper(), category, sub_type) for c in columns)
+        added = {(str(c).upper(), category, sub_type) for c in columns}
+        self.pairs.update(added)
+        if not soft:
+            self.hard_pairs.update(added)
 
-    def covers(self, column: str, category: str, sub_type: Optional[str]) -> bool:
+    def covers(self, column: str, category: str, sub_type: Optional[str], include_soft: bool = True) -> bool:
         column = str(column).upper()
-        return ((column, category, "*") in self.pairs
-                or (column, category, sub_type or "VALUE_ERROR") in self.pairs)
+        pairs = self.pairs if include_soft else self.hard_pairs
+        return ((column, category, "*") in pairs
+                or (column, category, sub_type or "VALUE_ERROR") in pairs)
 
 
 # ---------------------------------------------------------------------------

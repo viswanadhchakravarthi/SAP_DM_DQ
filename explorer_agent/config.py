@@ -336,6 +336,13 @@ class Config:
     SKIP_REFLECTION_ON_CACHE_HIT = _env_bool(
         "EXPLORER_SKIP_REFLECTION_ON_CACHE", _get("cache.skip_reflection_on_cache_hit", False)
     )
+    # Hybrid skill reuse: exact table+column first, else a skill matched by meaning (see config.yaml).
+    SIMILARITY_REUSE = _env_bool("EXPLORER_SIMILARITY_REUSE", _get("cache.similarity_reuse", True))
+    SIMILARITY_MIN_SCORE = _env_float("EXPLORER_SIMILARITY_MIN_SCORE", _get("cache.similarity_min_score", 0.45))
+    SIMILARITY_MIN_MARGIN = _env_float("EXPLORER_SIMILARITY_MIN_MARGIN", _get("cache.similarity_min_margin", 0.10))
+    SIMILARITY_MAX_PER_TABLE = _env_int("EXPLORER_SIMILARITY_MAX_PER_TABLE", _get("cache.similarity_max_per_table", 8))
+    SIMILARITY_MAX_FLAG_RATIO = _env_float("EXPLORER_SIMILARITY_MAX_FLAG_RATIO",
+                                           _get("cache.similarity_max_flag_ratio", 0.5))
 
     # Review app
     REVIEW_APP_CORS_ORIGINS = _get("review_app.cors_origins", ["*"])

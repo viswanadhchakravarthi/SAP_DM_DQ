@@ -114,8 +114,10 @@ def _code_rules(ctx: Ctx) -> List[Dict[str, Any]]:
         if (len(filled) < Config.ANOMALY_RARE_CODE_MIN_ROWS or len(counts) > Config.ANOMALY_RARE_CODE_MAX_DISTINCT
                 or counts.median() < Config.ANOMALY_RARE_CODE_MIN_TYPICAL_COUNT):
             continue
+        # soft: rarity says a code is unusual, not which codes are valid, so it must not stop a check that does
+        # (a skill such as "gender must be M or F" matched to this column).
         ctx.covered.add(f"{col} rare codes (used at most {Config.ANOMALY_RARE_CODE_MAX_COUNT}x among common codes) - "
-                        f"CORRECTNESS", [col], "CORRECTNESS", "VALUE_ERROR")
+                        f"CORRECTNESS", [col], "CORRECTNESS", "VALUE_ERROR", soft=True)
         limit = max(Config.ANOMALY_RARE_CODE_MAX_COUNT, 0)
         rare = counts[(counts <= limit) & (counts / len(filled) <= Config.ANOMALY_RARE_CODE_MAX_SHARE)]
         if rare.empty:
