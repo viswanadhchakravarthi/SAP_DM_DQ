@@ -320,6 +320,7 @@ def init_db():
         _migrate_llm_calls(conn)
         _migrate_explanations(conn)
         _reclassify_cross_table_completeness(conn)
+        _migrate_correctness_verdicts(conn)
         _backfill_finding_status(conn)
 
 
@@ -327,9 +328,36 @@ def init_db():
 # Blank" (leave it as it is) and "False Positive" both mean "not an issue". Both pairs have the same
 # open/closed behaviour, so a record's status needs no change.
 _COMPLETENESS_TO_RELATIONSHIP = {
-    "REQUIRES_BUSINESS_INPUT": "REQUIRES_BUSINESS_REVIEW",
-    "LEGITIMATE_BLANK": "FALSE_POSITIVE",
+    "REQUIRES_BUSINESS_INPUT": "NEEDS_INVESTIGATION",
+    "LEGITIMATE_BLANK": "LEGITIMATE",
 }
+
+# The old 5-option relationship vocabulary -> the single Correctness vocabulary. Open stays open
+# (the business or someone must still act) and closed stays closed (the reviewer accepted it).
+# CONFIRMED_ISSUE was closed ("yes, it is wrong") but has no counterpart: the closest is Needs
+# Investigation, which is open, so that record is reopened rather than silently accepted.
+_RELATIONSHIP_TO_CORRECTNESS = {
+    "REQUIRES_BUSINESS_REVIEW": "NEEDS_INVESTIGATION",
+    "REQUIRES_MASTER_DATA_CORRECTION": "NEEDS_INVESTIGATION",
+    "CONFIRMED_ISSUE": "NEEDS_INVESTIGATION",
+    "FALSE_POSITIVE": "LEGITIMATE",
+    "EXCLUDE_FROM_PROFILING": "LEGITIMATE",
+}
+
+
+def _migrate_correctness_verdicts(conn: sqlite3.Connection) -> None:
+    """Map stored decisions made with the old relationship vocabulary onto the two Correctness
+    options (see _RELATIONSHIP_TO_CORRECTNESS). Idempotent: nothing matches once mapped."""
+    moved = 0
+    for old, new in _RELATIONSHIP_TO_CORRECTNESS.items():
+        cur = conn.execute("UPDATE finding_items SET review_verdict = ? WHERE review_verdict = ?", (new, old))
+        moved += cur.rowcount
+        if old == "CONFIRMED_ISSUE" and cur.rowcount:
+            conn.execute("UPDATE finding_items SET status = 'PENDING' WHERE review_verdict = 'NEEDS_INVESTIGATION' "
+                         "AND status != 'PENDING'")   # open verdict, so the record is open again
+    if moved:
+        import logging
+        logging.getLogger(__name__).info("Mapped %d stored Correctness decision(s) to Legitimate / Needs Investigation", moved)
 
 
 def _reclassify_cross_table_completeness(conn: sqlite3.Connection) -> None:
@@ -378,16 +406,14 @@ ITEM_DISPOSITIONS = {
     # distinction. CORRECTED replaces MISSING_VALUE: it closes the item AND captures the
     # actual value via corrected_data, instead of just flagging that one is missing.
     "COMPLETENESS": {"LEGITIMATE_BLANK", "CORRECTED", "REQUIRES_BUSINESS_INPUT"},
-    "CORRECTNESS_RELATIONSHIP": {
-        "CONFIRMED_ISSUE", "FALSE_POSITIVE", "REQUIRES_MASTER_DATA_CORRECTION",
-        "REQUIRES_BUSINESS_REVIEW", "EXCLUDE_FROM_PROFILING",
-    },
-    # Same vocabulary as ANOMALY (a value-format violation is a judgment call - is this really
-    # wrong or not - not something with a "corrected value" to type in), used for the plain
-    # value-error correctness checks (invalid country/postal/tax format, etc.) that used to be
-    # stuck on the older generic decision-mode UI.
-    "CORRECTNESS_VALUE_ERROR": {"LEGITIMATE", "NEEDS_INVESTIGATION"},
-    "ANOMALY": {"LEGITIMATE", "NEEDS_INVESTIGATION"},
+    # One vocabulary for everything under Correctness (value errors, anomalies and relationship
+    # issues alike): "is this really wrong or not" is a judgment call, so a reviewer either accepts
+    # the value or sends it for investigation. Collapsed from a 5-option relationship set
+    # (CONFIRMED_ISSUE / FALSE_POSITIVE / REQUIRES_MASTER_DATA_CORRECTION / REQUIRES_BUSINESS_REVIEW /
+    # EXCLUDE_FROM_PROFILING): those strings are no longer accepted, stored decisions are mapped
+    # by _migrate_correctness_verdicts, and they stay in the review app's VERDICT_TONE only so
+    # anything missed still renders.
+    "CORRECTNESS": {"LEGITIMATE", "NEEDS_INVESTIGATION"},
 }
 ALL_VALID_VERDICTS = {"PENDING", "APPROVED", "REJECTED"}.union(*ITEM_DISPOSITIONS.values())
 # Verdicts meaning "still needs follow-up" keep status=PENDING; every other
@@ -705,18 +731,39 @@ def get_finding_items(finding_id: str) -> List[Dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
+_NOT_PROMOTABLE = "NOT (reusable = 1 AND COALESCE(check_code, '') != '')"
+
+
 def get_completeness_by_table(run_id: str, table_name: str) -> Dict[str, Any]:
-    """Every manual-review COMPLETENESS finding's items for one table in one run, pivoted by
-    physical record (row_index - stable within a run, since every check on a table reads the
-    same loaded DataFrame) instead of by column. Lets a reviewer see every missing field of one
-    record together instead of hopping between separate per-column findings to find the same row
-    again. AUTO_FIXABLE columns are excluded: they already have a fast one-click bulk-autofill
-    path on their own finding card, and their card is 'Approve/Reject', not a disposition."""
+    """Every COMPLETENESS finding's items for one table in one run, pivoted by record. Auto-fixable
+    and manual-fix findings are reviewed the same way (one disposition matrix). A reusable LLM check
+    with captured code is left out, exactly as the card list leaves it out: its "Approve as reusable
+    check" decision only exists on its own finding modal."""
+    return _grouped_by_table(run_id, table_name, f"category = 'COMPLETENESS' AND {_NOT_PROMOTABLE}", "column_name")
+
+
+def get_correctness_by_table(run_id: str, table_name: str, anomalies_only: bool = False) -> Dict[str, Any]:
+    """Every CORRECTNESS finding (value errors, anomalies, relationship issues) for one table in one
+    run, pivoted by record, one grid column per finding (several rules can hit one column). A
+    reusable LLM check is left out for the same reason as in Completeness. `anomalies_only` mirrors
+    the review page's Anomalies tab, so a card counted there opens a grid of the same findings."""
+    where = f"category = 'CORRECTNESS' AND {_NOT_PROMOTABLE}" + (" AND is_anomaly = 1" if anomalies_only else "")
+    return _grouped_by_table(run_id, table_name, where, "id")
+
+
+def _grouped_by_table(run_id: str, table_name: str, where_sql: str, cell_key: str) -> Dict[str, Any]:
+    """Items of every finding matching `where_sql` for one table in one run, pivoted by physical
+    record (row_index - stable within a run, since every check on a table reads the same loaded
+    DataFrame) instead of by finding. A reviewer sees every flagged field of one record together
+    instead of hopping between separate per-column findings to find the same row again.
+
+    `cell_key` is what a record's cells are keyed by: "column_name" (one finding per column, the
+    Completeness case) or "id" (several findings can hit one column, the Correctness case: each
+    rule is its own finding). Each field carries that value as `key`."""
     with get_connection() as conn:
         findings = conn.execute(
             "SELECT id, column_name, hypothesis, check_code FROM findings WHERE run_id = ? AND table_name = ? "
-            "AND category = 'COMPLETENESS' AND COALESCE(fix_type, 'MANUAL_FIX') != 'AUTO_FIXABLE' "
-            "ORDER BY column_name",
+            f"AND {where_sql} ORDER BY column_name, created_at",
             (run_id, table_name),
         ).fetchall()
         fields = [dict(f) for f in findings]
@@ -730,12 +777,23 @@ def get_completeness_by_table(run_id: str, table_name: str) -> Dict[str, Any]:
             finding_ids,
         ).fetchall()
 
-    column_by_finding = {f["id"]: f["column_name"] for f in fields}
+    for f in fields:
+        f["key"] = f[cell_key]
+        # Built-in rules name themselves on the first line of check_code; that tells two findings
+        # on the same column apart (e.g. a casing and a leading-space rule on NAME1).
+        first_line = (f.get("check_code") or "").split("\n", 1)[0]
+        rule_id = None
+        if first_line.startswith("# Built-in SAP rule"):
+            rule_id = first_line.replace("# Built-in SAP rule", "").strip().split(" (", 1)[0].rstrip(".")
+            # "text.casing.LFA1.NAME1" -> "text.casing": the table and column are already on screen.
+            rule_id = ".".join(p for p in rule_id.split(".") if p not in (table_name, f["column_name"])) or rule_id
+        f["rule_id"] = rule_id
+    key_by_finding = {f["id"]: f["key"] for f in fields}
     used_finding_ids = set()
     records: Dict[Any, Dict[str, Any]] = {}
     for row in items:
         it = dict(row)
-        col = column_by_finding.get(it["finding_id"])
+        col = key_by_finding.get(it["finding_id"])
         if not col:
             continue
         used_finding_ids.add(it["finding_id"])

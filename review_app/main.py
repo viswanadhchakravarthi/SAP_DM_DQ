@@ -287,12 +287,24 @@ def list_findings(
 
 @app.get("/api/findings/completeness-by-table")
 def get_completeness_by_table_endpoint(run_id: str, table: str):
-    """Manual-review COMPLETENESS findings for one table in one run, pivoted by record instead
-    of by column - see episodic_store.get_completeness_by_table - enriched with raw values read
-    from the uploaded CSV (same source as GET /findings/{id}/helper-columns): the client's chosen
-    helper columns, plus every flagged field's own value for the records where that field ISN'T
-    the one flagged, so a "not flagged" cell shows the real value instead of a bare checkmark."""
-    data = store.get_completeness_by_table(run_id, table)
+    """COMPLETENESS findings for one table in one run, pivoted by record instead of by column -
+    see episodic_store.get_completeness_by_table."""
+    return _enrich_grouped(store.get_completeness_by_table(run_id, table), run_id, table)
+
+
+@app.get("/api/findings/correctness-by-table")
+def get_correctness_by_table_endpoint(run_id: str, table: str, anomalies_only: bool = False):
+    """CORRECTNESS findings (value errors, anomalies, relationships) for one table in one run,
+    pivoted by record - see episodic_store.get_correctness_by_table."""
+    return _enrich_grouped(store.get_correctness_by_table(run_id, table, anomalies_only), run_id, table)
+
+
+def _enrich_grouped(data: dict, run_id: str, table: str) -> dict:
+    """Adds the raw values a per-table grid needs, read from the uploaded CSV (same source as
+    GET /findings/{id}/helper-columns): the client's chosen helper columns, plus every flagged
+    field's own value for the records where that field ISN'T the one flagged, so a "not flagged"
+    cell shows the real value instead of a bare checkmark. A field may name several columns
+    ("STCD1 + STCD2" for a composite tax rule); only real single columns get a value."""
     data["helper_columns"] = []
     data["stale"] = False
     data["stale_note"] = None
@@ -318,9 +330,9 @@ def get_completeness_by_table_endpoint(run_id: str, table: str):
         return data
 
     meta = {c["name"]: c for c in details["columns"]}
-    field_names = {f["column_name"] for f in data["fields"]}
+    field_names = {f["column_name"] for f in data["fields"] if f["column_name"] in meta}
     helper_names = [c for c in details["helper_columns"] if c not in field_names]
-    all_columns = [f["column_name"] for f in data["fields"]] + helper_names
+    all_columns = list(dict.fromkeys([f["column_name"] for f in data["fields"] if f["column_name"] in meta] + helper_names))
     row_indexes = sorted({r["row_index"] for r in data["records"] if r["row_index"] is not None})
     values = client_workspace.helper_values(client_id, table_up, row_indexes, all_columns)
 

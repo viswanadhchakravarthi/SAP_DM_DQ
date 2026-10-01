@@ -67,11 +67,11 @@ function wrapTableColumnRef(table, column, contextNote) {
   return `<span class="sap-ref" data-table="${escapeHtml(table)}" data-column="${escapeHtml(column)}" data-context="${escapeHtml(contextNote || "")}">${escapeHtml(table)}.${escapeHtml(column)}</span>`;
 }
 
-// Completeness findings are titled by table only: a single-field finding names its field in the
-// summary and the Disposition header, and the multi-field one already has no column. Other
-// pillars keep TABLE.COLUMN, which is what tells their findings apart.
+// Completeness and Correctness findings are titled by table only: a single finding names its
+// field in the summary and the Disposition header, and a merged one has no single column. The
+// other pillars keep TABLE.COLUMN.
 function findingTitleRef(finding) {
-  if (finding.category === "COMPLETENESS") return escapeHtml(finding.table_name || "");
+  if (finding.category === "COMPLETENESS" || finding.category === "CORRECTNESS") return escapeHtml(finding.table_name || "");
   return wrapTableColumnRef(finding.table_name, finding.column_name, finding.hypothesis || "");
 }
 const TABLE_COLUMN_REF_RE = /\b([A-Z][A-Z0-9_]{2,9})\.([A-Z][A-Z0-9_]{1,9})\b/g;
@@ -393,11 +393,11 @@ function attachCardHandlers() {
 // Completeness "club a table's findings together": the same physical record is
 // often flagged by more than one per-column Completeness check (LFBK.BANKL,
 // LFBK.IBAN, ...). Reviewing those one finding at a time means re-finding the
-// same row over and over. This pivots every manual-review Completeness finding
-// on one table into a single grid - one row per record, one column per flagged
-// field - so a reviewer clears a whole record in one pass. AUTO_FIXABLE fields
-// are excluded (see episodic_store.get_completeness_by_table); they already
-// have a fast one-click bulk-autofill path on their own card.
+// same row over and over. This pivots every Completeness finding on one table
+// into a single grid - one row per record, one column per flagged field - so a
+// reviewer clears a whole record in one pass. Correctness works the same way
+// (GROUPED_PILLARS below): one card and one grid per table, one column per
+// finding, because several rules can hit the same column.
 //
 // The underlying findings stay separate in the database - one per column, as
 // the pipeline generates them - because that's load-bearing, not just a
@@ -415,33 +415,56 @@ function attachCardHandlers() {
 // collapses them into one card titled by table, not table.column.
 // ---------------------------------------------------------------------------
 
-function completenessSiblings(finding) {
-  // isPromotable findings (a reusable LLM check with captured code) are never merged in either
-  // direction - merged or merging - because their own "Approve as reusable skill" decision (see
-  // renderFindingDecisionRow/isPromotable) only exists on their own single-finding modal. Sweeping
-  // one into the grouped grid would make the human skill-promotion gate unreachable for it.
-  return currentFindings.filter((f) =>
-    f.category === "COMPLETENESS" && f.fix_type !== "AUTO_FIXABLE" && !isPromotable(f) &&
-    f.table_name === finding.table_name && f.item_count > 0);
+// Which pillar's per-table grid a finding belongs to, or null when it is never merged.
+// isPromotable findings (a reusable LLM check with captured code) are never merged in either
+// direction - merged or merging - because their own "Approve as reusable skill" decision (see
+// renderFindingDecisionRow/isPromotable) only exists on their own single-finding modal. Sweeping
+// one into the grouped grid would make the human skill-promotion gate unreachable for it.
+function groupedPillar(finding) {
+  if (isPromotable(finding) || !(finding.item_count > 0)) return null;
+  if (finding.category === "COMPLETENESS" || finding.category === "CORRECTNESS") return finding.category;
+  return null;
 }
 
-function completenessSiblingCount(finding) {
-  return completenessSiblings(finding).length;
+const GROUPED_PILLARS = {
+  COMPLETENESS: { label: "Completeness", endpoint: "completeness-by-table", workflow: "COMPLETENESS_MANUAL", noun: "fields" },
+  // Correctness has several rules (findings) per column, so its card counts issues, not fields.
+  CORRECTNESS: { label: "Correctness", endpoint: "correctness-by-table", workflow: "CORRECTNESS", noun: "issues" },
+};
+
+function tableSiblings(finding) {
+  const pillar = groupedPillar(finding);
+  if (!pillar) return [];
+  return currentFindings.filter((f) => groupedPillar(f) === pillar && f.table_name === finding.table_name);
+}
+
+function tableSiblingCount(finding) {
+  return tableSiblings(finding).length;
 }
 
 // A synthetic finding-shaped object so the existing renderCard() can render a merged card
 // without a parallel render function. column_name: null makes wrapTableColumnRef() title it by
 // table alone (no ".column" suffix) instead of trying to render a comma list as a column ref.
-function mergedCompletenessFinding(siblings) {
+function mergedTableFinding(siblings) {
   const first = siblings[0];
+  const pillar = GROUPED_PILLARS[groupedPillar(first)];
   const allDecided = siblings.every((f) => f.status !== "PENDING");
   const latestReviewedAt = siblings.map((f) => f.reviewed_at).filter(Boolean).sort().pop() || null;
   const sameSource = siblings.every((f) => f.source === first.source) ? first.source : null;
+  const columns = [...new Set(siblings.map((f) => f.column_name))];
+  const rank = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+  const worst = siblings.reduce((a, f) => ((rank[f.severity] || 0) > (rank[a.severity] || 0) ? f : a), first);
   return {
     ...first,
     column_name: null,
     hypothesis: "",
-    result_summary: `${siblings.length} fields flagged: ${siblings.map((f) => f.column_name).join(", ")}.`,
+    fix_type: null,          // a merged card spans several findings: no single "Auto-fixable" badge
+    auto_fix_value: null,
+    severity: worst.severity,
+    is_anomaly: siblings.every((f) => f.is_anomaly),
+    result_summary: pillar.noun === "issues"
+      ? `${siblings.length} issues flagged across ${columns.length} field${columns.length === 1 ? "" : "s"}: ${columns.join(", ")}.`
+      : `${siblings.length} fields flagged: ${columns.join(", ")}.`,
     item_count: siblings.reduce((sum, f) => sum + (f.item_count || 0), 0),
     reviewed_count: siblings.reduce((sum, f) => sum + (f.reviewed_count || 0), 0),
     status: allDecided ? "APPROVED" : "PENDING",
@@ -452,37 +475,40 @@ function mergedCompletenessFinding(siblings) {
 }
 
 function renderFindingCards(findings) {
-  const rendered = new Set(); // table names already rendered as a merged card
+  const rendered = new Set(); // "<pillar>|<table>" already rendered as a merged card
   return findings.map((f) => {
-    if (f.category !== "COMPLETENESS" || f.fix_type === "AUTO_FIXABLE" || !(f.item_count > 0) || isPromotable(f)) {
-      return renderCard(f);
-    }
-    if (rendered.has(f.table_name)) return ""; // this table's card already rendered
-    const siblings = completenessSiblings(f);
+    const pillar = groupedPillar(f);
+    if (!pillar) return renderCard(f);
+    const renderedKey = `${pillar}|${f.table_name}`;
+    if (rendered.has(renderedKey)) return ""; // this table's card already rendered
+    const siblings = tableSiblings(f);
     if (siblings.length <= 1) return renderCard(f);
-    rendered.add(f.table_name);
-    return renderCard(mergedCompletenessFinding(siblings));
+    rendered.add(renderedKey);
+    return renderCard(mergedTableFinding(siblings));
   }).join("");
 }
 
-let groupedRecordsState = null;  // {runId, table} of the currently open grouped-records modal
+let groupedRecordsState = null;  // {runId, table, pillar, anomaliesOnly} of the open grouped-records modal
 let groupedRecordsData = null;   // last-fetched payload, for the check-code toggle to read from
 
-async function openGroupedRecords(runId, table) {
-  groupedRecordsState = { runId, table };
-  document.getElementById("groupedRecordsTitle").textContent = `${table} - Completeness (all fields)`;
+async function openGroupedRecords(runId, table, pillar = "COMPLETENESS", anomaliesOnly = false) {
+  groupedRecordsState = { runId, table, pillar, anomaliesOnly };
+  document.getElementById("groupedRecordsTitle").textContent =
+    `${table} - ${GROUPED_PILLARS[pillar].label} (all ${GROUPED_PILLARS[pillar].noun})`;
   document.getElementById("groupedRecordsModal").classList.remove("hidden");
   await refreshGroupedRecords();
 }
 
 async function refreshGroupedRecords() {
   if (!groupedRecordsState) return;
-  const { runId, table } = groupedRecordsState;
+  const { runId, table, pillar, anomaliesOnly } = groupedRecordsState;
   const body = document.getElementById("groupedRecordsModalBody");
   body.innerHTML = '<p class="empty-state">Loading records...</p>';
   try {
     groupedRecordsData = await fetchJSON(
-      `${API_BASE}/findings/completeness-by-table?run_id=${encodeURIComponent(runId)}&table=${encodeURIComponent(table)}`);
+      `${API_BASE}/findings/${GROUPED_PILLARS[pillar].endpoint}?run_id=${encodeURIComponent(runId)}&table=${encodeURIComponent(table)}` +
+      (anomaliesOnly ? "&anomalies_only=true" : ""));
+    withFieldLabels(groupedRecordsData.fields);
     body.innerHTML = renderGroupedRecordsBody(groupedRecordsData);
     attachGroupedRecordHandlers();
   } catch (error) {
@@ -490,16 +516,33 @@ async function refreshGroupedRecords() {
   }
 }
 
+// Column headers: the column name, plus the rule when several findings hit the same column
+// (Correctness has one finding per rule, so NAME1 can appear twice) - otherwise two headers would
+// look identical.
+function withFieldLabels(fields) {
+  const perColumn = {};
+  fields.forEach((f) => { perColumn[f.column_name] = (perColumn[f.column_name] || 0) + 1; });
+  fields.forEach((f) => {
+    f.label = perColumn[f.column_name] > 1 && f.rule_id ? `${f.column_name} (${f.rule_id})` : f.column_name;
+  });
+}
+
+// The disposition workflow (matrix rows, corrected-value editor) of the open grouped modal's pillar.
+function groupedWorkflow() {
+  return PILLAR_WORKFLOWS[GROUPED_PILLARS[groupedRecordsState.pillar].workflow];
+}
+
 function renderGroupedRecordsBody(data) {
+  const pillar = GROUPED_PILLARS[groupedRecordsState.pillar];
   if (!data.fields.length) {
-    return '<p class="empty-state">No manual-review Completeness fields for this table.</p>';
+    return `<p class="empty-state">No ${pillar.label} findings with records for this table.</p>`;
   }
   const hypothesis = data.fields.map((f) =>
-    `<strong>${escapeHtml(f.column_name)}:</strong> ${linkifyTableColumnRefs(escapeHtml(f.hypothesis || "(not captured)"))}`
+    `<strong>${escapeHtml(f.label)}:</strong> ${linkifyTableColumnRefs(escapeHtml(f.hypothesis || "(not captured)"))}`
   ).join("\n\n");
   return `
     <div class="detail-row">
-      <div class="detail-label">Hypothesis &amp; Rule Context (${data.fields.length} field${data.fields.length === 1 ? "" : "s"})</div>
+      <div class="detail-label">Hypothesis &amp; Rule Context (${data.fields.length} ${data.fields.length === 1 ? pillar.noun.replace(/s$/, "") : pillar.noun})</div>
       <pre>${hypothesis}</pre>
     </div>
     <div class="detail-row lazy-section" id="groupedLazyCode">
@@ -511,9 +554,10 @@ function renderGroupedRecordsBody(data) {
 
 function renderGroupedRecordsTable(data) {
   if (!data.records.length) {
-    return '<p class="empty-state">No pending manual-review records for this table.</p>';
+    return '<p class="empty-state">No records for this table.</p>';
   }
   const helperCols = data.helper_columns || [];
+  const editor = !!groupedWorkflow().inlineCorrectedInput;   // only Completeness has a corrected-value field
   // Key column names (e.g. "LIFNR + BANKS + BANKL + BANKN") shown once in the header; the cells
   // hold only the values. Every record of a table shares its key, so the first one is enough.
   const keyFieldNames = (data.records.find((r) => r.key_field) || {}).key_field || "";
@@ -531,7 +575,7 @@ function renderGroupedRecordsTable(data) {
           <tr>
             <th>Row</th><th>Key Field${keyFieldNames ? `<div class="hint-text">${wrapTableColumnRef(data.table_name, keyFieldNames, "")}</div>` : ""}</th>
             <th>Details</th>
-            ${data.fields.map((f) => `<th title="${escapeHtml(f.hypothesis || "")}">${escapeHtml(f.column_name)}</th>`).join("")}
+            ${data.fields.map((f) => `<th title="${escapeHtml(f.hypothesis || "")}">${escapeHtml(f.label)}</th>`).join("")}
             ${helperCols.map(helperHeader).join("")}
             <th>Disposition</th>
           </tr>
@@ -542,15 +586,15 @@ function renderGroupedRecordsTable(data) {
             // Which field(s) a record is flagged on varies per record, so the matrix is built per
             // row, not once for the whole table - always visible in the Disposition column, same
             // as every other pillar's Disposition column, no click needed to reach it.
-            const flaggedFields = data.fields.filter((f) => r.cells[f.column_name]);
+            const flaggedFields = data.fields.filter((f) => r.cells[f.key]);
             return `
               <tr>
                 <td>${escapeHtml(r.row_index ?? "-")}</td>
                 <td>${escapeHtml(r.key_value || "")}</td>
                 <td>${renderGroupedDetails(flaggedFields, r)}</td>
-                ${data.fields.map((f) => renderCompactStatusCell(r.cells[f.column_name], f.column_name, values[f.column_name])).join("")}
+                ${data.fields.map((f) => renderCompactStatusCell(r.cells[f.key], f.label, values[f.column_name], editor)).join("")}
                 ${helperCols.map((c) => `<td class="helper-col">${values[c.name] ? escapeHtml(values[c.name]) : '<span class="blank-cell">—</span>'}</td>`).join("")}
-                <td class="dispo-matrix-cell">${renderDispositionMatrix(r, flaggedFields)}</td>
+                <td class="dispo-matrix-cell">${renderDispositionMatrix(r, flaggedFields, groupedWorkflow().dispositions)}</td>
               </tr>`;
           }).join("")}
         </tbody>
@@ -563,11 +607,11 @@ function renderGroupedRecordsTable(data) {
 function renderGroupedDetails(flaggedFields, record) {
   const multi = flaggedFields.length > 1;
   const text = flaggedFields.map((f) => {
-    const item = record.cells[f.column_name];
-    return `<div class="grouped-detail">${multi ? `<strong>${escapeHtml(f.column_name)}:</strong> ` : ""}${linkifyTableColumnRefs(escapeHtml(item.issue_detail || ""))}</div>`;
+    const item = record.cells[f.key];
+    return `<div class="grouped-detail">${multi ? `<strong>${escapeHtml(f.label)}:</strong> ` : ""}${linkifyTableColumnRefs(escapeHtml(item.issue_detail || ""))}</div>`;
   }).join("");
   // ONE button per row; it opens every flagged field's explanation together.
-  const targets = flaggedFields.map((f) => ({ id: record.cells[f.column_name].id, field: f.column_name }));
+  const targets = flaggedFields.map((f) => ({ id: record.cells[f.key].id, field: f.label }));
   return `${text}<div><button type="button" class="btn-why" data-why-group="${escapeHtml(JSON.stringify(targets))}" aria-expanded="false">Why flagged?</button></div>`;
 }
 
@@ -610,35 +654,39 @@ async function toggleWhyGroup(button) {
 // entered) in its own column - the same design applies whether this record has one flagged field
 // or several. Actually setting the disposition happens in the Disposition column, always visible
 // (renderDispositionMatrix), not repeated per field here.
-function renderCompactStatusCell(item, fieldName, rawValue) {
+function renderCompactStatusCell(item, fieldName, rawValue, editor = true) {
   if (!item) {
     const shown = rawValue ? escapeHtml(rawValue) : '<span class="blank-cell">—</span>';
     return `<td class="grouped-cell grouped-cell-ok" title="Not flagged for ${escapeHtml(fieldName)}">${shown}</td>`;
   }
-  return `<td class="grouped-cell">${flaggedFieldStatusHtml(item, fieldName)}</td>`;
+  return `<td class="grouped-cell">${flaggedFieldStatusHtml(item, fieldName, editor)}</td>`;
 }
 
-// Status badge plus the corrected-value editor (or the entered value) for one flagged field.
-// It sits in that field's own cell - in the grouped view and in the single-field view alike; the
-// disposition matrix only holds the dots that set the verdict.
-function flaggedFieldStatusHtml(item, fieldName) {
-  const verdict = item.review_verdict || "PENDING";
+// Status badge plus (when `editor`, i.e. Completeness) the corrected-value editor or the entered
+// value for one flagged field. It sits in that field's own cell - in the grouped view and in the
+// single-field view alike; the disposition matrix only holds the dots that set the verdict.
+function flaggedFieldStatusHtml(item, fieldName, editor = true) {
+  // Records decided by the old Approve / Reject / autofill workflow have a status but no verdict:
+  // show that status rather than "Pending".
+  const verdict = (item.review_verdict && item.review_verdict !== "PENDING") ? item.review_verdict
+    : (item.status !== "PENDING" ? item.status : "PENDING");
   const tone = VERDICT_TONE[verdict] || "warning";
   const badge = verdict !== "PENDING"
     ? `<span class="verdict-badge verdict-tone-${tone}">${escapeHtml(verdict)}</span>`
     : `<span class="dispo-pending">Pending</span>`;
-  const correctedNote = item.status === "PENDING"
+  const correctedNote = !editor ? ""
+    : item.status === "PENDING"
     ? renderInlineCorrected(item, false, fieldName)
     : (item.corrected_data ? `<div class="corrected-note">→ ${escapeHtml(item.corrected_data)}</div>` : "");
   return `${badge}${correctedNote}`;
 }
 
-// The 3xN disposition matrix for one record: rows are the (shared, single source of truth)
-// Completeness dispositions, columns are that record's flagged fields - so each disposition's
-// label appears exactly once instead of once per flagged cell, and picking one is a single click
-// per column instead of hunting for the right button among three repeated per field.
-function renderDispositionMatrix(record, flaggedFields) {
-  const rows = PILLAR_WORKFLOWS.COMPLETENESS_MANUAL.dispositions;
+// The disposition matrix for one record: rows are the pillar's dispositions (`rows`, the shared
+// single source of truth in PILLAR_WORKFLOWS), columns are that record's flagged fields - so each
+// disposition's label appears exactly once instead of once per flagged cell, and picking one is a
+// single click per column instead of hunting for the right button among several repeated per field.
+// Cells are looked up by f.key (the column name for Completeness, the finding id for Correctness).
+function renderDispositionMatrix(record, flaggedFields, rows = PILLAR_WORKFLOWS.COMPLETENESS_MANUAL.dispositions) {
   return `
     <div class="dispo-matrix">
       <table class="dispo-matrix-table">
@@ -646,12 +694,12 @@ function renderDispositionMatrix(record, flaggedFields) {
           <tr>
             <th class="dispo-corner">Decision / Column</th>
             ${flaggedFields.map((f) => {
-              const item = record.cells[f.column_name];
+              const item = record.cells[f.key];
               // Also for open verdicts (Business to Confirm keeps status PENDING), else no way back.
               const undo = (item.status !== "PENDING" || (item.review_verdict || "PENDING") !== "PENDING")
                 ? `<button type="button" class="btn-undo-sm" data-undo-item="${escapeHtml(item.id)}"
                      aria-label="Undo - back to pending" data-tooltip="Undo - back to pending">↺</button>` : "";
-              return `<th>${escapeHtml(f.column_name)}${undo}</th>`;
+              return `<th>${escapeHtml(f.label || f.column_name)}${undo}</th>`;
             }).join("")}
           </tr>
         </thead>
@@ -659,7 +707,7 @@ function renderDispositionMatrix(record, flaggedFields) {
           ${rows.map((d) => `
             <tr>
               <th class="dispo-row-label btn-tone-${VERDICT_TONE[d.verdict] || "warning"}">${escapeHtml(d.label)}</th>
-              ${flaggedFields.map((f) => renderDispoMatrixCell(record.cells[f.column_name], d, f.column_name)).join("")}
+              ${flaggedFields.map((f) => renderDispoMatrixCell(record.cells[f.key], d, f.column_name)).join("")}
             </tr>`).join("")}
         </tbody>
       </table>
@@ -705,7 +753,7 @@ function attachGroupedRecordHandlers() {
       let pre = section.querySelector("pre");
       if (!pre) {
         const combined = (groupedRecordsData.fields || [])
-          .map((f) => `# ── ${f.column_name} ──\n${f.check_code || "(not captured)"}`)
+          .map((f) => `# ── ${f.label || f.column_name} ──\n${f.check_code || "(not captured)"}`)
           .join("\n\n");
         pre = document.createElement("pre");
         pre.className = "hidden";
@@ -817,14 +865,14 @@ async function openDetail(id) {
   const finding = currentFindings.find((item) => item.id === id);
   if (!finding) return;
 
-  // A Completeness finding whose table has other manual-review fields flagged opens the combined
-  // per-record grid instead of this single-column modal - see the "club a table's findings
-  // together" block above. A table with only one such field (the common case), or a promotable
-  // finding (its own "Approve as reusable skill" decision only exists on this modal), is
-  // unaffected.
-  if (finding.category === "COMPLETENESS" && finding.fix_type !== "AUTO_FIXABLE"
-      && !isPromotable(finding) && completenessSiblingCount(finding) > 1) {
-    await openGroupedRecords(finding.run_id, finding.table_name);
+  // A Completeness or Correctness finding whose table has other findings of the same pillar opens
+  // the combined per-record grid instead of this single-finding modal - see the "club a table's
+  // findings together" block above. A table with only one such finding (the common case), or a
+  // promotable finding (its own "Approve as reusable skill" decision only exists on this modal),
+  // is unaffected. A card built from anomalies only (the Anomalies tab) opens a grid of the same.
+  if (tableSiblingCount(finding) > 1) {
+    const anomaliesOnly = tableSiblings(finding).every((f) => f.is_anomaly);
+    await openGroupedRecords(finding.run_id, finding.table_name, groupedPillar(finding), anomaliesOnly);
     return;
   }
 
@@ -1010,13 +1058,6 @@ const PILLAR_WORKFLOWS = {
       { verdict: "CONFIRMED_INACTIVE", label: "🔴 Confirm Inactive" },
     ],
   },
-  COMPLETENESS_AUTO: {
-    title: "Individual Issues",
-    mode: "decision",
-    showCorrectedInput: true,
-    correctedLabel: "Corrected Data",
-    showAutofill: true,
-  },
   COMPLETENESS_MANUAL: {
     title: "Missing / Incomplete Records",
     mode: "verdict",
@@ -1028,28 +1069,9 @@ const PILLAR_WORKFLOWS = {
       { verdict: "REQUIRES_BUSINESS_INPUT", label: "Business to Confirm" },
     ],
   },
-  CORRECTNESS_VALUE_ERROR: {
-    title: "Individual Issues",
-    mode: "verdict",
-    showCorrectedInput: false,
-    dispositions: [
-      { verdict: "LEGITIMATE", label: "Legitimate Value" },
-      { verdict: "NEEDS_INVESTIGATION", label: "Needs Investigation" },
-    ],
-  },
-  CORRECTNESS_RELATIONSHIP: {
-    title: "Relationship / Integrity Issues",
-    mode: "verdict",
-    showCorrectedInput: false,
-    dispositions: [
-      { verdict: "CONFIRMED_ISSUE", label: "Confirm Issue" },
-      { verdict: "FALSE_POSITIVE", label: "False Positive" },
-      { verdict: "REQUIRES_MASTER_DATA_CORRECTION", label: "Requires Master Data Correction" },
-      { verdict: "REQUIRES_BUSINESS_REVIEW", label: "Requires Business Review" },
-      { verdict: "EXCLUDE_FROM_PROFILING", label: "Exclude from Future Profiling" },
-    ],
-  },
-  ANOMALY: {
+  // Everything under Correctness (value errors, anomalies and relationship issues alike) shares
+  // these two; a corrected value makes no sense for a judgment call.
+  CORRECTNESS: {
     title: "Flagged Values",
     mode: "verdict",
     showCorrectedInput: false,
@@ -1062,19 +1084,16 @@ const PILLAR_WORKFLOWS = {
 
 function getWorkflowKey(finding) {
   if (finding.category === "ACTIVENESS") return "ACTIVENESS";
-  if (finding.category === "COMPLETENESS") {
-    return finding.fix_type === "AUTO_FIXABLE" ? "COMPLETENESS_AUTO" : "COMPLETENESS_MANUAL";
-  }
-  if (finding.category === "CORRECTNESS") {
-    // is_anomaly only redirects within Correctness - it's only ever paired with CORRECTNESS
-    // by the built-in rule pack (anomaly_rules.py), but an LLM-proposed check can set it on
-    // any category; letting it override Completeness/Activeness there dropped their disposition
-    // vocabulary and (for Completeness) the Corrected Value field entirely.
-    if (finding.is_anomaly) return "ANOMALY";
-    return finding.effective_sub_type === "RELATIONSHIP_INTEGRITY"
-      ? "CORRECTNESS_RELATIONSHIP" : "CORRECTNESS_VALUE_ERROR";
-  }
-  return "CORRECTNESS_VALUE_ERROR";
+  // Auto-fixable and manual-fix findings are reviewed the same way (the matrix). An auto-fixable
+  // finding's suggested default is shown as a hint above its records, not as a separate workflow.
+  if (finding.category === "COMPLETENESS") return "COMPLETENESS_MANUAL";
+  // Value errors, anomalies and relationship issues all use the one Correctness workflow.
+  return "CORRECTNESS";
+}
+
+// Workflows whose records are decided in the dots-per-flagged-field matrix (see renderDispositionMatrix).
+function usesMatrix(cfg) {
+  return cfg === PILLAR_WORKFLOWS.COMPLETENESS_MANUAL || cfg === PILLAR_WORKFLOWS.CORRECTNESS;
 }
 
 function verdictButton(itemId, verdict, label, requiresCorrectedInput) {
@@ -1086,40 +1105,33 @@ function verdictButton(itemId, verdict, label, requiresCorrectedInput) {
 function renderWorkflowItemsTable(finding, items, isSynthetic, workflowKey) {
   const cfg = PILLAR_WORKFLOWS[workflowKey];
   const helperCols = isSynthetic ? [] : helperColumnsFor(finding.id);
-  const isAutoFixable = cfg.showAutofill && finding.fix_type === "AUTO_FIXABLE" && finding.auto_fix_value;
-  // Manual Completeness: key column names once in the header, values only in the cells - same
-  // as the grouped multi-field view.
-  const keyNamesInHeader = cfg === PILLAR_WORKFLOWS.COMPLETENESS_MANUAL && !isSynthetic
+  // Completeness: key column names once in the header, values only in the cells - same as the
+  // grouped multi-field view.
+  const keyNamesInHeader = usesMatrix(cfg) && !isSynthetic
     ? ((items.find((i) => i.key_field) || {}).key_field || "") : "";
 
-  const bulkBar = isSynthetic ? "" : `
-    <div class="item-actions-bar">
-      ${cfg.mode === "decision" ? `
-        <button data-bulk="APPROVED">Approve Selected</button>
-        <button data-bulk="REJECTED">Reject Selected</button>
-      ` : ""}
-      ${isAutoFixable ? `<button id="bulkAutofillBtn" class="btn-autofill">⚡ Apply Recommended Default (${escapeHtml(finding.auto_fix_value)}) to All Pending</button>` : ""}
-    </div>
-  `;
+  // The LLM's safe default for an auto-fixable finding: only a suggestion now. To use it, type it
+  // under "Enter Corrected Value" for each record you agree with.
+  const defaultHint = !isSynthetic && finding.fix_type === "AUTO_FIXABLE" && finding.auto_fix_value
+    ? `<p class="hint-text">Suggested default: <strong>${escapeHtml(finding.auto_fix_value)}</strong> -
+        enter it under "Enter Corrected Value" for the records where it is right.</p>` : "";
 
   return `
     <div class="detail-row" data-workflow="${escapeHtml(workflowKey)}">
       <div class="detail-label">
         ${escapeHtml(cfg.title)} ${isSynthetic ? "(no row-level detail captured)" : `(${items.length})`}
       </div>
-      ${bulkBar}
+      ${defaultHint}
       ${isSynthetic ? "" : helperNote(finding.id)}
       <table class="items-table">
         <thead>
           <tr>
-            ${cfg.mode === "decision" ? "<th></th>" : ""}
             <th>Row</th><th>Key Field${keyNamesInHeader ? `<div class="hint-text">${wrapTableColumnRef(finding.table_name, keyNamesInHeader, "")}</div>` : ""}</th><th>Details</th>${helperCols.map(helperHeader).join("")}
-            ${cfg.showCorrectedInput ? `<th>${escapeHtml(cfg.correctedLabel || "Corrected Data")}</th>` : ""}
-            <th>${cfg.mode === "decision" ? "Status" : "Disposition"}</th>
+            <th>Disposition</th>
           </tr>
         </thead>
         <tbody>
-          ${items.map((item) => renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helperCols)).join("")}
+          ${items.map((item) => renderWorkflowRow(finding, item, isSynthetic, cfg, helperCols)).join("")}
         </tbody>
       </table>
       ${isSynthetic ? `<p class="hint-text">This check did not produce row-level detail. Use "Approve Finding" / "Reject Finding" below.</p>` : ""}
@@ -1148,7 +1160,7 @@ function renderInlineCorrected(item, disabled, fieldName) {
     </div>`;
 }
 
-function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helperCols = []) {
+function renderWorkflowRow(finding, item, isSynthetic, cfg, helperCols = []) {
   const disabled = isSynthetic || item.status !== "PENDING";
   const keyCell = item.key_field ? wrapTableColumnRef(finding.table_name, item.key_field, "") : "";
   const fieldName = finding.column_name || "value";
@@ -1156,26 +1168,23 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helpe
   // finding.column_name is the same field for every row of a Completeness finding (one finding =
   // one column), so if it's among the chosen helper columns, edit it there; otherwise fall back
   // to the Details cell so the edit control is never lost.
-  const targetHelperCol = cfg.inlineCorrectedInput ? helperCols.find((c) => c.name === fieldName) : null;
-  const useMatrix = cfg === PILLAR_WORKFLOWS.COMPLETENESS_MANUAL && !isSynthetic && item.id;
-  const inlineCorrected = !cfg.inlineCorrectedInput ? ""
-    : (useMatrix ? flaggedFieldStatusHtml(item, fieldName) : renderInlineCorrected(item, disabled, fieldName));
+  // Completeness and Correctness both use the disposition matrix; only Completeness has the
+  // corrected-value editor, so Correctness gets just the status badge in the field's cell.
+  const useMatrix = usesMatrix(cfg) && !isSynthetic && item.id;
+  const targetHelperCol = (cfg.inlineCorrectedInput || useMatrix) ? helperCols.find((c) => c.name === fieldName) : null;
+  const inlineCorrected = useMatrix ? flaggedFieldStatusHtml(item, fieldName, !!cfg.inlineCorrectedInput)
+    : (cfg.inlineCorrectedInput ? renderInlineCorrected(item, disabled, fieldName) : "");
 
-  const detailsCell = linkifyTableColumnRefs(escapeHtml(item.issue_detail || "")) + (targetHelperCol ? "" : inlineCorrected) +
-    (isAutoFixable && item.status === "PENDING" ? `
-      <button class="btn-autofill" data-autofill-item="${escapeHtml(item.id)}" data-autofill-val="${escapeHtml(finding.auto_fix_value)}">
-        ⚡ Autofill '${escapeHtml(finding.auto_fix_value)}'
-      </button>` : "");
+  const detailsCell = linkifyTableColumnRefs(escapeHtml(item.issue_detail || "")) + (targetHelperCol ? "" : inlineCorrected);
 
   const whyButton = !isSynthetic && item.id
     ? `<div><button type="button" class="btn-why" data-why-item="${escapeHtml(item.id)}" aria-expanded="false">Why flagged?</button></div>` : "";
 
   let dispositionCell;
-  if (cfg === PILLAR_WORKFLOWS.COMPLETENESS_MANUAL && !isSynthetic && item.id) {
-    // Same 3xN matrix as the grouped multi-field view (k=1 here), so both look and behave alike.
-    dispositionCell = renderDispositionMatrix({ cells: { [fieldName]: item } }, [{ column_name: fieldName }]);
-  } else if (cfg.mode === "decision") {
-    dispositionCell = `<span class="badge status-${escapeHtml(item.status)}">${escapeHtml(item.status)}</span>`;
+  if (useMatrix) {
+    // Same matrix as the grouped multi-field view (k=1 here), so both look and behave alike.
+    dispositionCell = renderDispositionMatrix({ cells: { [fieldName]: item } },
+      [{ key: fieldName, column_name: fieldName }], cfg.dispositions);
   } else {
     const verdict = item.review_verdict || "PENDING";
     const tone = VERDICT_TONE[verdict] || "warning";
@@ -1198,15 +1207,13 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, isAutoFixable, helpe
 
   return `
     <tr data-item-id="${escapeHtml(item.id || "")}" class="item-row status-${escapeHtml(item.status)}${isSynthetic ? " synthetic-row" : ""}">
-      ${cfg.mode === "decision" ? `<td><input type="checkbox" class="item-checkbox" ${disabled ? "disabled" : ""}></td>` : ""}
       <td>${escapeHtml(item.row_index ?? "-")}</td>
       <td>${useMatrix ? escapeHtml(item.key_value || "") : `${keyCell}${item.key_value ? `: ${escapeHtml(item.key_value)}` : ""}`}</td>
       <td>${detailsCell}${whyButton}</td>
       ${helperCols.map((c) => c === targetHelperCol
         ? `<td class="helper-col helper-col-editable">${inlineCorrected}</td>`
         : helperCell(finding.id, item.id, c)).join("")}
-      ${cfg.showCorrectedInput ? `<td><input type="text" class="corrected-input" placeholder="Enter value..." value="${escapeHtml(item.corrected_data || "")}" ${disabled ? "disabled" : ""}></td>` : ""}
-      <td${cfg === PILLAR_WORKFLOWS.COMPLETENESS_MANUAL ? ' class="dispo-matrix-cell"' : ""}>${dispositionCell}</td>
+      <td${useMatrix ? ' class="dispo-matrix-cell"' : ""}>${dispositionCell}</td>
     </tr>
   `;
 }
@@ -1313,67 +1320,6 @@ function attachPillarWorkflowHandlers(findingId, finding, isSynthetic) {
   const section = document.getElementById("lazySectionRecords");
   section.querySelectorAll("[data-why-item]").forEach((btn) => btn.addEventListener("click", () => toggleWhy(btn)));
 
-  section.querySelectorAll("[data-bulk]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const status = button.dataset.bulk;
-      const checkedRows = section.querySelectorAll(".item-checkbox:checked");
-
-      if (checkedRows.length === 0) {
-        alert("Select at least one pending item first.");
-        return;
-      }
-
-      for (const checkbox of checkedRows) {
-        const row = checkbox.closest("tr");
-        const itemId = row.dataset.itemId;
-        const correctedInput = row.querySelector(".corrected-input");
-        const correctedData = correctedInput ? correctedInput.value : "";
-
-        await fetchJSON(`${API_BASE}/finding-items/${encodeURIComponent(itemId)}/decision`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status, corrected_data: correctedData }),
-        });
-      }
-
-      await loadFindings();
-      await reopenRecordsSection(findingId, finding);
-    });
-  });
-
-  section.querySelectorAll("[data-autofill-item]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const itemId = btn.dataset.autofillItem;
-      const fixVal = btn.dataset.autofillVal;
-      await fetchJSON(`${API_BASE}/finding-items/${encodeURIComponent(itemId)}/autofill`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fix_value: fixVal }),
-      });
-      await loadFindings();
-      await reopenRecordsSection(findingId, finding);
-    });
-  });
-
-  const bulkAutofillBtn = section.querySelector("#bulkAutofillBtn");
-  if (bulkAutofillBtn && finding.auto_fix_value) {
-    bulkAutofillBtn.addEventListener("click", async () => {
-      const pendingRows = section.querySelectorAll(".item-row.status-PENDING");
-      for (const row of pendingRows) {
-        const itemId = row.dataset.itemId;
-        if (itemId) {
-          await fetchJSON(`${API_BASE}/finding-items/${encodeURIComponent(itemId)}/autofill`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fix_value: finding.auto_fix_value }),
-          });
-        }
-      }
-      await loadFindings();
-      await reopenRecordsSection(findingId, finding);
-    });
-  }
-
   section.querySelectorAll("[data-edit-toggle]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const row = btn.closest("tr");
@@ -1389,7 +1335,9 @@ function attachPillarWorkflowHandlers(findingId, finding, isSynthetic) {
     btn.addEventListener("click", async () => {
       const itemId = btn.dataset.itemId;
       const verdict = btn.dataset.verdict;
-      const row = btn.closest("tr");
+      // The record's own row, not the nearest <tr>: the matrix dot sits inside the small matrix
+      // table, whose rows don't contain the corrected-value input (that is in the field's cell).
+      const row = btn.closest("tr.item-row") || btn.closest("tr");
       const correctedInput = row ? row.querySelector(".corrected-input") : null;
       // null (not "") when this row has no corrected-value field at all, so the request omits
       // corrected_data and the server leaves it untouched - only a row that actually has the
