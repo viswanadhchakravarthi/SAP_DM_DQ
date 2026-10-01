@@ -49,11 +49,15 @@ def promote_approved_findings(run_id: Optional[str] = None,
             store.mark_promoted(f["id"])  # prevents it from being re-evaluated forever
             continue
 
+        run = store.get_run(f["run_id"]) or {}
         skill = registry.save_skill(
             table=f["table_name"], column=f["column_name"],
             hypothesis=f.get("hypothesis", ""), description=description,
             check_code=f["check_code"], severity_example=f["severity"],
             source_finding_id=f["id"], source_run_id=f["run_id"],
+            category=f.get("category"), sub_type=f.get("sub_type"), rule_scope=f.get("rule_scope"),
+            industry=f.get("industry"), fix_type=f.get("fix_type"), is_anomaly=bool(f.get("is_anomaly")),
+            detail_code=f.get("detail_code"), source_client_id=run.get("client_id"),
         )
 
         memory_store.add(
@@ -66,6 +70,7 @@ def promote_approved_findings(run_id: Optional[str] = None,
                 "severity_example": skill["severity_example"],
                 "code": skill["check_code"],
                 "skill_id": skill["skill_id"],
+                "category": skill.get("category") or "",
             },
         )
 

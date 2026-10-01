@@ -40,8 +40,16 @@ def _save_registry(entries: List[Dict[str, Any]]) -> None:
 
 def save_skill(table: str, column: str, hypothesis: str, description: str,
                check_code: str, severity_example: str, source_finding_id: str,
-               source_run_id: str, tags: Optional[List[str]] = None) -> Dict[str, Any]:
-    """Persists a new skill: writes the code file + appends a registry entry. Returns the entry."""
+               source_run_id: str, tags: Optional[List[str]] = None,
+               category: Optional[str] = None, sub_type: Optional[str] = None,
+               rule_scope: Optional[str] = None, industry: Optional[str] = None,
+               fix_type: Optional[str] = None, is_anomaly: bool = False,
+               detail_code: Optional[str] = None,
+               source_client_id: Optional[str] = None) -> Dict[str, Any]:
+    """Persists a new skill: writes the code file + appends a registry entry. Returns the entry.
+
+    The finding's classification (pillar, scope, fix type...) and its `detail_code` travel with the skill:
+    without them a re-run skill is saved as a plain Correctness finding with no row-level records."""
     _ensure_dirs()
     skill_id = str(uuid.uuid4())
     code_filename = f"{table.lower()}_{column.lower()}_{skill_id[:8]}.py"
@@ -67,6 +75,14 @@ def save_skill(table: str, column: str, hypothesis: str, description: str,
         "severity_example": severity_example,
         "source_finding_id": source_finding_id,
         "source_run_id": source_run_id,
+        "source_client_id": source_client_id,
+        "category": category,
+        "sub_type": sub_type,
+        "rule_scope": rule_scope,
+        "industry": industry,
+        "fix_type": fix_type,
+        "is_anomaly": bool(is_anomaly),
+        "detail_code": detail_code,       # lists the offending rows; local-only, never sent to an LLM
         "created_at": datetime.now(timezone.utc).isoformat(),
         "reuse_count": 0,
     }
@@ -91,6 +107,27 @@ def increment_reuse(skill_id: str) -> None:
         if e["skill_id"] == skill_id:
             e["reuse_count"] = e.get("reuse_count", 0) + 1
     _save_registry(entries)
+
+
+_CLASSIFICATION_FIELDS = ("category", "sub_type", "rule_scope", "industry", "fix_type", "is_anomaly", "detail_code")
+
+
+def skill_classification(skill: Dict[str, Any]) -> Dict[str, Any]:
+    """The pillar, scope, fix type, anomaly flag and detail_code of a skill. Skills promoted before these were
+    stored get them from the finding they were promoted from; failing that, the defaults a finding has."""
+    out = {k: skill.get(k) for k in _CLASSIFICATION_FIELDS}
+    if not out["category"] and skill.get("source_finding_id"):
+        try:
+            from .. import episodic_store as store
+            src = store.get_finding(skill["source_finding_id"]) or {}
+            for k in _CLASSIFICATION_FIELDS:
+                out[k] = out[k] if out[k] else src.get(k)
+        except Exception:   # an unreadable history only costs the classification, never the run
+            pass
+    out["category"] = out["category"] or "CORRECTNESS"
+    out["rule_scope"] = out["rule_scope"] or "UNIVERSAL"
+    out["is_anomaly"] = bool(out["is_anomaly"])
+    return out
 
 
 # adding exact-match lookup

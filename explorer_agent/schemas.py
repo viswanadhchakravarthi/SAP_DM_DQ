@@ -247,11 +247,14 @@ class ColumnBinding(BaseModel):
         "(company code, purchasing/sales organisation, plant, storage location, valuation area). "
         "DELETION_FLAG: marks the record for deletion. BLOCK_FLAG: blocks the record for posting, "
         "purchasing, sales or in general. CREATED_DATE: when the record was created. DATE: any other date. "
-        "COUNTRY: a country key. POSTAL_CODE, CITY, STREET: address parts. TAX_ID: a tax / VAT / "
-        "registration number. LEGAL_NAME: a name of a person or organisation (incl. account holder). "
+        "COUNTRY: a country key. POSTAL_CODE, CITY, STREET: address parts. TAX_ID: a tax, VAT, GST or "
+        "company-registration number issued by a tax authority or business register - NOT an insurance, "
+        "membership, patient, employee, passport or licence number (those are OTHER, or KEY when they identify "
+        "the row). LEGAL_NAME: a name of a person or organisation (incl. account holder). "
         "SEARCH_TERM: a short sort/search field. EMAIL, PHONE: contact data. AMOUNT: a money value. "
         "QUANTITY: a count, weight, stock level or duration. CURRENCY: a currency key. CODE: a key into a "
-        "configured value set (account group, payment terms, incoterms, material type, unit, language). "
+        "closed value set that repeats a few values (status, type, category, class, gender, department, unit, "
+        "language, account group, payment terms, material type). "
         "TEXT: a free-text description. OTHER: none of these."))
     part_of_key: bool = Field(default=False, description=(
         "True for every column that, together with the others marked true, identifies ONE row of this table."))

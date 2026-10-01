@@ -85,6 +85,10 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE findings ADD COLUMN is_anomaly INTEGER DEFAULT 0")
     if "sub_type" not in existing_cols:
         conn.execute("ALTER TABLE findings ADD COLUMN sub_type TEXT")
+    if "detail_code" not in existing_cols:
+        # The pandas code that lists a finding's offending rows (LLM-written, no client data). Kept so that
+        # promoting the finding to a skill carries it: a skill without it re-runs with no row-level records.
+        conn.execute("ALTER TABLE findings ADD COLUMN detail_code TEXT")
     if "superseded_by" not in existing_cols:
         # id of the newer finding that replaced this one (a re-run regenerated a check whose earlier version
         # had no row-level records). The row is kept, but hidden from every list (see _finding_filters).
@@ -477,21 +481,22 @@ def save_finding(run_id: str, table: str, column: str, hypothesis: str, check_co
                  raw_result: Any, category: str = "CORRECTNESS", rule_scope: str = "UNIVERSAL",
                  industry: Optional[str] = None, fix_type: Optional[str] = None,
                  auto_fix_value: Optional[str] = None, is_anomaly: bool = False,
-                 sub_type: Optional[str] = None) -> str:
+                 sub_type: Optional[str] = None, detail_code: Optional[str] = None) -> str:
     finding_id = str(uuid.uuid4())
     with get_connection() as conn:
         conn.execute(
             """INSERT INTO findings
             (id, run_id, table_name, column_name, hypothesis, check_code,
              result_summary, severity, confidence, reusable, raw_result,
-             created_at, status, category, rule_scope, industry, fix_type, auto_fix_value, is_anomaly, sub_type)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, ?, ?, ?, ?)""",
+             created_at, status, category, rule_scope, industry, fix_type, auto_fix_value, is_anomaly, sub_type,
+             detail_code)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, ?, ?, ?, ?, ?)""",
             (finding_id, run_id, table, column, hypothesis, check_code,
              result_summary, severity, confidence, int(bool(reusable)),
              json.dumps(raw_result, default=str),
              datetime.now(timezone.utc).isoformat(),
              category or "CORRECTNESS", rule_scope or "UNIVERSAL",
-             industry, fix_type, auto_fix_value, int(bool(is_anomaly)), sub_type),
+             industry, fix_type, auto_fix_value, int(bool(is_anomaly)), sub_type, detail_code),
         )
     return finding_id
 
@@ -521,20 +526,25 @@ def _parse_ts(value: Optional[str]) -> Optional[datetime]:
 
 def known_findings(client_id: str, table_name: str, data_changed_at: Optional[datetime] = None) -> Dict[tuple, Dict[str, Any]]:
     """{finding_key: {finding_id, run_id, status}} of this client's earlier findings on a table that a
-    re-run should NOT create again: not replaced, not a duplicate group, with row-level records, and from
-    a run that started after the table's data last changed (an older finding describes data that no longer
-    exists). A finding with no records is deliberately not 'known' - it is the one worth regenerating."""
+    re-run should NOT create again: not replaced, not a duplicate group, and from a run that started
+    after the table's data last changed (an older finding describes data that no longer exists).
+
+    Known = in progress (pending, with row-level records) or already settled by a human: APPROVED,
+    REJECTED, or promoted to a skill - those count even without records, because the decision is the
+    point and regenerating would put an unreviewed copy next to it. The only finding that is NOT known
+    is a pending, unpromoted one with no records: it is the one worth regenerating."""
     with get_connection() as conn:
         rows = conn.execute(
-            "SELECT f.id, f.run_id, f.table_name, f.column_name, f.category, f.check_code, f.status, r.started_at, "
-            "(SELECT COUNT(*) FROM finding_items i WHERE i.finding_id = f.id) AS n "
+            "SELECT f.id, f.run_id, f.table_name, f.column_name, f.category, f.check_code, f.status, f.promoted_at, "
+            "r.started_at, (SELECT COUNT(*) FROM finding_items i WHERE i.finding_id = f.id) AS n "
             "FROM findings f JOIN runs r ON r.run_id = f.run_id "
             "WHERE r.client_id = ? AND UPPER(f.table_name) = ? AND f.superseded_by IS NULL "
             "AND f.category != 'DUPLICATE' ORDER BY r.started_at DESC",
             (client_id, table_name.upper())).fetchall()
     known: Dict[tuple, Dict[str, Any]] = {}
     for r in rows:
-        if not r["n"]:
+        settled = r["status"] in ("APPROVED", "REJECTED") or bool(r["promoted_at"])
+        if not r["n"] and not settled:
             continue
         started = _parse_ts(r["started_at"])
         if data_changed_at is not None and (started is None or started < data_changed_at):
@@ -545,13 +555,15 @@ def known_findings(client_id: str, table_name: str, data_changed_at: Optional[da
 
 
 def supersede_empty_findings(client_id: str, table_name: str, key: tuple, new_finding_id: str) -> int:
-    """Hide this client's earlier findings of the same check that have no row-level records (the new
-    finding replaces them). Their rows stay in the database, marked superseded_by the new one."""
+    """Hide this client's earlier findings of the same check that are still pending, unpromoted and have
+    no row-level records (the new finding replaces them). A finding a human has decided or that became a
+    skill is never replaced. Their rows stay in the database, marked superseded_by the new one."""
     with get_connection() as conn:
         rows = conn.execute(
             "SELECT f.id, f.table_name, f.column_name, f.category, f.check_code FROM findings f "
             "JOIN runs r ON r.run_id = f.run_id WHERE r.client_id = ? AND UPPER(f.table_name) = ? "
             "AND f.superseded_by IS NULL AND f.id != ? AND f.category != 'DUPLICATE' "
+            "AND f.status = 'PENDING' AND f.promoted_at IS NULL "
             "AND NOT EXISTS (SELECT 1 FROM finding_items i WHERE i.finding_id = f.id)",
             (client_id, table_name.upper(), new_finding_id)).fetchall()
         old = [r["id"] for r in rows

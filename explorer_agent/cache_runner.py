@@ -27,13 +27,21 @@ sandbox = SandboxExecutor(
 )
 
 
+MAX_DETAIL_ROWS = 50
+
+
 def run_cached_skills(
     table_name: str,
     column: str,
     df: pd.DataFrame,
     reflector_llm: Optional[Any] = None,
+    all_tables: Optional[Dict[str, pd.DataFrame]] = None,
 ) -> List[Dict[str, Any]]:
-    """Execute approved skills for one table column and return fresh findings."""
+    """Execute approved skills for one table column and return fresh findings.
+
+    A finding from a skill is as complete as a fresh one: it carries the skill's own classification
+    (pillar, scope, fix type...) and, when the skill has `detail_code`, its row-level records. The other
+    tables are available to the code (`tables[...]`), so a cross-table check does not fail for lack of them."""
     cached_skills = registry.get_skills_for_table_column(table_name, column)
 
     if not cached_skills:
@@ -51,10 +59,23 @@ def run_cached_skills(
 
     findings: List[Dict[str, Any]] = []
 
-    with sandbox.session({"df": df}) as box:
-        executed = [(skill, box.run(skill["check_code"])) for skill in cached_skills]
+    context = {"df": df, "tables": all_tables if all_tables is not None else {table_name: df}}
+    with sandbox.session(context) as box:
+        executed = []
+        for skill in cached_skills:
+            exec_result = box.run(skill["check_code"])
+            detail_rows: List[Dict[str, Any]] = []
+            if exec_result.get("success") and skill.get("detail_code"):
+                detail = box.run(skill["detail_code"])
+                metrics.sandbox_executions += 1
+                if detail.get("success") and isinstance(detail.get("result"), list):
+                    detail_rows = detail["result"][:MAX_DETAIL_ROWS]
+                else:
+                    logger.warning("Cached skill %s: its detail_code did not produce rows (%s)",
+                                   skill["skill_id"][:8], detail.get("error") or "not a list")
+            executed.append((skill, exec_result, detail_rows))
 
-    for skill, exec_result in executed:
+    for skill, exec_result, detail_rows in executed:
         skill_id = skill["skill_id"]
         logger.debug("Re-executed cached skill %s: %s", skill_id[:8], skill["hypothesis"])
         metrics.sandbox_executions += 1
@@ -75,12 +96,21 @@ def run_cached_skills(
         )
 
         if is_issue:
+            cls = registry.skill_classification(skill)
             findings.append(
                 {
                     "table": table_name,
                     "column": column,
                     "hypothesis": skill["hypothesis"],
                     "check_code": skill["check_code"],
+                    "detail_code": cls["detail_code"],
+                    "detail_rows": detail_rows,
+                    "category": cls["category"],
+                    "sub_type": cls["sub_type"],
+                    "rule_scope": cls["rule_scope"],
+                    "industry": cls["industry"],
+                    "fix_type": cls["fix_type"],
+                    "is_anomaly": cls["is_anomaly"],
                     "summary": summary,
                     "severity": severity,
                     "confidence": confidence,

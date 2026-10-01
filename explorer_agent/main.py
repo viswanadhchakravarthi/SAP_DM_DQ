@@ -24,6 +24,7 @@ from .duplicate_detector import LAST_STATS as DUPLICATE_STATS
 from .data_loader import load_data_dictionary_structured
 from . import client_knowledge
 from .memory.retriever import SkillRetriever
+from .memory import skill_registry as registry
 from . import episodic_store as store
 # from . import profiler_primitives as prim
 from .llm_usage import usage
@@ -66,12 +67,17 @@ def explore_table(graph, table_name, df, dictionary, all_tables, skill_retriever
 
     cached_findings = []
     columns_with_cache = set()
+    skill_covered = set()   # {(COLUMN, pillar)} a promoted skill already checks - the planner must not redo them
     if Config.ENABLE_CACHE_FAST_PATH:
         for column in columns:
-            col_cached = run_cached_skills(table_name, column, df, reflector_llm=reflector_single)
+            skills = registry.get_skills_for_table_column(table_name, column)
+            if skills:
+                columns_with_cache.add(column)
+                skill_covered |= {(str(column).upper(), registry.skill_classification(s)["category"]) for s in skills}
+            col_cached = run_cached_skills(table_name, column, df, reflector_llm=reflector_single,
+                                           all_tables=all_tables)
             if col_cached:
                 cached_findings.extend(col_cached)
-                columns_with_cache.add(column)
     # Per-column cache_hits/cache_misses are recorded inside run_cached_skills()
     # itself (see cache_runner.py) - counting them again here at table
     # granularity would double-count hits against the same metric.
@@ -85,6 +91,9 @@ def explore_table(graph, table_name, df, dictionary, all_tables, skill_retriever
             logger.info("[%s] %d cached-skill finding(s) the client already has were not recreated",
                         table_name, len(cached_findings) - len(kept))
         cached_findings = kept
+    # What the planner must not propose again: findings the client already has, plus what promoted skills
+    # check (even when the skill found nothing this time - the check exists, re-inventing it is waste).
+    known_checks = known_checks | skill_covered
 
     profile = profile_table(df, table_name)
     for var in profile["variables"]:
@@ -422,20 +431,23 @@ def main():
                 auto_fix_value=f.get("auto_fix_value"),
                 is_anomaly=bool(f.get("is_anomaly", False)),
                 sub_type=f.get("sub_type"),
+                detail_code=f.get("detail_code"),
             )
             detail_rows = f.get("detail_rows", [])
             if detail_rows:
                 store.save_finding_items(finding_id, detail_rows)
                 logger.info("Saved %d detail row(s) for finding %s", len(detail_rows), finding_id[:8])
-                if Config.SKIP_KNOWN_FINDINGS and f.get("category") != "DUPLICATE":
-                    # This check now has its records: an earlier version of it that had none is replaced.
-                    replaced = store.supersede_empty_findings(
-                        client["client_id"], table_name,
-                        store.finding_key(f["table"], f.get("column"), f.get("category"), f.get("check_code")),
-                        finding_id)
-                    if replaced:
-                        logger.info("[%s] %s: replaced %d earlier finding(s) that had no row-level records",
-                                    table_name, f.get("column"), replaced)
+            if Config.SKIP_KNOWN_FINDINGS and f.get("category") != "DUPLICATE":
+                # The new finding takes over from an earlier copy of the same check that is still pending,
+                # unpromoted and has no records (it would otherwise pile up, one more per run). A finding a
+                # human decided, or that became a skill, is never replaced.
+                replaced = store.supersede_empty_findings(
+                    client["client_id"], table_name,
+                    store.finding_key(f["table"], f.get("column"), f.get("category"), f.get("check_code")),
+                    finding_id)
+                if replaced:
+                    logger.info("[%s] %s: replaced %d earlier pending finding(s) that had no row-level records",
+                                table_name, f.get("column"), replaced)
 
         total_findings += len(findings)
         logger.info("[%s] done in %.2fs - %d finding(s)", table_name, time.perf_counter() - table_start, len(findings))

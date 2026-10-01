@@ -331,6 +331,7 @@ def build_explorer_graph(planner_structured, reflector_structured, repair_struct
                 "industry": industry, "fix_type": fix_type,
                 "auto_fix_value": auto_fix_value, "is_anomaly": is_anomaly,
                 "sub_type": sub_type,
+                "detail_code": check.detail_code if check else None,   # kept so a promoted skill can list its rows too
                 "raw_tool_result": str(r["result"]),
                 "_check_index": r["check_index"],
             })

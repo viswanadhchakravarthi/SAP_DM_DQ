@@ -73,7 +73,12 @@ How to decide:
    - the date a record was CREATED is CREATED_DATE (not DATE);
    - the name of a vendor, customer, partner or account holder is LEGAL_NAME (TEXT is only for descriptions);
    - company code, purchasing / sales organisation, plant, storage location are ORG_UNIT (not CODE);
-   - bank keys, account numbers and IBANs are OTHER unless they identify a row (then part_of_key).
+   - bank keys, account numbers and IBANs are OTHER unless they identify a row (then part_of_key);
+   - other identification numbers (insurance, membership, patient, employee, passport, licence) are OTHER, or
+     part_of_key when they identify a row of this table. TAX_ID is only for a tax / VAT / GST / company-registration
+     number: a rule will check its format against the country, so a wrong TAX_ID produces false findings;
+   - the schema may not be SAP at all (a clinic, a shop, a school): map by what the column MEANS in its own \
+domain, and use OTHER rather than the nearest-sounding concept when none truly fits.
 4. part_of_key: mark the columns that together identify one row of THIS table.
 5. references: set it for EVERY column holding the key of another listed table ('TABLE.COLUMN' exactly as \
    listed). value_overlap gives the share of this column's distinct values found in a unique column of \

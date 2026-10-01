@@ -23,6 +23,7 @@ def rebuild_index() -> int:
                 "table": skill["table"], "column": skill["column"],
                 "hypothesis": skill["hypothesis"], "severity_example": skill["severity_example"],
                 "code": skill["check_code"], "skill_id": skill["skill_id"],
+                "category": registry.skill_classification(skill)["category"],
             },
         )
     return len(skills)
