@@ -517,7 +517,7 @@ def apply_value_maps(tables: Dict[str, pd.DataFrame],
             continue
         df = tables[table].copy()
         for col, vmap in maps.items():
-            original = df[col].fillna("").astype(str).str.strip()
+            original = df[col].astype(object).where(df[col].notna(), "").astype(str).str.strip()   # safe for Int64
             df[col] = original.map(lambda v: vmap.get(v, v)).where(df[col].notna(), df[col])
             logger.info("[%s] %s: %d value(s) translated by value mapping before the rules (%d mapping(s))",
                         table, col, int(original.isin(list(vmap)).sum()), len(vmap))

@@ -2099,8 +2099,8 @@ async function openRunExplorerModal() {
   const changeLink = `<a href="./?client=${encodeURIComponent(CLIENT_ID)}">Change client / data</a>`;
   if (!WORKSPACE.ready) {
     modalBody.innerHTML = `
-      <p class="empty-state">${escapeHtml(WORKSPACE.client.name)} needs a data dictionary and at least one table
-        before a run can start. ${changeLink}</p>`;
+      <p class="empty-state">${escapeHtml(WORKSPACE.client.name)} needs at least one table, and either a data
+        dictionary or the "I don't have a data dictionary" choice, before a run can start. ${changeLink}</p>`;
     document.getElementById("runExplorerModal").classList.remove("hidden");
     return;
   }
@@ -2108,7 +2108,7 @@ async function openRunExplorerModal() {
   modalBody.innerHTML = `
     <div class="run-workspace-summary">
       <div><span class="rws-label">Client</span><strong>${escapeHtml(WORKSPACE.client.name)}</strong></div>
-      <div><span class="rws-label">Data dictionary</span>${escapeHtml(WORKSPACE.dictionary.file)}</div>
+      <div><span class="rws-label">Data dictionary</span>${WORKSPACE.dictionary ? escapeHtml(WORKSPACE.dictionary.file) : "none (optional for this client)"}</div>
       <div><span class="rws-label">Tables</span>
         ${WORKSPACE.tables.map((t) => `<span class="rws-table" title="${t.rows} rows · ${t.columns} columns">${escapeHtml(t.table)}</span>`).join("")}
       </div>

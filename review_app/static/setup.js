@@ -280,7 +280,7 @@ function render() {
   } else if (selected.isNew) {
     selection.innerHTML = `<span class="selection-chip is-new">+ New client: <strong>${escapeHtml(selected.name)}</strong></span>
       <span class="hint-text">It is created when you upload its first file.</span>`;
-    el("dataStepHint").textContent = `Upload ${selected.name}'s data dictionary and tables.`;
+    el("dataStepHint").textContent = `Upload ${selected.name}'s tables and, if there is one, its data dictionary.`;
   } else {
     const known = clients.find((c) => c.client_id === selected.client_id);
     const decisions = known?.duplicate_decisions ? ` · ${known.duplicate_decisions} remembered decision(s)` : "";
@@ -288,17 +288,30 @@ function render() {
       <span class="hint-text">Existing client${escapeHtml(decisions)}</span>`;
     el("dataStepHint").textContent = workspace?.tables?.length
       ? "Previously uploaded files are kept - replace or add files if the data changed."
-      : `Upload ${selected.name}'s data dictionary and tables.`;
+      : `Upload ${selected.name}'s tables and, if there is one, its data dictionary.`;
   }
 
   const dictionary = workspace?.dictionary;
+  // Ticked "I don't have a data dictionary": the dictionary becomes optional (an uploaded one still wins).
+  const noDictionary = Boolean(workspace?.no_dictionary) && !dictionary;
   const hasFiles = Boolean(dictionary || workspace?.tables?.length);
   el("clearFilesBtn").classList.toggle("hidden", !selected || selected.isNew || !hasFiles);
+  const tick = el("noDictionary");
+  tick.checked = noDictionary;
+  tick.disabled = locked || Boolean(dictionary);   // with a dictionary uploaded there is nothing to opt out of
+  tick.title = dictionary ? "A data dictionary is uploaded. Use 'Clear all files' to run without one." : "";
+  el("dictionaryRequired").classList.toggle("hidden", noDictionary);
   el("dictionaryState").innerHTML = dictionary ? `
     <div class="file-row">
       <span class="file-name">📘 ${escapeHtml(dictionary.file)}</span>
       <span class="file-meta">${dictionary.rows} field definitions · ${dictionary.tables_described} table(s) · uploaded ${escapeHtml(formatWhen(dictionary.uploaded_at))}</span>
       <span class="file-hint">Upload another file to replace it</span>
+    </div>` : noDictionary ? `
+    <div class="file-row">
+      <span class="file-name">📘 No data dictionary</span>
+      <span class="file-meta">Optional for this client: runs use column names and statistics only, with no column
+        descriptions or declared data types.</span>
+      <span class="file-hint">You can still upload one later</span>
     </div>` : "";
 
   const tables = workspace?.tables || [];
@@ -326,13 +339,26 @@ function render() {
   const missing = [];
   if (!selected) missing.push("choose a client");
   else {
-    if (!dictionary) missing.push("upload a data dictionary");
+    if (!dictionary && !noDictionary) missing.push("upload a data dictionary (or tick “I don't have a data dictionary”)");
     if (!tables.length) missing.push("upload at least one table");
   }
   el("proceedBtn").disabled = missing.length > 0;
   el("proceedHint").textContent = missing.length
     ? `To continue: ${missing.join(", ")}.`
-    : `${selected.name} · ${dictionary.file} · ${tables.length} table(s)`;
+    : `${selected.name} · ${dictionary ? dictionary.file : "no data dictionary"} · ${tables.length} table(s)`;
+}
+
+// The tick box: the client has no data dictionary, so the dictionary becomes optional. A new client is
+// created on the spot, since the choice is stored with its workspace.
+async function setNoDictionary(value) {
+  try {
+    await ensureClientCreated();
+    workspace = await fetchJSON(`${API_BASE}/clients/${encodeURIComponent(selected.client_id)}/no-dictionary`,
+      { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ value }) });
+  } catch (error) {
+    alert(`Could not save the choice: ${error.message}`);
+  }
+  render();
 }
 
 function proceed() {
@@ -505,6 +531,7 @@ window.addEventListener("scroll", positionPicker, true);  // follow the button w
   el("clearFilesBtn").addEventListener("click", clearAllFiles);
   setupCombobox();
   setupDropZone("dictionaryDrop", "dictionaryInput", "dictionary");
+  el("noDictionary").addEventListener("change", (event) => setNoDictionary(event.target.checked));
   setupDropZone("tablesDrop", "tablesInput", "tables");
   el("proceedBtn").addEventListener("click", proceed);
 

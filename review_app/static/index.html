@@ -48,7 +48,7 @@
 
       <div class="upload-block">
         <div class="upload-block-head">
-          <h3>Data dictionary <span class="required-mark">*</span></h3>
+          <h3>Data dictionary <span class="required-mark" id="dictionaryRequired">*</span></h3>
           <span class="hint-text">Master metadata CSV with columns <code>Table</code>, <code>Field</code>, <code>Description</code>
             (optionally <code>Data_Type</code>, <code>Notes</code>).</span>
         </div>
@@ -57,6 +57,11 @@
           <input type="file" id="dictionaryInput" accept=".csv,text/csv" hidden>
           <span class="drop-icon" aria-hidden="true">📘</span>
           <span><strong>Choose dictionary CSV</strong> or drop it here</span>
+        </label>
+        <label class="checkbox-inline no-dictionary-row" id="noDictionaryRow">
+          <input type="checkbox" id="noDictionary" disabled>
+          <span>I don't have a data dictionary <span class="hint-text">(optional - the run then uses column names and
+            statistics only)</span></span>
         </label>
       </div>
 

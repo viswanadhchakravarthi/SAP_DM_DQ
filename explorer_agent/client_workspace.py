@@ -73,6 +73,9 @@ def get_workspace(client_id: str) -> Dict[str, Any]:
     dictionary = meta.get("dictionary")
     if dictionary and not (base / dictionary["file"]).exists():
         dictionary = None
+    # The reviewer ticked "I don't have a data dictionary": a run then goes ahead without one (names
+    # and statistics only - no descriptions or declared data types). An uploaded dictionary wins.
+    no_dictionary = bool(meta.get("no_dictionary")) and dictionary is None
     tables = [
         {"table": name, **info}
         for name, info in sorted(meta.get("tables", {}).items())
@@ -82,9 +85,25 @@ def get_workspace(client_id: str) -> Dict[str, Any]:
         "client_id": client_id,
         "data_dir": str(base),
         "dictionary": dictionary,
+        "no_dictionary": no_dictionary,
         "tables": tables,
-        "ready": bool(dictionary and tables),
+        "ready": bool((dictionary or no_dictionary) and tables),
     }
+
+
+def set_no_dictionary(client_id: str, value: bool) -> Dict[str, Any]:
+    """Record that this client has no data dictionary (or that it does after all). Refused while a
+    dictionary is uploaded: the two would contradict each other, and the upload is what a run uses."""
+    with _lock:
+        meta = _read_metadata(client_id)
+        base = workspace_dir(client_id)
+        dictionary = meta.get("dictionary")
+        if value and dictionary and (base / dictionary["file"]).exists():
+            raise WorkspaceError("A data dictionary is already uploaded for this client - "
+                                 "use 'Clear all files' first if you want to run without one.")
+        meta["no_dictionary"] = bool(value)
+        _write_metadata(client_id, meta)
+    return get_workspace(client_id)
 
 
 def _safe_filename(filename: str) -> str:
@@ -212,6 +231,7 @@ def save_dictionary(client_id: str, original_filename: str, tmp_path: Path) -> D
                 "tables_described": int(df[table_col].nunique()),
                 "uploaded_at": datetime.now(timezone.utc).isoformat(),
             }
+            meta["no_dictionary"] = False   # uploading one settles it
             _write_metadata(client_id, meta)
         return get_workspace(client_id)
     finally:

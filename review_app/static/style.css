@@ -1174,6 +1174,16 @@ header .btn-icon:hover {
 .required-mark {
   color: #dc2626;
 }
+.required-mark.hidden { display: none; }
+
+/* "I don't have a data dictionary" tick box under the dictionary drop zone (page 1) */
+.no-dictionary-row {
+  margin-top: 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.no-dictionary-row input:disabled { cursor: not-allowed; }
+.no-dictionary-row .hint-text { margin: 0; }
 
 .field-hint {
   margin-top: 0;

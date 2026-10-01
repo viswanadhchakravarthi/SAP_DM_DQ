@@ -158,6 +158,12 @@ def main():
              "review decisions (memory_store/clients/<client>/) are linked to it.",
     )
     parser.add_argument("--dictionary-file", default=Config.DATA_DICTIONARY_FILE)
+    parser.add_argument(
+        "--no-dictionary", action="store_true",
+        help="Run without a data dictionary (the client has none): column meaning then comes from "
+             "names, statistics and the SAP rule pack only, and number columns are typed by a safe "
+             "guess (values with leading zeros stay text).",
+    )
     parser.add_argument("--model", default=None,
                         help="Model for the PRIMARY provider (default: its model in config.yaml).")
     parser.add_argument("--temperature", type=float, default=None,
@@ -218,12 +224,19 @@ def main():
         Config.ENABLE_CACHE_FAST_PATH, args.duplicates_only, args.deterministic_only, Config.SAP_RULES_ENABLED,
     )
 
-    dictionary_path = str(Path(args.data_dir) / args.dictionary_file)
-    dictionary = load_data_dictionary(dictionary_path)
-    # SAP data types from the dictionary, so CHAR keys keep their zero padding
-    # and are not silently turned into numbers - see data_loader.load_table.
-    column_types = dictionary_column_types(dictionary_path)
-    discovered = discover_table_files(args.data_dir, args.dictionary_file)
+    if args.no_dictionary:
+        # Nothing to read, and nothing in the folder to skip: every CSV there is a table.
+        dictionary_path, dictionary, column_types, dictionary_file = None, {}, {}, None
+        logger.info("Running without a data dictionary (--no-dictionary): no column descriptions or "
+                    "declared data types; column meaning comes from names, statistics and the rule pack.")
+    else:
+        dictionary_path = str(Path(args.data_dir) / args.dictionary_file)
+        dictionary = load_data_dictionary(dictionary_path)
+        # SAP data types from the dictionary, so CHAR keys keep their zero padding
+        # and are not silently turned into numbers - see data_loader.load_table.
+        column_types = dictionary_column_types(dictionary_path)
+        dictionary_file = args.dictionary_file
+    discovered = discover_table_files(args.data_dir, dictionary_file)
     wanted = {t.upper() for t in args.tables} if args.tables else None
     table_files = {k: v for k, v in discovered.items() if wanted is None or k in wanted}
     if not table_files:
@@ -360,7 +373,8 @@ def main():
     # Handoff to the Mapping / Value Mapping Agent: what every source column looks like.
     handoff_path = None
     try:
-        doc = structural_profile.build_profile(tables, table_files, load_data_dictionary_structured(dictionary_path),
+        doc = structural_profile.build_profile(tables, table_files,
+                                               load_data_dictionary_structured(dictionary_path) if dictionary_path else {},
                                                mappings, client, run_id)
         handoff_path = structural_profile.write_profile(doc)
     except Exception as exc:

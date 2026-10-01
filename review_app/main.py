@@ -90,6 +90,10 @@ class HelperColumnsRequest(BaseModel):
     columns: List[str] = []
 
 
+class NoDictionaryRequest(BaseModel):
+    value: bool
+
+
 class RunExplorerRequest(BaseModel):
     # Data folder, dictionary and tables all come from this client's workspace.
     client_id: str
@@ -171,6 +175,18 @@ async def upload_dictionary(client_id: str, filename: str, request: Request):
 @app.put("/api/clients/{client_id}/tables")
 async def upload_table(client_id: str, filename: str, request: Request):
     return await _receive_upload(client_id, filename, request, client_workspace.save_table)
+
+
+@app.put("/api/clients/{client_id}/no-dictionary")
+def put_no_dictionary(client_id: str, body: NoDictionaryRequest):
+    """Page 1 tick box "I don't have a data dictionary": makes the dictionary optional, so a run can
+    start with tables alone. Refused while a dictionary is uploaded."""
+    client = _require_client(client_id)
+    try:
+        workspace = client_workspace.set_no_dictionary(client_id, body.value)
+    except client_workspace.WorkspaceError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"client": client, **workspace}
 
 
 @app.delete("/api/clients/{client_id}/tables/{table}")
@@ -751,9 +767,11 @@ def _build_explorer_cli_args(body: RunExplorerRequest, client: dict, workspace: 
     user actually set, so config.yaml/CLI defaults still apply otherwise.
     Data folder and dictionary always come from the client's workspace, never
     from a path in the request."""
-    args = ["--client", client["name"],
-            "--data-dir", workspace["data_dir"],
-            "--dictionary-file", workspace["dictionary"]["file"]]
+    args = ["--client", client["name"], "--data-dir", workspace["data_dir"]]
+    # No uploaded dictionary only happens when the reviewer ticked "I don't have one" (the run
+    # endpoint refuses a workspace that is neither): the CLI then runs on names and statistics alone.
+    args += (["--dictionary-file", workspace["dictionary"]["file"]] if workspace["dictionary"]
+             else ["--no-dictionary"])
     if body.model:
         args += ["--model", body.model]
     if body.temperature is not None:
@@ -778,7 +796,8 @@ def run_explorer_endpoint(body: RunExplorerRequest):
     workspace = client_workspace.get_workspace(body.client_id)
     if not workspace["ready"]:
         raise HTTPException(status_code=400,
-                            detail="Upload a data dictionary and at least one table for this client first.")
+                            detail="Upload at least one table for this client first, and either a data dictionary "
+                                   "or tick \"I don't have a data dictionary\".")
     cli_args = _build_explorer_cli_args(body, client, workspace)
     try:
         job_id = job_manager.start_job(cli_args)

@@ -72,7 +72,9 @@ def load_pack(path: Optional[str] = None) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 def text(series: pd.Series) -> pd.Series:
-    return series.fillna("").astype(str).str.strip()
+    # Not series.fillna(""): a nullable Int64 column (digit-only text such as a postal code or bank key
+    # typed as a number when the client has no data dictionary) refuses "" and raises TypeError.
+    return series.astype(object).where(series.notna(), "").astype(str).str.strip()
 
 
 def upper(series: pd.Series) -> pd.Series:
