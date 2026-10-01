@@ -33,6 +33,7 @@ class RunMetrics:
     sap_rule_rows: int = 0
     planner_checks_covered_by_rules: int = 0  # planner checks dropped because a rule already ran them
     anomaly_findings: int = 0          # of sap_rule_findings, from anomaly_rules.py
+    known_findings_skipped: int = 0    # findings (rules and checks) the client already had, not recreated
     # Column mapping (column_mapping.py): what each column means, for the rule engines.
     column_mapping_agent: int = 0      # tables mapped from the Mapping Agent's input file (free)
     mapping_candidates_below_threshold: int = 0  # PROPOSED candidates under handoff.min_confidence (not used)
@@ -49,7 +50,7 @@ class RunMetrics:
             "repair_llm_calls=%d checks_repaired=%d preflight_rejected=%d llm_call_failures=%d llm_input_tokens=%d llm_output_tokens=%d llm_reasoning_tokens=%d "
             "sap_rules_evaluated=%d sap_rule_findings=%d sap_rule_rows=%d planner_checks_covered_by_rules=%d "
             "anomaly_findings=%d column_mapping_standard=%d column_mapping_hits=%d column_mapping_llm_calls=%d "
-            "column_mapping_failures=%d",
+            "column_mapping_failures=%d known_findings_skipped=%d",
             self.planner_llm_calls, self.reflector_llm_calls,
             self.duplicate_rule_llm_calls, self.duplicate_rule_hits, self.duplicate_rule_misses,
             self.sandbox_executions, self.cache_hits, self.cache_misses,
@@ -57,6 +58,7 @@ class RunMetrics:
             self.sap_rules_evaluated, self.sap_rule_findings, self.sap_rule_rows,
             self.planner_checks_covered_by_rules, self.anomaly_findings, self.column_mapping_standard,
             self.column_mapping_hits, self.column_mapping_llm_calls, self.column_mapping_failures,
+            self.known_findings_skipped,
         )
 
     def reset(self):
@@ -80,6 +82,7 @@ class RunMetrics:
         self.sap_rule_rows = 0
         self.planner_checks_covered_by_rules = 0
         self.anomaly_findings = 0
+        self.known_findings_skipped = 0
         self.column_mapping_agent = 0
         self.mapping_candidates_below_threshold = 0
         self.column_mapping_standard = 0

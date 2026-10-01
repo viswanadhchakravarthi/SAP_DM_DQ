@@ -27,6 +27,8 @@ from typing import Dict, List, Optional, Set
 import pandas as pd
 from pandas.api import types as ptypes
 
+from .sandbox import SANDBOX_NAMES
+
 # Methods that only work on numbers; called on a text column they raise.
 _NUMERIC_ONLY = {"mean", "std", "median", "quantile", "var"}
 _ORDER_OPS = (ast.Gt, ast.Lt, ast.GtE, ast.LtE)
@@ -57,6 +59,29 @@ def other_tables_read(code: str, own_table: str) -> List[str]:
         if isinstance(name, str) and name.upper() != own_table.upper():
             found.add(name)
     return sorted(found)
+
+
+# Frame methods whose string arguments are column names: method -> (positional index, keyword name).
+_COLUMN_ARGS = {"set_index": (0, "keys"), "groupby": (0, "by"), "sort_values": (0, "by"),
+                "drop_duplicates": (0, "subset")}
+
+
+def _defined_names(nodes: List[ast.AST]) -> Set[str]:
+    """Names the code itself binds: assignments, loop/comprehension/with targets, function and lambda
+    parameters, imports, except-handler names. Anything else it reads must come from the sandbox."""
+    names: Set[str] = set()
+    for n in nodes:
+        if isinstance(n, ast.Name) and isinstance(n.ctx, (ast.Store, ast.Del)):
+            names.add(n.id)
+        elif isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            names.add(n.name)
+        elif isinstance(n, ast.arg):
+            names.add(n.arg)
+        elif isinstance(n, (ast.Import, ast.ImportFrom)):
+            names.update((a.asname or a.name).split(".")[0] for a in n.names)
+        elif isinstance(n, ast.ExceptHandler) and n.name:
+            names.add(n.name)
+    return names
 
 
 def _const_names(node: ast.AST) -> Optional[List[str]]:
@@ -98,6 +123,16 @@ def _analyse(code: str, df: pd.DataFrame, all_tables: Dict[str, pd.DataFrame]) -
     if not any(isinstance(n, ast.Name) and n.id == "result" and isinstance(n.ctx, ast.Store) for n in nodes):
         problems.append("the code never assigns `result`")
 
+    # A name the sandbox does not provide (globals(), locals(), vars(), eval, open, ...) is a NameError
+    # at run time - seen in production logs: `NameError: name 'globals' is not defined`.
+    defined = _defined_names(nodes)
+    unavailable = sorted({n.id for n in nodes if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)
+                          and n.id not in defined and n.id not in SANDBOX_NAMES})
+    for name in unavailable:
+        problems.append(f"`{name}` does not exist in the sandbox - use only pd, np, re, datetime, df, tables, "
+                        f"names you define yourself, and basic builtins (len, str, int, float, set, list, dict, "
+                        f"sorted, sum, min, max, zip, enumerate, range, any, all, isinstance)")
+
     columns = set(map(str, df.columns))
     # Columns the code creates itself, and whether `df` is rebuilt (then its columns are unknown).
     created = {name for n in nodes if isinstance(n, ast.Subscript) and isinstance(n.ctx, ast.Store)
@@ -130,6 +165,31 @@ def _analyse(code: str, df: pd.DataFrame, all_tables: Dict[str, pd.DataFrame]) -
                     hint = _lookup(columns, col)
                     problems.append(f"column '{col}' is not in this table"
                                     + (f" (did you mean '{hint}'?)" if hint else f" (columns: {', '.join(sorted(columns))})"))
+
+    # Columns named in .set_index('X') / .groupby('X') / .sort_values('X') / .drop_duplicates(subset=[..])
+    # on `df` or on tables['T']: seen in production logs as `KeyError: "None of ['LIFNR'] are in the columns"`,
+    # a key copied from an example into a table that does not have it.
+    for n in nodes:
+        if not (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr in _COLUMN_ARGS):
+            continue
+        frame = n.func.value
+        if isinstance(frame, ast.Name) and frame.id == "df" and not df_rebuilt:
+            have, where = columns | created, "this table"
+        elif (isinstance(frame, ast.Subscript) and isinstance(frame.value, ast.Name) and frame.value.id == "tables"
+              and isinstance(frame.slice, ast.Constant) and frame.slice.value in all_tables):
+            have, where = set(map(str, all_tables[frame.slice.value].columns)), f"table {frame.slice.value}"
+        else:
+            continue
+        position, keyword = _COLUMN_ARGS[n.func.attr]
+        wanted = [kw.value for kw in n.keywords if kw.arg == keyword]
+        if position is not None and len(n.args) > position:
+            wanted.append(n.args[position])
+        for arg in wanted:
+            for col in _const_names(arg) or []:
+                if col not in have:
+                    hint = _lookup(have, col)
+                    problems.append(f"column '{col}' (in .{n.func.attr}) is not in {where}"
+                                    + (f" (did you mean '{hint}'?)" if hint else f" (columns: {', '.join(sorted(have))})"))
 
     if df_rebuilt:
         return _dedupe(problems)

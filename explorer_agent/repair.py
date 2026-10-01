@@ -55,8 +55,9 @@ def sanitize_error(error: Optional[str], known_names: Sequence[str]) -> str:
 
 
 def failed_indices(results: List[Dict[str, Any]]) -> List[int]:
-    """check_index of every check that did not produce a result."""
-    return [r["check_index"] for r in results if not r["success"]]
+    """check_index of every check that did not produce a result, or whose `detail_code` is statically
+    known to fail (its aggregate result is fine, but the finding would lose its row-level records)."""
+    return [r["check_index"] for r in results if not r["success"] or r.get("detail_problems")]
 
 
 def build_repair_prompt(table_name: str, df: pd.DataFrame, all_tables: Dict[str, pd.DataFrame],
@@ -72,8 +73,13 @@ def build_repair_prompt(table_name: str, df: pd.DataFrame, all_tables: Dict[str,
     for n, i in enumerate(indices, 1):
         check, result = checks[i], results[i]
         error = result.get("error") or ""
-        error_line = (error.replace("Pre-flight: ", "", 1)[:MAX_ERROR_CHARS * 2] if result.get("preflight_rejected")
-                      else sanitize_error(error, known))
+        if result.get("success") and result.get("detail_problems"):
+            # `code` ran; only detail_code is broken. Generated locally from column names, so it passes as is.
+            error_line = ("the `code` ran and its result is fine - keep it exactly as it is. Only `detail_code` "
+                          "will fail: " + "; ".join(result["detail_problems"])[:MAX_ERROR_CHARS * 2])
+        else:
+            error_line = (error.replace("Pre-flight: ", "", 1)[:MAX_ERROR_CHARS * 2] if result.get("preflight_rejected")
+                          else sanitize_error(error, known))
         blocks.append(
             f"### Failed check {n}\n"
             f"column: {check.column}\ncategory: {check.category}\nhypothesis: {check.hypothesis}\n"

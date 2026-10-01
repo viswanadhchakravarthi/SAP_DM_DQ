@@ -257,6 +257,13 @@ profiling:
   # the planner ONCE per round, all in one call, then re-run. 0 = off. Costs at most one extra LLM call
   # per round and table, and only when a check failed. The loop ends on this counter, never on the model.
   max_repair_rounds: 1 # EXPLORER_MAX_REPAIR_ROUNDS
+  # Re-running a table must not recreate findings the client already has. A finding is "known" when an
+  # earlier run of the same client has the same check on that table (a built-in rule by rule id, any other
+  # check by column + pillar), it has row-level records, and the table's file has not changed since that
+  # run started. Known checks are dropped before the planner (and the planner is told) and are not saved
+  # again; an earlier finding WITHOUT records is regenerated and the empty one hidden as superseded.
+  # false (or --no-skip-known) = recreate everything, as before. EXPLORER_SKIP_KNOWN_FINDINGS
+  skip_known_findings: true
 
 explain:
   local_llm:

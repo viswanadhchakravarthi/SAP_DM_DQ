@@ -85,6 +85,10 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE findings ADD COLUMN is_anomaly INTEGER DEFAULT 0")
     if "sub_type" not in existing_cols:
         conn.execute("ALTER TABLE findings ADD COLUMN sub_type TEXT")
+    if "superseded_by" not in existing_cols:
+        # id of the newer finding that replaced this one (a re-run regenerated a check whose earlier version
+        # had no row-level records). The row is kept, but hidden from every list (see _finding_filters).
+        conn.execute("ALTER TABLE findings ADD COLUMN superseded_by TEXT")
 
 
 def _migrate_finding_items(conn: sqlite3.Connection) -> None:
@@ -492,6 +496,71 @@ def save_finding(run_id: str, table: str, column: str, hypothesis: str, check_co
     return finding_id
 
 
+# --- Findings that already exist for a client (so a re-run does not create them again) -------------------
+
+def finding_key(table: str, column: Optional[str], category: Optional[str], check_code: Optional[str]) -> tuple:
+    """What makes two findings 'the same check' across runs. A built-in rule is identified by its rule id
+    (the first line of its check_code: '# Built-in SAP rule text.casing.LFA1.NAME1 (rule pack ...)');
+    an LLM-proposed or promoted check by table + column + pillar, because its wording and code change from
+    run to run while what it tests (this column, for this kind of problem) does not."""
+    first_line = (check_code or "").split("\n", 1)[0]
+    if first_line.startswith("# Built-in SAP rule"):
+        rule_id = first_line.replace("# Built-in SAP rule", "").strip().split(" (", 1)[0].rstrip(".").split()
+        if rule_id:
+            return ("RULE", str(table).upper(), rule_id[0])
+    return ("CHECK", str(table).upper(), str(column or "").upper(), category or "CORRECTNESS")
+
+
+def _parse_ts(value: Optional[str]) -> Optional[datetime]:
+    try:
+        parsed = datetime.fromisoformat(str(value))
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+def known_findings(client_id: str, table_name: str, data_changed_at: Optional[datetime] = None) -> Dict[tuple, Dict[str, Any]]:
+    """{finding_key: {finding_id, run_id, status}} of this client's earlier findings on a table that a
+    re-run should NOT create again: not replaced, not a duplicate group, with row-level records, and from
+    a run that started after the table's data last changed (an older finding describes data that no longer
+    exists). A finding with no records is deliberately not 'known' - it is the one worth regenerating."""
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT f.id, f.run_id, f.table_name, f.column_name, f.category, f.check_code, f.status, r.started_at, "
+            "(SELECT COUNT(*) FROM finding_items i WHERE i.finding_id = f.id) AS n "
+            "FROM findings f JOIN runs r ON r.run_id = f.run_id "
+            "WHERE r.client_id = ? AND UPPER(f.table_name) = ? AND f.superseded_by IS NULL "
+            "AND f.category != 'DUPLICATE' ORDER BY r.started_at DESC",
+            (client_id, table_name.upper())).fetchall()
+    known: Dict[tuple, Dict[str, Any]] = {}
+    for r in rows:
+        if not r["n"]:
+            continue
+        started = _parse_ts(r["started_at"])
+        if data_changed_at is not None and (started is None or started < data_changed_at):
+            continue
+        key = finding_key(r["table_name"], r["column_name"], r["category"], r["check_code"])
+        known.setdefault(key, {"finding_id": r["id"], "run_id": r["run_id"], "status": r["status"]})
+    return known
+
+
+def supersede_empty_findings(client_id: str, table_name: str, key: tuple, new_finding_id: str) -> int:
+    """Hide this client's earlier findings of the same check that have no row-level records (the new
+    finding replaces them). Their rows stay in the database, marked superseded_by the new one."""
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT f.id, f.table_name, f.column_name, f.category, f.check_code FROM findings f "
+            "JOIN runs r ON r.run_id = f.run_id WHERE r.client_id = ? AND UPPER(f.table_name) = ? "
+            "AND f.superseded_by IS NULL AND f.id != ? AND f.category != 'DUPLICATE' "
+            "AND NOT EXISTS (SELECT 1 FROM finding_items i WHERE i.finding_id = f.id)",
+            (client_id, table_name.upper(), new_finding_id)).fetchall()
+        old = [r["id"] for r in rows
+               if finding_key(r["table_name"], r["column_name"], r["category"], r["check_code"]) == key]
+        for finding_id in old:
+            conn.execute("UPDATE findings SET superseded_by = ? WHERE id = ?", (new_finding_id, finding_id))
+        return len(old)
+
+
 # Where a finding came from, derived from what was stored (no extra column): the duplicate engine, a built-in
 # rule (its check_code starts with "# Built-in SAP rule", see rule_context.finding), or a check the LLM proposed
 # (also when it ran from a promoted skill).
@@ -505,7 +574,7 @@ def _finding_filters(run_id: Optional[str] = None, status: Optional[str] = None,
                      industry: Optional[str] = None, is_anomaly: Optional[bool] = None,
                      client_id: Optional[str] = None, source: Optional[str] = None) -> Tuple[str, List[Any]]:
     """WHERE-clause fragment (starting with ' AND', or empty) + params shared by the findings queries."""
-    clauses: List[str] = []
+    clauses: List[str] = ["superseded_by IS NULL"]   # a regenerated check replaces its empty predecessor
     params: List[Any] = []
     for column, value in (("run_id", run_id), ("status", status), ("category", category),
                           ("rule_scope", rule_scope), ("industry", industry)):
@@ -610,7 +679,7 @@ def get_runs(client_id: Optional[str] = None) -> List[Dict[str, Any]]:
 def get_stats(run_id: Optional[str] = None) -> Dict[str, Any]:
     with get_connection() as conn:
         # Status counts
-        status_query = "SELECT status, COUNT(*) as cnt FROM findings WHERE 1=1"
+        status_query = "SELECT status, COUNT(*) as cnt FROM findings WHERE superseded_by IS NULL"
         params: List[Any] = []
         if run_id:
             status_query += " AND run_id = ?"
@@ -623,7 +692,7 @@ def get_stats(run_id: Optional[str] = None) -> Dict[str, Any]:
         stats["TOTAL"] = sum(v for k, v in stats.items())
 
         # Category counts
-        cat_query = "SELECT category, COUNT(*) as cnt FROM findings WHERE 1=1"
+        cat_query = "SELECT category, COUNT(*) as cnt FROM findings WHERE superseded_by IS NULL"
         if run_id:
             cat_query += " AND run_id = ?"
         cat_query += " GROUP BY category"
@@ -635,14 +704,14 @@ def get_stats(run_id: Optional[str] = None) -> Dict[str, Any]:
         stats["categories"] = categories
 
         # Anomaly count
-        anom_query = "SELECT COUNT(*) as cnt FROM findings WHERE is_anomaly = 1"
+        anom_query = "SELECT COUNT(*) as cnt FROM findings WHERE is_anomaly = 1 AND superseded_by IS NULL"
         if run_id:
             anom_query += " AND run_id = ?"
         anom_row = conn.execute(anom_query, params).fetchone()
         stats["anomalies"] = anom_row["cnt"] if anom_row else 0
 
         # Rule scope counts
-        scope_query = "SELECT rule_scope, COUNT(*) as cnt FROM findings WHERE 1=1"
+        scope_query = "SELECT rule_scope, COUNT(*) as cnt FROM findings WHERE superseded_by IS NULL"
         if run_id:
             scope_query += " AND run_id = ?"
         scope_query += " GROUP BY rule_scope"
@@ -668,7 +737,7 @@ def mark_promoted(finding_id: str) -> bool:
 def get_promotable_findings(run_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """Approved + marked reusable by LLM + not yet promoted + has captured code."""
     query = """SELECT * FROM findings
-               WHERE status = 'APPROVED' AND reusable = 1
+               WHERE status = 'APPROVED' AND reusable = 1 AND superseded_by IS NULL
                  AND promoted_at IS NULL AND check_code IS NOT NULL AND check_code != ''"""
     params: List[Any] = []
     if run_id:
@@ -763,7 +832,7 @@ def _grouped_by_table(run_id: str, table_name: str, where_sql: str, cell_key: st
     with get_connection() as conn:
         findings = conn.execute(
             "SELECT id, column_name, hypothesis, check_code FROM findings WHERE run_id = ? AND table_name = ? "
-            f"AND {where_sql} ORDER BY column_name, created_at",
+            f"AND superseded_by IS NULL AND {where_sql} ORDER BY column_name, created_at",
             (run_id, table_name),
         ).fetchall()
         fields = [dict(f) for f in findings]

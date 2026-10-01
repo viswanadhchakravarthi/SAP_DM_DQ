@@ -182,6 +182,7 @@ class Config:
     # Bounded repair loop (graph.py, repair.py): rounds in which planner checks that failed to run are
     # sent back to the planner once, together. 0 = off. Each round is at most ONE extra LLM call per table.
     MAX_REPAIR_ROUNDS = _env_int("EXPLORER_MAX_REPAIR_ROUNDS", _get("profiling.max_repair_rounds", 1))
+    SKIP_KNOWN_FINDINGS = _env_bool("EXPLORER_SKIP_KNOWN_FINDINGS", _get("profiling.skip_known_findings", True))
 
     # Deterministic duplicate matching (explorer_agent/duplicate_detector.py).
     # The matching itself never calls an LLM; the rules it executes are drafted

@@ -43,8 +43,11 @@ def execute_checks(
         return results
 
     # Free static checks first: code that can't run is rejected with a precise reason instead of
-    # crashing in the sandbox. Only `code` blocks; a detail_code problem just loses row detail later.
+    # crashing in the sandbox. Only `code` blocks execution. A detail_code problem is recorded on the
+    # result (`detail_problems`) so the repair round can rewrite it - otherwise the finding would be
+    # saved without its row-level records, because detail_code runs later, only for confirmed findings.
     executed: List[Dict[str, Any]] = [{}] * len(checks)
+    detail_problems_by_index: Dict[int, List[str]] = {}
     runnable = []
     for index, check in enumerate(checks):
         problems = preflight(check.code, df, all_tables)
@@ -57,6 +60,7 @@ def execute_checks(
         if check.detail_code:
             detail_problems = preflight(check.detail_code, df, all_tables)
             if detail_problems:
+                detail_problems_by_index[index] = detail_problems
                 logger.warning("Check #%d on column %s: detail_code will probably fail - %s",
                                index, check.column, "; ".join(detail_problems))
     if runnable:
@@ -85,6 +89,7 @@ def execute_checks(
                 "result": sanitized,
                 "error": exec_result.get("error"),
                 "preflight_rejected": bool(exec_result.get("preflight")),
+                "detail_problems": detail_problems_by_index.get(index, []),
             }
         )
 

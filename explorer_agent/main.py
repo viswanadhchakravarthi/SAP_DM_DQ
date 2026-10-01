@@ -3,7 +3,9 @@ import json
 import sys
 import time
 import argparse
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 from .config import Config
 from .data_loader import (discover_table_files, load_all_tables, load_data_dictionary,
@@ -33,8 +35,32 @@ from .llm_providers import LLMChainExhaustedError, build_llms, close_local_llm
 logger = get_logger("main")
 
 
+_OTHER_TABLE_COLUMN_CAP = 40   # columns listed per other table in the planner prompt
+
+
+def _known_findings_for(client_id: str, data_dir: str, table_file: Optional[str], table_name: str) -> dict:
+    """Findings this client already has on a table that this run should not create again (empty when the
+    feature is off). 'Same data' = the table's file is not newer than the earlier run: if it was uploaded
+    again since, what those findings describe is gone, so nothing is skipped."""
+    if not Config.SKIP_KNOWN_FINDINGS:
+        return {}
+    changed_at = None
+    if table_file:
+        path = Path(data_dir) / table_file
+        if path.exists():
+            changed_at = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+    try:
+        return store.known_findings(client_id, table_name, changed_at)
+    except Exception as exc:   # an unreadable history must never stop a run: just recreate everything
+        logger.warning("[%s] could not look up the client's earlier findings (%s) - recreating them", table_name, exc)
+        return {}
+
+
 def explore_table(graph, table_name, df, dictionary, all_tables, skill_retriever, reflector_single,
-                  rule_coverage=None) -> list:
+                  rule_coverage=None, known_checks=None) -> list:
+    """`known_checks`: {(COLUMN, category)} the client already has findings for on this table (same data):
+    no planner check is made for them, and the planner is told which they are."""
+    known_checks = known_checks or set()
     logger.info("=== Exploring table %s (batch mode) ===", table_name)
     columns = list(df.columns)
 
@@ -49,6 +75,16 @@ def explore_table(graph, table_name, df, dictionary, all_tables, skill_retriever
     # Per-column cache_hits/cache_misses are recorded inside run_cached_skills()
     # itself (see cache_runner.py) - counting them again here at table
     # granularity would double-count hits against the same metric.
+    if known_checks and cached_findings:
+        # A promoted skill re-runs every time; its finding for a column the client already has one for
+        # would only be a second copy.
+        kept = [f for f in cached_findings
+                if (str(f.get("column", "")).upper(), f.get("category") or "CORRECTNESS") not in known_checks]
+        if len(kept) < len(cached_findings):
+            metrics.known_findings_skipped += len(cached_findings) - len(kept)
+            logger.info("[%s] %d cached-skill finding(s) the client already has were not recreated",
+                        table_name, len(cached_findings) - len(kept))
+        cached_findings = kept
 
     profile = profile_table(df, table_name)
     for var in profile["variables"]:
@@ -72,10 +108,19 @@ def explore_table(graph, table_name, df, dictionary, all_tables, skill_retriever
             field for (tbl, field), desc in dictionary.items()
             if tbl == name and "key" in desc.lower()
         })
-        return f"{name} (key: {', '.join(key_cols)})" if key_cols else name
+        # Column names (metadata only, like the repair and column-mapping prompts). Without them - and
+        # without a dictionary there is no key hint either - the planner can only guess what to look up,
+        # and copies a key name from the prompt's example instead (KeyError in production). Capped so a
+        # wide table doesn't flood the prompt.
+        cols = [str(c) for c in all_tables[name].columns]
+        shown = ", ".join(cols[:_OTHER_TABLE_COLUMN_CAP]) + (f", ... (+{len(cols) - _OTHER_TABLE_COLUMN_CAP} more)"
+                                                             if len(cols) > _OTHER_TABLE_COLUMN_CAP else "")
+        return (f"{name} (key: {', '.join(key_cols)}; columns: {shown})" if key_cols
+                else f"{name} (columns: {shown})")
 
     other_tables_note = (
-        "Other registered tables available via tables['<name>'] for cross-table lookups: "
+        "Other registered tables available via tables['<name>'] for cross-table lookups, with their columns - "
+        "use only these names: "
         f"{[_describe_other_table(t) for t in all_tables if t != table_name]}"
         if len(all_tables) > 1 else "No other tables registered."
     )
@@ -98,6 +143,10 @@ def explore_table(graph, table_name, df, dictionary, all_tables, skill_retriever
 
     cache_note = (f"Columns with EXISTING approved checks (deprioritize unless new insight): "
                   f"{sorted(columns_with_cache)}" if columns_with_cache else "No cached checks exist yet.")
+    if known_checks:
+        cache_note += ("\nALREADY CHECKED for this client in an earlier run on this same data - do NOT propose these "
+                       "again, look for other problems: "
+                       + ", ".join(f"{col}/{cat}" for col, cat in sorted(known_checks)))
 
     if profile["table"]["profiled_rows"] < profile["table"]["n_rows"]:
         profile_note = (f"Column profiles (statistical, privacy-sanitized) - computed on a random sample of "
@@ -126,6 +175,7 @@ Propose roughly 1-2 checks per notable column (skip clean-looking columns). Do n
         "table_name": table_name, "seed_prompt": seed_prompt, "df": df,
         "all_tables": all_tables, "proposed_checks": [], "check_results": [], "findings": [],
         "rule_coverage": rule_coverage or RuleCoverage(), "repair_round": 0, "to_run": None,
+        "known_checks": known_checks,
     }
     final_state = graph.invoke(initial_state)
     fresh_findings = final_state["findings"]
@@ -170,6 +220,10 @@ def main():
                         help="Temperature for the PRIMARY provider (default: config.yaml).")
     parser.add_argument("--max-repair-rounds", type=int, default=Config.MAX_REPAIR_ROUNDS,
                         help="Rounds in which failed planner checks are sent back to the planner (0 = off).")
+    parser.add_argument(
+        "--no-skip-known", action="store_true",
+        help="Recreate every finding even when this client already has it from an earlier run on the same "
+             "data (default: skip those, see profiling.skip_known_findings in config.yaml).")
     parser.add_argument("--tables", nargs="*", default=None)
     parser.add_argument("--no-cache", action="store_true")
     parser.add_argument(
@@ -202,6 +256,8 @@ def main():
 
     if args.no_cache:
         Config.ENABLE_CACHE_FAST_PATH = False
+    if args.no_skip_known:
+        Config.SKIP_KNOWN_FINDINGS = False
     Config.LLM_PROVIDER = args.llm_provider
     Config.MAX_REPAIR_ROUNDS = max(0, args.max_repair_rounds)
 
@@ -304,6 +360,8 @@ def main():
     for table_name, df in tables.items():
         table_start = time.perf_counter()
         usage.set_table(table_name)
+        known = _known_findings_for(client["client_id"], args.data_dir, table_files.get(table_name), table_name)
+        known_checks = {(key[2], key[3]) for key in known if key[0] == "CHECK"}
         # Deterministic duplicate detection first: zero LLM cost, and its
         # findings are kept even if the LLM chain fails for this table.
         findings = []
@@ -332,11 +390,23 @@ def main():
         if not no_planner:
             try:
                 findings += explore_table(graph, table_name, df, dictionary, tables, skill_retriever,
-                                          reflector_single, rule_coverage=rule_coverage)
+                                          reflector_single, rule_coverage=rule_coverage, known_checks=known_checks)
             except LLMChainExhaustedError as exc:
                 # One table's LLM outage shouldn't discard the rest of the run.
                 logger.error("[%s] LLM exploration skipped - %s", table_name, exc)
                 failed_tables.append(table_name)
+
+        # Findings this client already has from an earlier run on the same data are not created again
+        # (the scorecard above was computed from the full rule output, so it is unaffected).
+        if known:
+            to_save = [f for f in findings if f.get("category") == "DUPLICATE"
+                       or store.finding_key(f["table"], f.get("column"), f.get("category"), f.get("check_code")) not in known]
+            skipped = len(findings) - len(to_save)
+            if skipped:
+                metrics.known_findings_skipped += skipped
+                logger.info("[%s] %d finding(s) the client already has (earlier run, same data) were not recreated",
+                            table_name, skipped)
+            findings = to_save
 
         for f in findings:
             finding_id = store.save_finding(
@@ -357,6 +427,15 @@ def main():
             if detail_rows:
                 store.save_finding_items(finding_id, detail_rows)
                 logger.info("Saved %d detail row(s) for finding %s", len(detail_rows), finding_id[:8])
+                if Config.SKIP_KNOWN_FINDINGS and f.get("category") != "DUPLICATE":
+                    # This check now has its records: an earlier version of it that had none is replaced.
+                    replaced = store.supersede_empty_findings(
+                        client["client_id"], table_name,
+                        store.finding_key(f["table"], f.get("column"), f.get("category"), f.get("check_code")),
+                        finding_id)
+                    if replaced:
+                        logger.info("[%s] %s: replaced %d earlier finding(s) that had no row-level records",
+                                    table_name, f.get("column"), replaced)
 
         total_findings += len(findings)
         logger.info("[%s] done in %.2fs - %d finding(s)", table_name, time.perf_counter() - table_start, len(findings))
@@ -394,10 +473,14 @@ def main():
           f"Findings: {metrics.sap_rule_findings} (anomalies: {metrics.anomaly_findings}) | "
           f"Rows flagged: {metrics.sap_rule_rows} | "
           f"Planner checks dropped as already covered: {metrics.planner_checks_covered_by_rules}")
+    if Config.SKIP_KNOWN_FINDINGS:
+        print(f"Findings the client already had (earlier run, same data) and were not recreated: "
+              f"{metrics.known_findings_skipped}   (--no-skip-known recreates them)")
     status = "COMPLETED" if not failed_tables else "PARTIAL"
     try:
         events.publish("profiling.completed", client["client_id"], client["name"], run_id, status, {
             "tables": list(tables.keys()), "findings": total_findings, "failed_tables": failed_tables,
+            "known_findings_skipped": metrics.known_findings_skipped,
             "structural_profile": {
                 "path": str(handoff_path) if handoff_path else None,
                 "url": f"/api/clients/{client['client_id']}/handoff/structural-profile?run_id={run_id}"

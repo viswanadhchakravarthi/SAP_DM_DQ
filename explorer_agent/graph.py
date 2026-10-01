@@ -93,9 +93,17 @@ the vectorized `.str` accessor with `na=False` (e.g. `df['IBAN'].str.startswith(
 2. `detail_code` (STRONGLY RECOMMENDED): pandas code that sets `result` to a list of dicts, one per offending row.
    Keys:
    - row_index (int): dataframe index
-   - key_field (str): name of natural key column (e.g. 'LIFNR')
+   - key_field (str): name of the table's natural key column - one of THIS table's columns as listed in the profile
    - key_value: value of key field for this row
    - issue_detail (str): specific description of the issue for THIS row
+
+NAMES: use ONLY table names and column names that are listed in this prompt (this table's profile, and the
+"Other registered tables" list with their columns). The names in the example below (<OTHER_TABLE>, <KEY>,
+<NAME_COLUMN>) are PLACEHOLDERS - never copy a table or column name from an example. If no other table has a
+column that matches a key of this table, skip the cross-table lookup and build issue_detail from this table alone.
+The sandbox has only `pd`, `np`, `re`, `datetime`, `df`, `tables` and basic builtins (len, str, int, float, set,
+list, dict, sorted, sum, min, max, zip, enumerate, range, any, all, isinstance): `globals()`, `locals()`, `vars()`,
+`eval`, `open` and similar do NOT exist, so never call them (to test whether a name exists, define it first).
 
 CROSS-TABLE ENRICHMENT (make issue_detail actionable, not just an identifier): your `detail_code` has access to
 `tables['<OTHER_TABLE>']` for EVERY other registered table (a dict of full DataFrames, keyed by table name), not
@@ -103,16 +111,16 @@ just `df` (the current table). PERFORMANCE - detail_code runs under a strict wal
 offending rows and slice to at most 50 of them (e.g. `subset = df[mask].head(50)`), and only THEN do any per-row
 string building or cross-table lookups on that small subset - never enrich all matching rows before capping, and
 build lookup dicts (`.to_dict()`) once outside any loop, never inside one. When a row references a business key
-that also exists in another table (e.g. LIFNR in LFB1 also identifies a row in LFA1), look up human-readable
-context BEFORE building issue_detail:
-    name_lookup = tables['LFA1'].set_index('LIFNR')['NAME1'].to_dict()
-    vendor_name = name_lookup.get(row['LIFNR'], 'Unknown')
+that also exists in another table (the same key column appears in both tables' column lists), look up
+human-readable context BEFORE building issue_detail (placeholders - substitute real names from this prompt):
+    name_lookup = tables['<OTHER_TABLE>'].set_index('<KEY>')['<NAME_COLUMN>'].to_dict()
+    entity_name = name_lookup.get(row['<KEY>'], 'Unknown')
 Build each lookup dict ONCE outside any loop with `.to_dict()`, and ALWAYS read it with `.get(key, 'Unknown')`
 (never direct indexing) since the key may not exist in the other table. Compose issue_detail as a business-readable
-sentence, not a bare code: e.g. 'Vendor: 473 - ABC Supplies Pvt Ltd | Company Code: 1000 | Payment Terms: XXXX '
-'(expected/common: YYYY) | Suggested Action: Confirm with the AP team whether this term is intentional.' Include
-whatever of vendor id/name, company code, current value, expected/reference value, and a suggested action is
-actually available from the current table plus one cross-table lookup - do not invent fields that aren't there.
+sentence, not a bare code: e.g. 'Record: <key value> - <name> | <field>: <current value> (expected/common: <value>) | '
+'Suggested Action: Confirm with the data owner whether this is intentional.' Include whatever of key, name, current
+value, expected/reference value, and a suggested action is actually available from the current table plus one
+cross-table lookup - do not invent fields that aren't there.
 
 Cap detail_rows at around 50 rows (use .head(50)).
 Inside code use ONLY single quotes (') for string literals - never double quotes, and no f-strings; build strings with + and str().
@@ -151,6 +159,7 @@ class TableExplorerState(TypedDict):
     rule_coverage: Any  # sap_rules.RuleCoverage - what the deterministic SAP rules already checked
     repair_round: int   # repair rounds used so far (bounded by Config.MAX_REPAIR_ROUNDS)
     to_run: Any         # None = execute every check; a list = re-run only these check indices
+    known_checks: Any   # {(COLUMN, category)} this client already has findings for on this table (skip them)
 
 
 def build_explorer_graph(planner_structured, reflector_structured, repair_structured=None):
@@ -191,6 +200,17 @@ def build_explorer_graph(planner_structured, reflector_structured, repair_struct
         if reclassified:
             logger.info("Reclassified %d planner COMPLETENESS check(s) for table %s as CORRECTNESS/"
                         "RELATIONSHIP_INTEGRITY: %s", len(reclassified), state["table_name"], "; ".join(reclassified))
+        # A check on a column and pillar this client already has a finding for (an earlier run, same
+        # data) would just create that finding a second time. The prompt says so too; models ignore it.
+        known = state.get("known_checks") or set()
+        if known:
+            fresh = [c for c in checks if (c.column.upper(), c.category) not in known]
+            if len(fresh) < len(checks):
+                dropped = [f"{c.column}/{c.category}" for c in checks if c not in fresh]
+                logger.info("Discarded %d planner check(s) for table %s the client already has findings for: %s",
+                            len(dropped), state["table_name"], ", ".join(dropped))
+                metrics.known_findings_skipped += len(dropped)
+            checks = fresh
         # Same for checks that repeat a built-in SAP rule on the same column and
         # pillar: the prompt asks the planner not to, but models ignore it.
         coverage = state.get("rule_coverage")

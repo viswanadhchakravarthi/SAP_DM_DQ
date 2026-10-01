@@ -56,6 +56,15 @@ SAFE_BUILTINS = {
     "StopIteration": StopIteration, "RuntimeError": RuntimeError,
 }
 
+# Every name check code can use without defining it: the builtins above plus what the worker injects
+# (keep in step with `base_globals` in _worker, and with the context the executor passes in).
+# preflight.py reads this to reject code that calls something the sandbox lacks (globals, locals,
+# vars, eval, open, ...) before it runs, instead of letting it die with a NameError.
+SANDBOX_NAMES = frozenset(SAFE_BUILTINS) | {
+    "__import__", "pd", "np", "re", "datetime", "mask_value", "fuzzy_token_similarity",
+    "cluster_duplicates", "detect_distribution_outliers", "df", "tables", "result",
+}
+
 BLOCKED_MODULES = {
     "os", "sys", "subprocess", "socket", "shutil", "pathlib",
     "requests", "urllib", "importlib", "ctypes", "multiprocessing",
