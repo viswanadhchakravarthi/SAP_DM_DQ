@@ -256,6 +256,50 @@ def _dedupe(items: List[str]) -> List[str]:
     return out
 
 
+_MIN_LITERAL_LIST = 3   # a pair like ['M', 'F'] is a format fact; three or more is a claimed domain
+
+
+def hardcoded_value_lists(code: str) -> List[str]:
+    """Problems for a check that tests a column against a literal list of allowed values.
+
+    The planner sees no client configuration, so a list such as ['1000', '2000', '3000'] for vendor
+    account groups is a guess presented as a rule (seen on prod data: group 5700 flagged because the
+    model assumed the "standard" groups). Valid sets come from the data dictionary, a loaded target
+    domain or another table, never from the model. Only for planner checks: a promoted skill was
+    approved by a human, so the caller does not apply this to those."""
+    try:
+        tree = ast.parse(code or "")
+    except SyntaxError:
+        return []
+
+    def literal_size(node: ast.AST) -> int:
+        if isinstance(node, (ast.List, ast.Tuple, ast.Set)) and all(
+                isinstance(e, ast.Constant) and isinstance(e.value, (str, int)) for e in node.elts):
+            return len({e.value for e in node.elts})
+        return 0
+
+    named = {}   # allowed = ['1000', ...]
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Assign) and len(n.targets) == 1 and isinstance(n.targets[0], ast.Name):
+            named[n.targets[0].id] = literal_size(n.value)
+
+    def size_of(node: ast.AST) -> int:
+        return named.get(node.id, 0) if isinstance(node, ast.Name) else literal_size(node)
+
+    for n in ast.walk(tree):
+        candidates = []
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == "isin" and n.args:
+            candidates = [n.args[0]]
+        elif isinstance(n, ast.Compare) and any(isinstance(op, (ast.In, ast.NotIn)) for op in n.ops):
+            candidates = list(n.comparators)
+        if any(size_of(c) >= _MIN_LITERAL_LIST for c in candidates):
+            return ["the code tests a column against a hardcoded list of allowed values, which you cannot know "
+                    "(valid codes are configured per client) - do not assert a valid set. Flag by evidence in the "
+                    "data instead (a value used by very few rows, a format or length that differs from the "
+                    "column's pattern) or against values in another loaded table, or drop this check"]
+    return []
+
+
 def preflight(code: str, df: pd.DataFrame, all_tables: Dict[str, pd.DataFrame]) -> List[str]:
     """Problems that would make `code` fail; empty when it looks runnable."""
     return _analyse(code, df, all_tables)

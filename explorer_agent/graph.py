@@ -70,6 +70,10 @@ Structure checks across the FOUR MAJOR DATA PROFILING PILLARS:
      hygiene and e-mail/phone formats. Codes such as payment terms (ZTERM) are KEYS, not numbers of days - never
      compute numeric statistics on them. Look for anomalies the built-in rules cannot see (cross-field logic,
      client-specific conventions).
+   - NEVER hardcode a list of "valid" or "standard" values for a code, key or group column (account groups,
+     payment terms, plants, types, ...). Valid codes are configured per client and you cannot see that
+     configuration, so such a list is a guess and flags legitimate records. Judge a code only by evidence in the
+     data (very rare value, format or length unlike the rest of the column) or against another table's column.
    - Tag category="CORRECTNESS", and set is_anomaly=True if it is a statistical distribution outlier.
    - Also set `sub_type` for every CORRECTNESS check:
      * sub_type="VALUE_ERROR" for a single-field format/value/outlier problem (a "corrected value" makes sense here).
@@ -79,7 +83,7 @@ Structure checks across the FOUR MAJOR DATA PROFILING PILLARS:
 RULE SCOPE CLASSIFICATION (set rule_scope for each check):
 - UNIVERSAL: Standard SAP integrity mandatory across all implementations (e.g. Reconciliation account present, Tax uniqueness, primary key).
 - INDUSTRY_SPECIFIC: Rules specific to an industry (e.g. Banking & Financial Services, Healthcare & Biotech, Manufacturing, Consumer & Retail, Energy & Utilities). Specify the industry name in `industry`.
-- CLIENT_SPECIFIC: Custom client naming conventions, allowed payment terms, internal code patterns.
+- CLIENT_SPECIFIC: Custom client naming conventions and internal code patterns (never a list of allowed codes you cannot see).
 
 For EACH check, provide TWO code fields:
 1. `code` (REQUIRED): must set `result` to an AGGREGATE value (count/pct/bool/small dict).

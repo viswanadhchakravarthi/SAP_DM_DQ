@@ -12,7 +12,7 @@ import pandas as pd
 from .config import Config
 from .logging_config import get_logger
 from .metrics import metrics
-from .preflight import preflight
+from .preflight import hardcoded_value_lists, preflight
 from .privacy_guard import sanitize_result_for_llm
 from .sandbox import SandboxExecutor
 from .schemas import ProposedCheck
@@ -50,7 +50,7 @@ def execute_checks(
     detail_problems_by_index: Dict[int, List[str]] = {}
     runnable = []
     for index, check in enumerate(checks):
-        problems = preflight(check.code, df, all_tables)
+        problems = preflight(check.code, df, all_tables) + hardcoded_value_lists(check.code)
         if problems:
             metrics.preflight_rejected += 1
             executed[index] = {"success": False, "result": None, "error": "Pre-flight: " + "; ".join(problems),
