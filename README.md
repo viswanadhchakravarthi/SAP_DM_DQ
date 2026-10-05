@@ -123,7 +123,7 @@ print("Path to model files:", path)
 
 ## Configuration
 
-Non-secret, shareable settings (LLM provider/model, SAP table list, sandbox
+Non-secret, shareable settings (LLM provider/model, dictionary and upload settings, sandbox
 limits, memory/log paths, etc.) live in [`config.yaml`](config.yaml) at the
 project root - edit that file to change defaults for everyone.
 
@@ -170,6 +170,31 @@ D:\GitHub\SAP_DM_DQ\.venv\Lib\site-packages\llama_cpp\__init__.py
 
 ---
 
+## Usage
+
+```bash
+# Profile a client's tables (--client is required; tables are every CSV under --data-dir)
+python -m explorer_agent.main --client "<client name>" --data-dir <path>
+
+# Client has no data dictionary: column meaning comes from names, statistics and the rule pack
+python -m explorer_agent.main --client "<client name>" --data-dir <path> --no-dictionary
+
+# Recreate findings that earlier runs already produced (by default they are skipped)
+python -m explorer_agent.main --client "<client name>" --data-dir <path> --no-skip-known
+
+# LLM-free engines only (duplicate matching + built-in SAP rules)
+python -m explorer_agent.main --client "<client name>" --data-dir <path> --deterministic-only
+
+# Human review app: page 1 picks the client and uploads its data, page 2 reviews findings
+uvicorn review_app.main:app --reload
+```
+
+* **Data dictionary is optional.** On page 1, tick "I don't have a data dictionary" to proceed with tables alone.
+* **Re-runs don't repeat themselves.** A finding that is in progress or already decided by a human is not recreated unless the table file changed (`profiling.skip_known_findings`).
+* **Skills are reused by meaning.** A promoted skill first applies to the exact table + column it was learned on; otherwise it can be matched to a differently named column by its meaning, using the local embedding model (`cache.similarity_*`). Adapted code is pre-flight checked and still goes through human review.
+
+---
+
 ## Module Index
 
 * `explorer_agent/` — the profiling pipeline (CLI: `python -m explorer_agent.main`)
@@ -184,6 +209,7 @@ D:\GitHub\SAP_DM_DQ\.venv\Lib\site-packages\llama_cpp\__init__.py
   * `privacy_guard.py` — heuristic scrubbing of check results before they reach an LLM; `table_profiler.py` — allowlisted statistical profile.
   * `sandbox.py`, `check_executor.py` — isolated execution of LLM-generated checks; `preflight.py` — free static checks that reject code that can't run; `repair.py` — the bounded loop that sends failed checks back to the planner once.
   * `episodic_store.py` — SQLite run/finding history and human review state; `client_knowledge.py`, `client_workspace.py` — per-client memory and uploaded data.
+  * `cache_runner.py`, `skill_reuse.py` — re-run promoted skills: exact table + column first, then by meaning.
   * `evaluate.py` — scores a run against a client's answer key.
 * `explorer_agent/memory/` — `base.py` (MemoryStore interface), `chroma_store.py` (Chroma adapter), `__init__.py` (backend factory `get_memory_store`), `skill_registry.py` (procedural JSON source of truth), `retriever.py`, `promotion.py` (episodic → procedural → semantic), `reindex.py` (rebuild the vector index), `duplicate_rule_store.py`.
 * `review_app/` — FastAPI + vanilla JS review UI (`uvicorn review_app.main:app`); `job_manager.py` runs the explorer as a child process.
