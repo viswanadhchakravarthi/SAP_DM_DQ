@@ -20,6 +20,8 @@ Rule families (one finding per rule and table, with every offending row):
                  default in config.yaml).
 * CORRECTNESS  - invalid ISO COUNTRY; POSTAL_CODE against its country's format;
                  TAX_ID columns evaluated together, by country.
+                 Also: IBAN check digits and tax-number check digits (offline, ``checksums``),
+                 and a PO Box or city typed into a street field (``_street_rules``).
 * RELATIONSHIP_INTEGRITY - orphan rows (a `references` value missing in the
                  referenced table), and cascading master flags not carried to
                  the child rows.
@@ -29,13 +31,14 @@ The statistical and formatting anomalies (Priority 2) are in ``anomaly_rules``;
 and the review UI - never to an LLM. Only rule descriptions reach the planner.
 """
 
+import re
 from collections import defaultdict
 from datetime import date
 from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from . import anomaly_rules
+from . import anomaly_rules, checksums, enrichment, local_auditor
 from .config import Config
 from .logging_config import get_logger
 from .metrics import metrics
@@ -177,12 +180,36 @@ def _mandatory_rules(ctx: Ctx) -> List[Dict[str, Any]]:
         fix_hint = (f"agreed default '{auto_value}' can be applied" if auto_value is not None
                     else "value must come from the business")
         severity = ctx.severity_override.get(first) or _MANDATORY_SEVERITY.get(ctx.b(first)["concept"], "HIGH")
-        rows = [ctx.row(i, f"{label} ({which}) is mandatory in {ctx.table} but blank - {fix_hint}.") for i in hits]
-        out.append(finding(ctx, rule_id, first, f"Missing {label} ({which})",
-                           f"{label} ({which}) is a mandatory field in {ctx.table}.",
-                           rows, "COMPLETENESS", severity, columns_used=members,
-                           fix_type="AUTO_FIXABLE" if auto_value is not None else "MANUAL_FIX",
-                           auto_fix_value=None if auto_value is None else str(auto_value)))
+
+        # A blank City / Postal Code the client's own verified records can answer is a proposal, not a
+        # manual defect: it becomes its own AUTO_FIXABLE finding and only the rest stays manual.
+        inferred = {}
+        if len(members) == 1 and auto_value is None:
+            inferred = enrichment.infer_missing(ctx, first, hits)
+        manual = [i for i in hits if int(i) not in inferred]
+        if manual:
+            rows = [ctx.row(i, f"{label} ({which}) is mandatory in {ctx.table} but blank - {fix_hint}.")
+                    for i in manual]
+            out.append(finding(ctx, rule_id, first, f"Missing {label} ({which})",
+                               f"{label} ({which}) is a mandatory field in {ctx.table}.",
+                               rows, "COMPLETENESS", severity, columns_used=members,
+                               fix_type="AUTO_FIXABLE" if auto_value is not None else "MANUAL_FIX",
+                               auto_fix_value=None if auto_value is None else str(auto_value)))
+        if inferred:
+            rows = []
+            for i in (int(i) for i in hits if int(i) in inferred):
+                guess = inferred[i]
+                row = ctx.row(i, f"{label} ({which}) is blank - proposed value '{guess['value']}': "
+                                 f"{guess['evidence']}.")
+                row["suggested_action"] = f"SET {first} = {guess['value']}"
+                rows.append(row)
+            values = {inferred[int(r['row_index'])]["value"] for r in rows}
+            sources = {inferred[int(r['row_index'])]["source"] for r in rows}
+            out.append(finding(ctx, f"{rule_id}.inferred", first, f"Missing {label} ({which}) - value proposed",
+                               enrichment.hypothesis(ctx.b(first)["concept"], "reference" in sources),
+                               rows, "COMPLETENESS", severity, columns_used=members,
+                               fix_type="AUTO_FIXABLE",
+                               auto_fix_value=values.pop() if len(values) == 1 else "inferred per record"))
     if covered:
         ctx.covered.add(f"mandatory fields blank: {', '.join(covered)} - COMPLETENESS",
                         [c for g in covered for c in g.split("/")], "COMPLETENESS")
@@ -255,6 +282,74 @@ def _postal_rules(ctx: Ctx) -> List[Dict[str, Any]]:
     return out
 
 
+_PO_BOX_RE = re.compile(r"\b(?:p\.?\s?o\.?\s?box|postfach|apartado(?:\s+postal)?|caixa\s+postal)\s*\.?\s*(?:no\.?\s*)?\d+\b",
+                        re.IGNORECASE)
+_POSTAL_LIKE_RE = re.compile(r"(?<![\d/-])\d{4,6}(?![\d/-])")
+
+
+def _street_rules(ctx: Ctx) -> List[Dict[str, Any]]:
+    """A street field should hold the street and house number only. A PO Box or a city typed into it
+    breaks address matching and the load into SAP's structured address fields.
+
+    Deterministic first: a PO Box pattern, then a city that is the record's own city or one the table
+    uses elsewhere. Only a suspicious string that neither could explain (a comma, a postal-code-like
+    number) goes to the local model, and only within its small per-run budget (local_auditor.py)."""
+    out = []
+    cities = ctx.cols("CITY")
+    for col in ctx.cols("STREET"):
+        rule_id = f"street.{ctx.table}.{col}"
+        if not ctx.enabled(rule_id):
+            continue
+        values = text(ctx.df[col])
+        own_city = text(ctx.df[cities[0]]) if cities else pd.Series("", index=ctx.df.index)
+        counts = own_city[own_city != ""].str.upper().value_counts()
+        known = set(counts[counts >= 2].index)
+        found: Dict[Any, Dict[str, str]] = {}
+        suspects = []
+        for i in ctx.df.index[values != ""]:
+            value, city = values[i], own_city[i]
+            parts = {"street": value, "po_box": "", "city": "", "source": "rule"}
+            box = _PO_BOX_RE.search(value)
+            if box:
+                parts["po_box"] = box.group(0)
+                parts["street"] = (value[:box.start()] + " " + value[box.end():]).strip(" ,;-/")
+            tail = value.rsplit(",", 1)
+            if len(tail) == 2 and tail[1].strip().upper() in known:
+                parts["city"], parts["street"] = tail[1].strip(), tail[0].strip(" ,;-/")
+            elif city and len(value) > len(city) + 2 and value.upper().endswith(" " + city.upper()):
+                parts["city"], parts["street"] = value[-len(city):], value[:-len(city)].strip(" ,;-/")
+            if parts["po_box"] or parts["city"]:
+                found[i] = parts
+            elif "," in value or _POSTAL_LIKE_RE.search(value):
+                suspects.append(i)
+        if local_auditor.enabled():
+            for i in suspects:
+                if local_auditor.remaining() < 1:
+                    break
+                split = local_auditor.split_street(values[i], own_city[i])
+                if split is not None and (split.city or split.po_box):
+                    metrics.local_audit_addresses_split += 1
+                    found[i] = {"street": split.street or values[i], "po_box": split.po_box, "city": split.city,
+                                "source": "local model"}
+        if not found:
+            continue
+        rows = []
+        for i in sorted(found):
+            p = found[i]
+            what = " and ".join(x for x in (f"a PO Box ('{p['po_box']}')" if p["po_box"] else "",
+                                            f"the city '{p['city']}'" if p["city"] else "") if x)
+            row = ctx.row(i, f"{col} '{values[i]}' also contains {what} (found by {p['source']}).")
+            row["suggested_action"] = ("SPLIT " + col + ": street='" + p["street"] + "'"
+                                       + (f"; PO Box='{p['po_box']}'" if p["po_box"] else "")
+                                       + (f"; city='{p['city']}'" if p["city"] else ""))
+            rows.append(row)
+        out.append(finding(ctx, rule_id, col, f"Street field holds more than a street ({col})",
+                           f"{ctx.table}.{col} should contain the street and house number only; a PO Box or a city "
+                           f"belongs in its own address field.", rows, "CORRECTNESS", "MEDIUM",
+                           columns_used=[col] + cities[:1], sub_type="VALUE_ERROR", fix_type="MANUAL_FIX"))
+    return out
+
+
 def _tax_rules(ctx: Ctx) -> List[Dict[str, Any]]:
     fields = ctx.cols("TAX_ID")
     if not fields:
@@ -270,6 +365,10 @@ def _tax_rules(ctx: Ctx) -> List[Dict[str, Any]]:
 
     run_missing = any(ctx.b(f)["required"] for f in fields) and ctx.enabled(f"tax.{ctx.table}.missing")
     run_format = bool(country_col) and ctx.enabled(f"tax.{ctx.table}.format")
+    run_checksum = (run_format and checksums.stdnum_available() and ctx.enabled(f"tax.{ctx.table}.checksum"))
+    if run_checksum:
+        ctx.covered.add(f"tax number check digits (VAT, GSTIN, PAN, EIN, national numbers; python-stdnum) across "
+                        f"{field_list} - CORRECTNESS", fields, "CORRECTNESS", "VALUE_ERROR")
     if run_missing:
         ctx.covered.add(f"tax number present in at least one of {field_list} (evaluated together, never one "
                         f"field alone) - COMPLETENESS", fields, "COMPLETENESS")
@@ -277,7 +376,7 @@ def _tax_rules(ctx: Ctx) -> List[Dict[str, Any]]:
         ctx.covered.add(f"tax number format and placeholders per country in {country_col} across {field_list} "
                         f"({len(formats)} countries) - CORRECTNESS", fields, "CORRECTNESS", "VALUE_ERROR")
 
-    missing_rows, invalid_rows = [], []
+    missing_rows, invalid_rows, checksum_rows = [], [], []
     for i in ctx.df.index:
         filled = [(f, values[f][i]) for f in fields if values[f][i]]
         real = [(f, v) for f, v in filled if not placeholder.match(v)]
@@ -293,9 +392,18 @@ def _tax_rules(ctx: Ctx) -> List[Dict[str, Any]]:
         if run_format and country in formats:
             accepted = formats[country]
             for f, v in real:
-                if not any(rx.match(v) for _, rx in accepted):
+                fits = [name for name, rx in accepted if rx.match(v)]
+                if not fits:
                     names = ", ".join(sorted({name for name, _ in accepted}))
                     invalid_rows.append(ctx.row(i, f"{f} '{v}' matches no {country} tax number format ({names})."))
+                elif run_checksum:
+                    # Right shape, but is it a possible number? Judged only when EVERY format it fits can
+                    # be checked and all of them reject it (see checksums.py).
+                    verdicts = [checksums.tax_valid(ctx.pack, country, name, v) for name in fits]
+                    if all(x is not None for x in verdicts) and not any(verdicts):
+                        checksum_rows.append(ctx.row(
+                            i, f"{f} '{v}' has the shape of a {country} {' / '.join(fits)} but its check "
+                               f"digit(s) are wrong - likely a typing error."))
     out = []
     used = fields + ([country_col] if country_col else [])
     if missing_rows:
@@ -310,6 +418,57 @@ def _tax_rules(ctx: Ctx) -> List[Dict[str, Any]]:
                            f"{country_col}; countries without a known format are only checked for presence.",
                            invalid_rows, "CORRECTNESS", "MEDIUM", columns_used=used,
                            sub_type="VALUE_ERROR", fix_type="MANUAL_FIX"))
+    if checksum_rows:
+        out.append(finding(ctx, f"tax.{ctx.table}.checksum", " + ".join(fields),
+                           f"Tax number fails its check digit ({field_list} vs {country_col})",
+                           f"A tax number of a country with a published check-digit scheme (VAT, GSTIN, PAN, "
+                           f"EIN, ...) must pass it; the number fits the format but cannot be a real one.",
+                           checksum_rows, "CORRECTNESS", "MEDIUM", columns_used=used,
+                           sub_type="VALUE_ERROR", fix_type="MANUAL_FIX"))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# CORRECTNESS - bank identifiers (IBAN, BIC), offline check digits via schwifty
+# ---------------------------------------------------------------------------
+
+def _bank_rules(ctx: Ctx) -> List[Dict[str, Any]]:
+    out = []
+    if not checksums.iban_available():
+        return out
+    bank_country = next((c for c in ctx.cols("COUNTRY") if ctx.b(c)["part_of_key"]), None)
+    for col in ctx.cols("IBAN"):
+        rule_id = f"iban.{ctx.table}.{col}"
+        if not ctx.enabled(rule_id):
+            continue
+        ctx.covered.add(f"{col} is a valid IBAN (structure and ISO 7064 mod-97 check digits) - CORRECTNESS",
+                        [col], "CORRECTNESS", "VALUE_ERROR")
+        raw = text(ctx.df[col])
+        invalid, mismatched = [], []
+        countries = upper(ctx.df[bank_country]) if bank_country else None
+        for i in ctx.df.index[raw != ""]:
+            value = checksums.clean_iban(raw[i])
+            problem = checksums.iban_problem(value)
+            if problem:
+                invalid.append(ctx.row(i, f"{col} '{raw[i]}' is not a valid IBAN: {problem}."))
+            elif countries is not None and countries[i] in ctx.pack["_iso"] \
+                    and checksums.iban_country(value) != countries[i]:
+                mismatched.append(ctx.row(
+                    i, f"{col} '{raw[i]}' belongs to country {checksums.iban_country(value)}, but the bank "
+                       f"country {bank_country} is {countries[i]}."))
+        if invalid:
+            out.append(finding(ctx, rule_id, col, f"Invalid IBAN ({col})",
+                               f"{ctx.table}.{col} must be a valid IBAN: right length and characters for its "
+                               f"country, and correct ISO 7064 mod-97 check digits. A bad IBAN fails the payment "
+                               f"run after go-live.", invalid, "CORRECTNESS", "HIGH", sub_type="VALUE_ERROR",
+                               fix_type="MANUAL_FIX"))
+        if mismatched and ctx.enabled(f"{rule_id}.country"):
+            out.append(finding(ctx, f"{rule_id}.country", f"{col} + {bank_country}",
+                               f"IBAN country differs from the bank country ({col} vs {bank_country})",
+                               f"The first two letters of a valid IBAN are its country; they should agree with "
+                               f"the bank country {bank_country} of the same record.", mismatched, "CORRECTNESS",
+                               "MEDIUM", columns_used=[col, bank_country], sub_type="VALUE_ERROR",
+                               fix_type="MANUAL_FIX"))
     return out
 
 
@@ -413,8 +572,8 @@ def _propagation_rules(ctx: Ctx) -> List[Dict[str, Any]]:
 # Entry point
 # ---------------------------------------------------------------------------
 
-_FAMILIES = (_flag_rules, _dormancy_rules, _mandatory_rules, _country_rules, _postal_rules, _tax_rules,
-             _domain_rules, _orphan_rules, _propagation_rules)
+_FAMILIES = (_flag_rules, _dormancy_rules, _mandatory_rules, _country_rules, _postal_rules, _street_rules, _tax_rules,
+             _bank_rules, _domain_rules, _orphan_rules, _propagation_rules)
 
 
 def run_sap_rules(table_name: str, df: pd.DataFrame, all_tables: Dict[str, pd.DataFrame],

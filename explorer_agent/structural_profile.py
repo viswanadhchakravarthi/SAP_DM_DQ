@@ -36,7 +36,8 @@ from .logging_config import get_logger
 logger = get_logger("structural_profile")
 
 # Concepts (column_mapping) whose values are personal or identifying: never listed.
-PERSONAL_CONCEPTS = {"LEGAL_NAME", "STREET", "CITY", "POSTAL_CODE", "EMAIL", "PHONE", "TAX_ID", "SEARCH_TERM", "TEXT"}
+PERSONAL_CONCEPTS = {"LEGAL_NAME", "STREET", "CITY", "POSTAL_CODE", "EMAIL", "PHONE", "TAX_ID", "SEARCH_TERM", "TEXT",
+                     "BANK_ACCOUNT", "IBAN"}
 _NUMERIC_DECL = re.compile(r"^(CURR|QUAN|DEC|FLTP|INT\d*|INTEGER|NUMBER|DECIMAL|FLOAT)", re.I)
 _EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 _IBAN = re.compile(r"^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$")

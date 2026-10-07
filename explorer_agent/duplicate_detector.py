@@ -48,10 +48,12 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from . import client_knowledge, duplicate_rules
+from . import client_knowledge, duplicate_rules, local_auditor
 from .config import Config
 from .logging_config import get_logger
-from .profiler_primitives import fuzzy_token_similarity, normalize_text, normalize_text_series
+from .metrics import metrics
+from .profiler_primitives import (fuzzy_token_similarity, normalize_address_series, normalize_name_series,
+                                  normalize_text, place_contains)
 
 logger = get_logger("duplicate_detector")
 
@@ -163,11 +165,13 @@ class _Records:
         self.keys = keys
 
         if name_col:
-            norm = normalize_text_series(_clean_series(df[name_col]))
+            # Legal-entity form removed ("Acme Pvt Ltd" == "Acme Private Limited" == "Acme").
+            norm = normalize_name_series(_clean_series(df[name_col]))
             self.norm_names = norm.where(norm.str.len() >= _MIN_NAME_LEN, "").to_numpy(dtype=object)
         else:
             self.norm_names = np.full(n, "", dtype=object)
-        self.location = {c: normalize_text_series(_clean_series(df[c])).to_numpy(dtype=object)
+        # Street abbreviations expanded ("St." == "Street", "Rd" == "Road", ...).
+        self.location = {c: normalize_address_series(_clean_series(df[c])).to_numpy(dtype=object)
                          for c in location_cols}
         per_col = {c: _identifier_series(_clean_series(df[c]))
                    for c in {c for cols in identifiers for c in cols}}
@@ -297,6 +301,8 @@ def find_duplicate_groups(df: pd.DataFrame, rules: Dict[str, Any],
                     add_pair(a, b)
 
     # 3. Fuzzy names, only within a shared location block
+    borderline: List[Tuple[int, int]] = []   # same block, similarity just under the threshold
+    border_similarity: Dict[Tuple[int, int], float] = {}
     if name_col and location_cols:
         # (location column, value) blocks in the order a row-by-row scan meets them
         has_name = norm_names != ""
@@ -326,11 +332,37 @@ def find_duplicate_groups(df: pd.DataFrame, rules: Dict[str, Any],
                             continue
                         if (min(a, b), max(a, b)) in evidence:
                             continue
-                        if fuzzy_token_similarity(norm_names[a], norm_names[b]) >= fuzzy_threshold:
+                        similarity = fuzzy_token_similarity(norm_names[a], norm_names[b])
+                        if similarity >= fuzzy_threshold:
                             add_pair(a, b)
+                        elif similarity >= Config.DUPLICATE_SEMANTIC_MIN_FUZZY:
+                            borderline.append((a, b))
+                            border_similarity[(min(a, b), max(a, b))] = similarity
         if oversized:
             logger.warning("Skipped fuzzy name matching in %d oversized location block(s) (> %d rows)",
                            oversized, max_block)
+
+    # 3b. Borderline pairs: let the local embedding model say whether the names mean the same entity.
+    if borderline and Config.DUPLICATE_SEMANTIC_ENABLED:
+        for (a, b), cosine in _semantic_matches(borderline, records, evidence).items():
+            ev = add_pair(a, b)
+            if ev is not None:
+                ev["semantic"] = cosine
+
+    # 3c. Still undecided: the closest few go to the local model, within its small per-run budget
+    # (local_auditor.py). It can only add a SIMILAR look-alike for the reviewer.
+    if borderline and local_auditor.enabled():
+        undecided = sorted((p for p in border_similarity if p not in evidence),
+                           key=lambda p: border_similarity[p], reverse=True)
+        for a, b in undecided:
+            if local_auditor.remaining() < 2:
+                break
+            verdict = local_auditor.arbitrate_pair(records[a], records[b])
+            if verdict is not None and verdict.verdict == "SAME":
+                ev = add_pair(a, b)
+                if ev is not None:
+                    ev["arbitrated"] = {"reason": verdict.reason, "similarity": border_similarity[(a, b)]}
+                    metrics.local_audit_pairs_linked += 1
 
     for label, count in skipped_shared.items():
         logger.info("Ignored %d %s value(s) shared by more than %d records (treated as placeholders)",
@@ -483,9 +515,45 @@ def find_duplicate_groups(df: pd.DataFrame, rules: Dict[str, Any],
     return rows, stats
 
 
+def _semantic_matches(pairs: List[Tuple[int, int]], records: "_Records",
+                      evidence: Dict[Tuple[int, int], Dict[str, Any]]) -> Dict[Tuple[int, int], float]:
+    """{(i, j): cosine} for borderline pairs whose names the LOCAL embedding model (all-MiniLM-L6-v2,
+    the one memory/chroma_store.py runs) reads as the same entity. Names stay on this machine; unique
+    names are embedded once and the pair count is capped (duplicates.semantic.max_pairs). Any failure
+    (model files missing, ...) just means no semantic matches - the rule-based result stands."""
+    pairs = [p for p in dict.fromkeys((min(a, b), max(a, b)) for a, b in pairs)
+             if p not in evidence and records.keys[p[0]] != records.keys[p[1]]]
+    if len(pairs) > Config.DUPLICATE_SEMANTIC_MAX_PAIRS:
+        logger.warning("%d borderline name pair(s); embedding only the first %d (duplicates.semantic.max_pairs)",
+                       len(pairs), Config.DUPLICATE_SEMANTIC_MAX_PAIRS)
+        pairs = pairs[:Config.DUPLICATE_SEMANTIC_MAX_PAIRS]
+    if not pairs:
+        return {}
+    try:
+        from .memory import get_memory_store  # local import: the detector must load without the vector stack
+        names = sorted({records.norm_names[p] for pair in pairs for p in pair})
+        vectors = dict(zip(names, get_memory_store().embed(names)))
+    except Exception as exc:
+        logger.warning("Semantic name matching unavailable (%s) - borderline pairs are left as they are",
+                       str(exc).splitlines()[0][:200] if str(exc) else type(exc).__name__)
+        return {}
+    numbers = records.numbers()
+    out = {}
+    for a, b in pairs:
+        if numbers[a] != numbers[b]:
+            continue
+        cosine = float(np.dot(vectors[records.norm_names[a]], vectors[records.norm_names[b]]))
+        if cosine >= Config.DUPLICATE_SEMANTIC_MIN_COSINE:
+            out[(a, b)] = round(cosine, 3)
+    if out:
+        logger.info("Semantic matching linked %d of %d borderline name pair(s)", len(out), len(pairs))
+    return out
+
+
 def _classify_pair(a: Dict[str, Any], b: Dict[str, Any], ev: Dict[str, Any],
                    location_cols: List[str], fuzzy_threshold: float) -> Optional[Tuple[str, float, str]]:
-    same_location = [c for c in location_cols if a["location"][c] and a["location"][c] == b["location"][c]]
+    # Equal, or one address contained in the other ("123 Main St" in "123 Main Street, Suite 400").
+    same_location = [c for c in location_cols if place_contains(a["location"][c], b["location"][c])]
     location_text = ", ".join(f"same {c}" for c in same_location)
 
     if ev["identifiers"]:
@@ -504,6 +572,16 @@ def _classify_pair(a: Dict[str, Any], b: Dict[str, Any], ev: Dict[str, Any],
 
     if a["numbers"] != b["numbers"] or not same_location:
         return None
+    if ev.get("arbitrated"):
+        return ("SIMILAR", ev["arbitrated"]["similarity"],
+                f"the local model judged these the same entity ({ev['arbitrated']['reason']}; names "
+                f"{ev['arbitrated']['similarity']:g}% alike: '{a['name']}' vs '{b['name']}'); {location_text}")
+    if ev.get("semantic"):
+        # Names too different for the fuzzy threshold, but the local embedding model reads them as the
+        # same entity; the shared location (the block they were found in) corroborates it.
+        return ("SIMILAR", round(ev["semantic"] * 100, 1),
+                f"semantically similar names (embedding cosine {ev['semantic']:.2f}: '{a['name']}' vs "
+                f"'{b['name']}'); {location_text}")
     similarity = fuzzy_token_similarity(a["norm_name"], b["norm_name"])
     if similarity < fuzzy_threshold:
         return None
@@ -539,7 +617,7 @@ def describe_rules(table_name: str, rules: Dict[str, Any]) -> str:
 def detect_table_duplicates(table_name: str, df: pd.DataFrame, client_id: Optional[str] = None,
                             dictionary: Optional[Dict[Tuple[str, str], str]] = None,
                             client_name: Optional[str] = None,
-                            rule_planner=None) -> Optional[Dict[str, Any]]:
+                            rule_planner=None, mapping: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
     """Build one DUPLICATE finding (with all group rows) for any table, or None.
 
     Rules are resolved by ``duplicate_rules.resolve_rules``: a config.yaml
@@ -553,7 +631,7 @@ def detect_table_duplicates(table_name: str, df: pd.DataFrame, client_id: Option
     if not Config.DUPLICATES_ENABLED or df.empty:
         return None
     rules = duplicate_rules.resolve_rules(table_name, df, dictionary, client_id=client_id,
-                                          client_name=client_name, rule_planner=rule_planner)
+                                          client_name=client_name, rule_planner=rule_planner, mapping=mapping)
     logger.info("[%s] duplicate rules (%s): %s", table_name, rules["source"], "; ".join(rules["checks"]))
 
     decisions = client_knowledge.load_duplicate_decisions(client_id, table_name)

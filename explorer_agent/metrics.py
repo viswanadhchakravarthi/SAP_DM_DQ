@@ -27,6 +27,11 @@ class RunMetrics:
     duplicate_rule_llm_calls: int = 0
     duplicate_rule_hits: int = 0    # tables whose rules came from saved memory
     duplicate_rule_misses: int = 0  # tables with no saved rules for this schema
+    duplicate_rule_concept_hits: int = 0  # tables whose rules were built from the column mapping (free)
+    # Local-model audit (local_auditor.py): records shown to the local model, capped per process.
+    local_audit_records: int = 0
+    local_audit_pairs_linked: int = 0     # borderline duplicate pairs the local model judged the same entity
+    local_audit_addresses_split: int = 0  # street strings the local model found a city / PO Box in
     # Deterministic SAP rule pack (sap_rules.py) - zero LLM calls by design.
     sap_rules_evaluated: int = 0  # rule groups that ran (table/column present, not disabled)
     sap_rule_findings: int = 0
@@ -80,6 +85,10 @@ class RunMetrics:
         self.duplicate_rule_llm_calls = 0
         self.duplicate_rule_hits = 0
         self.duplicate_rule_misses = 0
+        self.duplicate_rule_concept_hits = 0
+        self.local_audit_records = 0
+        self.local_audit_pairs_linked = 0
+        self.local_audit_addresses_split = 0
         self.sap_rules_evaluated = 0
         self.sap_rule_findings = 0
         self.sap_rule_rows = 0

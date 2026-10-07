@@ -124,11 +124,19 @@ standard_columns:
   LFBK:
     LIFNR: {concept: KEY, part_of_key: true, references: LFA1.LIFNR}
     BANKS: {concept: COUNTRY, part_of_key: true, required: true}
-    BANKL: {concept: OTHER, part_of_key: true, required: true}
-    BANKN: {concept: OTHER, part_of_key: true, required: true, required_group: account}
+    BANKL: {concept: BANK_KEY, part_of_key: true, required: true}
+    BANKN: {concept: BANK_ACCOUNT, part_of_key: true, required: true, required_group: account}
     BKONT: {concept: OTHER}
     KOINH: {concept: LEGAL_NAME}
-    IBAN: {concept: OTHER, required: true, required_group: account}
+    IBAN: {concept: IBAN, required: true, required_group: account}
+  KNBK:
+    KUNNR: {concept: KEY, part_of_key: true, references: KNA1.KUNNR}
+    BANKS: {concept: COUNTRY, part_of_key: true, required: true}
+    BANKL: {concept: BANK_KEY, part_of_key: true, required: true}
+    BANKN: {concept: BANK_ACCOUNT, part_of_key: true, required: true, required_group: account}
+    BKONT: {concept: OTHER}
+    KOINH: {concept: LEGAL_NAME}
+    IBAN: {concept: IBAN, required: true, required_group: account}
   MARA:
     MATNR: {concept: KEY, part_of_key: true}
     MTART: {concept: CODE, required: true}
@@ -252,13 +260,26 @@ standard_columns:
     PARTNER: {concept: KEY, part_of_key: true, references: BUT000.PARTNER}
     KUNNR: {concept: KEY, part_of_key: true, references: KNA1.KUNNR}
 
+# What a record of each SAP table is called, for the duplicate matching rules (review text only).
+duplicate_labels: {LFA1: vendors, KNA1: customers, LFBK: vendor bank accounts, KNBK: customer bank accounts, MARA: materials, BUT000: business partners, ADRC: addresses}
+
+# ---------------------------------------------------------------------------
+# Built-in reference domains (static check tables). A column of an SAP-standard table listed here
+# gets the same 'Invalid code' rule (domain.<T>.<C>) a Metadata Repository domain would give, and
+# the domain replaces the statistical rare-code check for it. A target-domains file from the
+# Metadata Repository (sap-dm.target-domains) always wins over these. Countries (T005), currencies
+# (TCURC) and their formats are checked by the country.* rules and the ISO lists below.
+# ---------------------------------------------------------------------------
+reference_domains:
+  LFM1.INCO1: &incoterms {check_table: TINC, label: "Incoterms 2020 (ICC)", values: [EXW, FCA, CPT, CIP, DAP, DPU, DDP, FAS, FOB, CFR, CIF]}
+  KNVV.INCO1: *incoterms
 # ---------------------------------------------------------------------------
 # Migration objects, for the DQ scorecard: which SAP tables make up each object.
 # A non-SAP table joins the object of the SAP tables it is mapped to.
 # ---------------------------------------------------------------------------
 objects:
   Vendor: [LFA1, LFB1, LFBK, LFM1]
-  Customer: [KNA1, KNB1, KNVV]
+  Customer: [KNA1, KNB1, KNBK, KNVV]
   Material: [MARA, MARC, MARD, MBEW, MVKE, MAKT]
   Service: [ASMD, ASMDT]
   Business Partner: [BUT000, BUT020, BUT0ID, BUT100, ADRC, CVI_VEND_LINK, CVI_CUST_LINK]
@@ -407,6 +428,32 @@ tax:
     AE: {TRN: '\d{15}'}
     AU: {ABN: '\d{11}'}
     SG: {UEN: '\d{8,9}[A-Z]|[TSR]\d{2}[A-Z]{2}\d{4}[A-Z]'}
+  # Check-digit validation (explorer_agent/checksums.py, python-stdnum, offline). Keyed by the SAME
+  # format names as above; the value is the stdnum module(s) that validate it. A number is reported
+  # (rule tax.<T>.checksum) only when it fits a format listed here and every listed validator rejects
+  # it - a format without an entry here (US SSN, DE Steuernummer, ...) is never judged.
+  checksum:
+    EU VAT: eu.vat
+    IN: {GSTIN: in_.gstin, PAN: in_.pan}
+    US: {EIN: us.ein}
+    GB: {UK VAT: gb.vat, UTR: gb.utr}
+    FR: {SIREN/SIRET: [fr.siren, fr.siret]}
+    IT: {Partita IVA: it.iva, Codice fiscale: it.codicefiscale}
+    ES: {NIF/CIF: [es.nif, es.cif]}
+    PL: {NIP: pl.nip}
+    PT: {NIF: pt.nif}
+    SE: {Organisationsnummer: se.orgnr}
+    CH: {UID/MWST: [ch.uid, ch.vat]}
+    BR: {CNPJ: br.cnpj, CPF: br.cpf}
+    CN: {Unified Social Credit Code: cn.uscc}
+    AU: {ABN: au.abn}
+    MX: {RFC: mx.rfc}
+    CA: {Business Number: ca.bn}
+    TR: {VKN/TCKN: [tr.vkn, tr.tckimlik]}
+    SG: {UEN: sg.uen}
+    JP: {Corporate Number: jp.cn}
+    KR: {Business Registration Number: kr.brn}
+    VN: {MST: vn.mst}
 
 # ---------------------------------------------------------------------------
 # PRIORITY 2 - formatting anomalies on text concepts (anomaly_rules.py).

@@ -44,6 +44,7 @@ CONCEPT_WORDS = {
     "LEGAL_NAME": "name", "SEARCH_TERM": "search term", "EMAIL": "e-mail address", "PHONE": "phone number",
     "AMOUNT": "amount of money", "QUANTITY": "quantity", "CURRENCY": "currency", "CODE": "code",
     "TEXT": "free text", "OTHER": "",
+    "BANK_KEY": "bank key", "BANK_ACCOUNT": "bank account number", "IBAN": "IBAN",
 }
 _NEAR_COPY = 0.90   # two skills this alike are the same kind of check, not rivals
 

@@ -177,7 +177,12 @@ class Config:
     # "Why was this record flagged": the exact explanation is always available; the plain-language one uses the
     # LOCAL model and is the one place record values reach an LLM (explain.py). Off by default.
     EXPLAIN_LOCAL_LLM_ENABLED = _env_bool("EXPLORER_EXPLAIN_LOCAL_LLM", _get("explain.local_llm.enabled", False))
-    EXPLAIN_MAX_TOKENS = _env_int("EXPLORER_EXPLAIN_MAX_TOKENS", _get("explain.local_llm.max_tokens", 220))
+    # Local-model audit of small, ambiguous slices (explorer_agent/local_auditor.py): borderline duplicate
+    # pairs and free-text street strings. Off by default; never more than max_records records per process.
+    LOCAL_AUDIT_ENABLED = _env_bool("EXPLORER_LOCAL_AUDIT", _get("local_audit.enabled", False))
+    LOCAL_AUDIT_MAX_RECORDS = _env_int("EXPLORER_LOCAL_AUDIT_MAX_RECORDS", _get("local_audit.max_records_per_run", 50))
+    LOCAL_AUDIT_MAX_TOKENS = _env_int("EXPLORER_LOCAL_AUDIT_MAX_TOKENS", _get("local_audit.max_tokens", 200))
+    EXPLAIN_MAX_TOKENS =_env_int("EXPLORER_EXPLAIN_MAX_TOKENS", _get("explain.local_llm.max_tokens", 220))
 
     # Bounded repair loop (graph.py, repair.py): rounds in which planner checks that failed to run are
     # sent back to the planner once, together. 0 = off. Each round is at most ONE extra LLM call per table.
@@ -208,6 +213,19 @@ class Config:
     DUPLICATE_RULES_REUSE_ACROSS_CLIENTS = _env_bool(
         "EXPLORER_DUPLICATE_RULES_SHARE", _get("duplicates.rules.reuse_across_clients", False)
     )
+    DUPLICATE_RULES_FROM_MAPPING = _env_bool(
+        "EXPLORER_DUPLICATE_RULES_FROM_MAPPING", _get("duplicates.rules.from_mapping", True)
+    )
+    # Local embedding model as a last look at borderline name pairs (same location block, fuzzy
+    # similarity between min_fuzzy and fuzzy_name_threshold). Free and offline, but it is a model:
+    # it only ever yields SIMILAR (a look-alike for the reviewer), never EXACT/PROBABLE.
+    DUPLICATE_SEMANTIC_ENABLED = _env_bool("EXPLORER_DUPLICATE_SEMANTIC", _get("duplicates.semantic.enabled", True))
+    DUPLICATE_SEMANTIC_MIN_FUZZY = _env_float("EXPLORER_DUPLICATE_SEMANTIC_MIN_FUZZY",
+                                              _get("duplicates.semantic.min_fuzzy", 70))
+    DUPLICATE_SEMANTIC_MIN_COSINE = _env_float("EXPLORER_DUPLICATE_SEMANTIC_MIN_COSINE",
+                                               _get("duplicates.semantic.min_cosine", 0.85))
+    DUPLICATE_SEMANTIC_MAX_PAIRS = _env_int("EXPLORER_DUPLICATE_SEMANTIC_MAX_PAIRS",
+                                            _get("duplicates.semantic.max_pairs", 2000))
     DUPLICATE_FUZZY_NAME_THRESHOLD = _env_float(
         "EXPLORER_DUPLICATE_FUZZY_THRESHOLD", _get("duplicates.fuzzy_name_threshold", 85)
     )
@@ -253,6 +271,22 @@ class Config:
     SAP_RULES_MAX_ROWS = _env_int("EXPLORER_SAP_RULES_MAX_ROWS", _get("sap_rules.max_rows_per_finding", 1000))
     SAP_RULES_DISABLED = _env_list("EXPLORER_SAP_RULES_DISABLED", _get("sap_rules.disabled_rules", []))
     SAP_RULES_CLIENT_OVERRIDES = _get("sap_rules.client_overrides", {}) or {}
+    # Check the rule pack's static reference domains (Incoterms, ...) like a Metadata Repository domain.
+    SAP_RULES_REFERENCE_DOMAINS = _env_bool("EXPLORER_SAP_RULES_REFERENCE_DOMAINS",
+                                            _get("sap_rules.reference_domains", True))
+
+    # Proposing a blank City / Postal Code from the client's own verified records (enrichment.py).
+    ENRICHMENT_ENABLED = _env_bool("EXPLORER_ENRICHMENT_ENABLED", _get("enrichment.enabled", True))
+    ENRICHMENT_MIN_COOCCURRENCE = _env_float("EXPLORER_ENRICHMENT_MIN_COOCCURRENCE",
+                                             _get("enrichment.min_cooccurrence", 0.9))
+    ENRICHMENT_POSTAL_FROM_CITY = _env_bool("EXPLORER_ENRICHMENT_POSTAL_FROM_CITY",
+                                            _get("enrichment.postal_from_city", False))
+    ENRICHMENT_MIN_SUPPORT =_env_int("EXPLORER_ENRICHMENT_MIN_SUPPORT", _get("enrichment.min_support", 2))
+
+    # Static offline reference data bundled with the agent (see explorer_agent/reference_data/README.md).
+    REFERENCE_DATA_DIR = _resolve_path(_env_str("EXPLORER_REFERENCE_DATA_DIR",
+                                                _get("reference_data.dir", "explorer_agent/reference_data")))
+    GEO_POSTAL_DB = Path(REFERENCE_DATA_DIR) / "geo_postal.db"
 
     # Statistical and formatting anomalies (explorer_agent/anomaly_rules.py) - zero LLM calls.
     ANOMALIES_ENABLED = _env_bool("EXPLORER_ANOMALIES_ENABLED", _get("anomalies.enabled", True))

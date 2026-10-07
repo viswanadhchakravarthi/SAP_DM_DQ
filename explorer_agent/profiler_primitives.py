@@ -45,6 +45,66 @@ def normalize_text_series(values: pd.Series) -> pd.Series:
     return s.str.replace(r"\s+", " ", regex=True).str.strip()
 
 
+# --------------------------------------------------------------------------
+# Address and legal-entity normalization (used by duplicate_detector).
+# Both are plain lookups, so "123 Main St." and "123 Main Street" - or "Acme Pvt Ltd" and
+# "Acme Private Limited" - compare equal without a model.
+# --------------------------------------------------------------------------
+
+ADDRESS_ABBREVIATIONS = {
+    "st": "street", "str": "street", "strasse": "street", "rd": "road", "ave": "avenue", "av": "avenue",
+    "blvd": "boulevard", "bldg": "building", "flr": "floor", "fl": "floor", "ste": "suite", "apt": "apartment",
+    "hwy": "highway", "dr": "drive", "ln": "lane", "sq": "square", "pkwy": "parkway",
+}
+_ADDRESS_TOKEN_RE = r"\b(" + "|".join(sorted(ADDRESS_ABBREVIATIONS, key=len, reverse=True)) + r")\b"
+
+# Common legal-entity forms (a working subset of the ISO 20275 ELF list), as they look AFTER
+# normalize_text: lower case, punctuation removed ("S.A." -> "s a"), "ltd" -> "limited",
+# "pvt ltd" -> "private limited". Removed from the END of a name only, and never the whole name.
+LEGAL_ENTITY_FORMS = [
+    "private limited", "public limited company", "limited liability company", "limited liability partnership",
+    "limited", "incorporated", "corporation", "company", "pty limited", "pty", "gmbh", "mbh", "gmbh co kg",
+    "ag", "kg", "ohg", "ug", "llc", "l l c", "llp", "lp", "plc", "inc", "corp", "co",
+    "s a", "s a s", "s a r l", "sarl", "sas", "s r l", "srl", "s p a", "spa", "s l", "b v", "bv", "n v", "nv",
+    "a s", "aps", "oy", "ab", "sp z o o", "kk", "pte", "pte limited", "sdn bhd", "bhd", "de c v", "s a de c v",
+]
+_LEGAL_ENTITY_RE = (r"(?<=\S)(?:\s+(?:" + "|".join(re.escape(f).replace(r"\ ", r"\s+")
+                                                      for f in sorted(LEGAL_ENTITY_FORMS, key=len, reverse=True))
+                    + r"))+$")
+
+
+def normalize_address_series(values: pd.Series) -> pd.Series:
+    """normalize_text_series for address parts: also expands street abbreviations (St -> street, Rd -> road,
+    Bldg -> building, Flr -> floor, Ste -> suite, Ave -> avenue, ...). Names are not touched."""
+    s = values.str.strip().str.lower().str.replace("ß", "ss", regex=False)
+    s = s.str.replace(r"[^a-z0-9\s]", " ", regex=True)
+    s = s.str.replace(_ADDRESS_TOKEN_RE, lambda m: ADDRESS_ABBREVIATIONS[m.group(1)], regex=True)
+    return s.str.replace(r"\s+", " ", regex=True).str.strip()
+
+
+def normalize_name_series(values: pd.Series) -> pd.Series:
+    """normalize_text_series for entity names, with the trailing legal-entity form removed
+    ("acme private limited", "acme pvt ltd", "acme llc" -> "acme")."""
+    s = normalize_text_series(values)
+    return s.str.replace(_LEGAL_ENTITY_RE, "", regex=True).str.strip()
+
+
+def place_contains(x: str, y: str) -> bool:
+    """True when two NORMALIZED address strings describe the same place: equal, or one is
+    contained in the other as a token set ('123 main street' in '123 main street suite 400',
+    also '123 main street' vs 'main street 123'). The smaller side needs at least two tokens,
+    and when the larger one has a house number the smaller one must carry it too."""
+    if not x or not y:
+        return False
+    if x == y:
+        return True
+    tx, ty = set(x.split()), set(y.split())
+    small, large = (tx, ty) if len(tx) <= len(ty) else (ty, tx)
+    if len(small) < 2 or not small <= large:
+        return False
+    return any(t.isdigit() for t in small) or not any(t.isdigit() for t in large)
+
+
 def fuzzy_token_similarity(s1: Any, s2: Any) -> float:
     """Compute token-sorted similarity percentage (0-100) using difflib.SequenceMatcher."""
     norm1 = normalize_text(s1)

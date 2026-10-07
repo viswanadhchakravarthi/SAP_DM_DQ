@@ -361,8 +361,15 @@ def main():
         target_domains = column_mapping.load_target_domains(domains_file)
     except Exception as exc:  # a broken handoff must not be silently half-used
         parser.error(f"Handoff input is invalid ({mapping_file} / {domains_file}): {exc}")
+    if Config.SAP_RULES_REFERENCE_DOMAINS and not args.duplicates_only:
+        # Static check tables shipped with the rule pack (Incoterms, ...); the Metadata Repository's win.
+        target_domains = {**column_mapping.builtin_domains(load_pack()), **target_domains}
     mappings = {}
-    if Config.SAP_RULES_ENABLED and not args.duplicates_only:
+    # Duplicate matching rules are built from the same mapping (duplicate_rules.rules_from_mapping),
+    # so --duplicates-only needs it too; a new non-standard layout then costs its one mapping call
+    # instead of the duplicate planner's.
+    if ((Config.SAP_RULES_ENABLED and not args.duplicates_only)
+            or (Config.DUPLICATES_ENABLED and Config.DUPLICATE_RULES_FROM_MAPPING)):
         mappings = column_mapping.resolve_mappings(tables, load_pack(), dictionary, client_id=client["client_id"],
                                                    client_name=client["name"], planner=mapping_planner,
                                                    mapping_agent=mapping_agent)
@@ -390,7 +397,7 @@ def main():
         findings = []
         duplicate_finding = detect_table_duplicates(table_name, df, client_id=client["client_id"],
                                                     dictionary=dictionary, client_name=client["name"],
-                                                    rule_planner=rule_planner)
+                                                    rule_planner=rule_planner, mapping=mappings.get(table_name))
         if duplicate_finding:
             findings.append(duplicate_finding)
         # Known SAP standards next - also zero LLM cost, also kept if the LLM fails.
@@ -402,8 +409,9 @@ def main():
         # Quality score + recommended survivor per duplicate group - a pre-selection
         # for the reviewer, never a verdict. Uses the rules' per-row defects.
         if duplicate_finding:
-            survivorship.annotate(duplicate_finding, table_name, rule_tables.get(table_name, df), mappings,
-                                  rule_tables, rule_findings)
+            # --duplicates-only has no rule findings to score on, so it gets no recommendation.
+            survivorship.annotate(duplicate_finding, table_name, rule_tables.get(table_name, df),
+                                  {} if args.duplicates_only else mappings, rule_tables, rule_findings)
         if not args.duplicates_only and Config.SAP_RULES_ENABLED:
             table_scores.append(scorecard.score_table(
                 table_name, rule_tables[table_name], mappings.get(table_name), rule_coverage, rule_findings,
@@ -494,8 +502,13 @@ def main():
     print(f"Total execution time: {elapsed:.2f}s ({elapsed/60:.2f} min)")
     print(f"LLM calls - Planner: {metrics.planner_llm_calls} | Reflector: {metrics.reflector_llm_calls} | "
           f"Duplicate rules: {metrics.duplicate_rule_llm_calls}")
-    print(f"Duplicate rules - Reused from memory: {metrics.duplicate_rule_hits} | "
+    print(f"Duplicate rules - From column mapping (no LLM): {metrics.duplicate_rule_concept_hits} | "
+          f"Reused from memory: {metrics.duplicate_rule_hits} | "
           f"Drafted for a new schema: {metrics.duplicate_rule_misses}")
+    if metrics.local_audit_records:
+        print(f"Local model audit - Records shown: {metrics.local_audit_records} "
+              f"(cap {Config.LOCAL_AUDIT_MAX_RECORDS}) | Duplicate pairs linked: {metrics.local_audit_pairs_linked} | "
+              f"Street fields split: {metrics.local_audit_addresses_split}")
     print(f"SAP rules (no LLM) - Rule groups run: {metrics.sap_rules_evaluated} | "
           f"Findings: {metrics.sap_rule_findings} (anomalies: {metrics.anomaly_findings}) | "
           f"Rows flagged: {metrics.sap_rule_rows} | "

@@ -82,14 +82,104 @@ def _identical_rows_only(df: pd.DataFrame, reason: str) -> Dict[str, Any]:
     return rules
 
 
+# Concepts that identify a real-world entity on their own (a shared one links two records).
+_IDENTIFIER_CONCEPTS = ("TAX_ID", "IBAN", "EMAIL", "PHONE")
+_LOCATION_CONCEPTS = ("POSTAL_CODE", "CITY", "STREET")
+# A column mapping that is only a best-effort fallback says nothing about meaning.
+_UNUSABLE_MAPPING_SOURCES = ("unmapped", "sap-standard-partial")
+_MAX_DISPLAY = 10
+
+
+def rules_from_mapping(table: str, df: pd.DataFrame, mapping: Optional[Dict[str, Any]],
+                       labels: Optional[Dict[str, str]] = None) -> Optional[Dict[str, Any]]:
+    """Matching rules built from what the columns MEAN (the column mapping), with no LLM call.
+
+    The mapping already says which column is a tax number, e-mail, phone, IBAN,
+    bank account, name or address part - for SAP-standard layouts from the rule
+    pack, for anything else from the one-time mapping call. Building the rules
+    from it means no identifier can be forgotten the way a free-form duplicate
+    planner sometimes did (STCD2-STCD5, STCEG, bank details). Returns None when
+    there is no usable mapping, and the caller falls back to the LLM planner.
+    """
+    if not mapping or mapping.get("source") in _UNUSABLE_MAPPING_SOURCES:
+        return None
+    bindings = {c: b for c, b in mapping["columns"].items() if c in df.columns}
+    if not any(b["concept"] != "OTHER" for b in bindings.values()):
+        return None
+
+    def of(*concepts: str) -> List[str]:
+        return [c for c, b in bindings.items() if b["concept"] in concepts]
+
+    key = [c for c in of("KEY") if bindings[c]["part_of_key"]]
+    key_parts = [c for c, b in bindings.items() if b["part_of_key"]]
+    # A key must be unique only on a master table: every key part is a KEY and none points elsewhere.
+    key_unique = bool(key) and all(bindings[c]["concept"] == "KEY" and not bindings[c]["references"]
+                                   for c in key_parts)
+
+    why: Dict[str, str] = {}
+    groups: Dict[str, List[str]] = {}
+    for column in of(*_IDENTIFIER_CONCEPTS):
+        groups[f"__{column}"] = [column]
+        why[column] = f"identifier - {bindings[column]['concept']}: {bindings[column]['reason']}"
+    accounts = of("BANK_ACCOUNT")
+    if accounts:
+        # An account number is only unique together with its bank: country + bank key + account.
+        parts = [c for c in of("COUNTRY") if bindings[c]["part_of_key"]] + of("BANK_KEY") + accounts
+        groups["__bank"] = parts
+        for column in parts:
+            why[column] = (f"identifier (together with {', '.join(p for p in parts if p != column)}) - "
+                           f"{bindings[column]['concept']}: {bindings[column]['reason']}")
+
+    names = of("LEGAL_NAME")
+    name = next((c for c in names if bindings[c]["required"]), names[0] if names else None)
+    location = of(*_LOCATION_CONCEPTS)
+    if name:
+        why[name] = (f"name - {bindings[name]['reason']}" if location else
+                     f"name - NOT used for matching: this table has no location columns to confirm a name match.")
+    for column in location:
+        why[column] = f"location - {bindings[column]['concept']}: {bindings[column]['reason']}"
+    for column in key:
+        why[column] = f"key - {bindings[column]['reason']}"
+
+    # No distinct-share guard here (the LLM planner needs one because it can mislabel a column): the
+    # mapping says what the column IS, and the detector already ignores a value shared by more than
+    # duplicates.max_identifier_share records, so a default e-mail or "TBD" cannot link anything.
+    identifiers = [cols for cols in groups.values() if cols]
+    shown = [c for c in [*([name] if name else []), *names, *location, *of("COUNTRY"),
+                         *[c for cols in identifiers for c in cols]] if c not in key]
+    display = list(dict.fromkeys(shown))[:_MAX_DISPLAY] or [c for c in df.columns if c not in key][:8]
+    rules = {
+        "key": key, "key_unique": key_unique,
+        "name": name if location else None,
+        "identifiers": identifiers, "location": location, "display": display,
+        "label": (labels or {}).get(table, "records"),
+        "rule_scope": "UNIVERSAL" if str(mapping.get("source", "")).startswith("sap-standard") else "CLIENT_SPECIFIC",
+        "industry": None, "notes": None, "why": why,
+        "source": "concept-mapping",
+        "source_detail": (f"built from the column mapping ({mapping.get('source')}): every column mapped to "
+                          f"TAX_ID, IBAN, bank account, e-mail or phone is an identifier, the name is matched "
+                          f"fuzzily and confirmed by postal code / city / street - no LLM call"),
+    }
+    rules["checks"] = build_checks(rules)
+    return rules
+
+
 def resolve_rules(table: str, df: pd.DataFrame,
                   dictionary: Optional[Dict[Tuple[str, str], str]] = None,
                   client_id: Optional[str] = None, client_name: Optional[str] = None,
-                  rule_planner: Optional["duplicate_rule_planner.RulePlanner"] = None) -> Dict[str, Any]:
-    """The matching rules for one table - from config, from memory, or freshly drafted."""
+                  rule_planner: Optional["duplicate_rule_planner.RulePlanner"] = None,
+                  mapping: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """The matching rules for one table - from config, from the column mapping, from memory, or drafted."""
     raw = Config.DUPLICATE_TABLE_RULES.get(table)
     if raw:
         return _from_config(table, raw)
+
+    if Config.DUPLICATE_RULES_FROM_MAPPING:
+        from .rule_context import load_pack  # local import: keeps this module free of the rule engines
+        concept_rules = rules_from_mapping(table, df, mapping, load_pack().get("duplicate_labels"))
+        if concept_rules:
+            metrics.duplicate_rule_concept_hits += 1
+            return concept_rules
 
     saved = duplicate_rule_store.load_rules(table, df.columns, client_id, client_name)
     if saved:

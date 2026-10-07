@@ -76,6 +76,14 @@ duplicates:
   # matches always also need a matching location field, and names whose
   # numbers differ ("Plant 1" vs "Plant 2") never fuzzy-match.
   fuzzy_name_threshold: 85 # EXPLORER_DUPLICATE_FUZZY_THRESHOLD
+  # Last look at borderline name pairs with the LOCAL embedding model (all-MiniLM-L6-v2, no network):
+  # pairs in the same location block whose fuzzy similarity is between min_fuzzy and the threshold
+  # above are linked as SIMILAR (never EXACT/PROBABLE) when the names' embedding cosine is >= min_cosine.
+  semantic:
+    enabled: true     # EXPLORER_DUPLICATE_SEMANTIC
+    min_fuzzy: 70     # EXPLORER_DUPLICATE_SEMANTIC_MIN_FUZZY
+    min_cosine: 0.85  # EXPLORER_DUPLICATE_SEMANTIC_MIN_COSINE
+    max_pairs: 2000   # EXPLORER_DUPLICATE_SEMANTIC_MAX_PAIRS
   # An identifier value shared by more records than this is treated as a
   # placeholder/default (e.g. a dummy tax ID), not as proof of duplication.
   max_identifier_share: 5 # EXPLORER_DUPLICATE_MAX_IDENTIFIER_SHARE
@@ -113,6 +121,12 @@ duplicates:
     # repurposed and custom fields mean whatever their owner decided.
     reuse_across_clients: false # EXPLORER_DUPLICATE_RULES_SHARE
 
+    # Build the rules from the column mapping (what each column MEANS) before asking the LLM:
+    # every TAX_ID / IBAN / bank-account / e-mail / phone column becomes an identifier, the
+    # LEGAL_NAME the matched name, POSTAL_CODE / CITY / STREET its location. SAP-standard tables
+    # cost nothing; the LLM planner above is only the fallback when a table has no usable mapping.
+    from_mapping: true # EXPLORER_DUPLICATE_RULES_FROM_MAPPING
+
   # Rules are drafted per table as described above - no per-table setup needed.
   # Only add a table here to pin its rules by hand and skip both the LLM and memory, e.g.:
   #   tables:
@@ -124,6 +138,21 @@ duplicates:
   #       location: []          # corroborating fields for name matches
   #       display: [KOINH, BANKS, BANKL, BANKN, IBAN]  # columns shown in the review app
   tables: {}
+
+enrichment:
+  # A blank mandatory City (or Postal Code) gets a proposed value - fix_type AUTO_FIXABLE - when the
+  # client's own verified records agree on it (explorer_agent/enrichment.py): same country + postal code
+  # (or city) held by at least min_support records, of which at least min_cooccurrence share one value.
+  enabled: true           # EXPLORER_ENRICHMENT_ENABLED
+  min_cooccurrence: 0.9   # EXPLORER_ENRICHMENT_MIN_COOCCURRENCE
+  min_support: 2          # EXPLORER_ENRICHMENT_MIN_SUPPORT
+  # The reverse direction (blank Postal Code from country + city). Off: a city usually has many postal
+  # codes, so "most records in this city use 400001" is weak evidence for THIS record.
+  postal_from_city: false # EXPLORER_ENRICHMENT_POSTAL_FROM_CITY
+
+reference_data:
+  # Static offline reference files bundled with the agent (geo_postal.db, ...). Never fetched at run time.
+  dir: explorer_agent/reference_data   # EXPLORER_REFERENCE_DATA_DIR
 
 scorecard:
   # Composite DQ Index per table, migration object and run (explorer_agent/scorecard.py),
@@ -275,8 +304,19 @@ explain:
     enabled: true
     max_tokens: 220
 
+local_audit:
+  # The LOCAL model (llm.local.model_path, in-process llama.cpp, no network) as an on-demand auditor of SMALL
+  # ambiguous slices - never a table scan: (1) a borderline duplicate pair (names 70-85% alike in the same
+  # location block, which the embedding check could not settle), (2) a free-text street string that may hold a
+  # city or PO Box after the deterministic checks failed. Every item sends that record's values to the local model
+  # only, so it is off by default (same exception as explain.local_llm). A hard cap on records per process keeps
+  # a CPU model from running for hours; items beyond it are simply not audited.
+  enabled: false          # EXPLORER_LOCAL_AUDIT
+  max_records_per_run: 50 # EXPLORER_LOCAL_AUDIT_MAX_RECORDS (a pair counts as 2 records)
+  max_tokens: 200         # EXPLORER_LOCAL_AUDIT_MAX_TOKENS
+
 sandbox:
-  timeout_seconds: 10          # per check, from the moment the check starts
+  timeout_seconds: 10         # per check, from the moment the check starts
   mem_limit_mb: 512            # Unix only: headroom on top of the loaded data
   # Time for the worker to start and receive the tables, once per batch of checks
   # (not counted against timeout_seconds; ~10 s for 1M vendor rows)

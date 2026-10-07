@@ -223,6 +223,33 @@ class DuplicateRulePlan(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Local-model audit (see local_auditor.py): tiny, bounded questions about ONE pair / ONE string.
+# ---------------------------------------------------------------------------
+
+class PairVerdict(BaseModel):
+    """Whether two master data records describe the same real-world entity."""
+    verdict: Literal["SAME", "DIFFERENT", "UNSURE"] = Field(description=(
+        "SAME only when the two records clearly describe one and the same company/person (name variants, "
+        "abbreviations, legal form, word order). DIFFERENT when they are different entities (different branch, "
+        "department, number, location that cannot be explained). UNSURE when the facts do not decide it."))
+    reason: str = Field(description="One short sentence naming the facts that decided it.")
+
+    @field_validator("verdict", mode="before")
+    @classmethod
+    def normalize_verdict(cls, v):
+        value = str(v or "").strip().upper()
+        return value if value in ("SAME", "DIFFERENT") else "UNSURE"
+
+
+class AddressParts(BaseModel):
+    """The parts found inside ONE free-text street field. Copy text exactly as written; leave a part empty if absent."""
+    street: str = Field(default="", description="Street name and house number only.")
+    po_box: str = Field(default="", description="A PO Box / Postfach, exactly as written.")
+    city: str = Field(default="", description="A city or town name written inside the field.")
+    postal_code: str = Field(default="", description="A postal code written inside the field.")
+
+
+# ---------------------------------------------------------------------------
 # Column mapping (see column_mapping.py)
 # ---------------------------------------------------------------------------
 # What each column MEANS, in a fixed business vocabulary. The deterministic rule
@@ -234,6 +261,7 @@ ColumnConcept = Literal[
     "KEY", "ORG_UNIT", "DELETION_FLAG", "BLOCK_FLAG", "CREATED_DATE", "DATE",
     "COUNTRY", "POSTAL_CODE", "CITY", "STREET", "TAX_ID", "LEGAL_NAME", "SEARCH_TERM",
     "EMAIL", "PHONE", "AMOUNT", "QUANTITY", "CURRENCY", "CODE", "TEXT", "OTHER",
+    "BANK_KEY", "BANK_ACCOUNT", "IBAN",
 ]
 COLUMN_CONCEPTS = ColumnConcept.__args__
 BlockType = Literal["POSTING", "PURCHASING", "SALES", "GENERAL"]
@@ -251,7 +279,9 @@ class ColumnBinding(BaseModel):
         "company-registration number issued by a tax authority or business register - NOT an insurance, "
         "membership, patient, employee, passport or licence number (those are OTHER, or KEY when they identify "
         "the row). LEGAL_NAME: a name of a person or organisation (incl. account holder). "
-        "SEARCH_TERM: a short sort/search field. EMAIL, PHONE: contact data. AMOUNT: a money value. "
+        "SEARCH_TERM: a short sort/search field. EMAIL, PHONE: contact data. BANK_KEY: a bank / branch "
+        "identifier (bank key, sort code, routing number, BIC). BANK_ACCOUNT: a bank account number. "
+        "IBAN: an International Bank Account Number. (The bank's COUNTRY stays COUNTRY.) AMOUNT: a money value. "
         "QUANTITY: a count, weight, stock level or duration. CURRENCY: a currency key. CODE: a key into a "
         "closed value set that repeats a few values (status, type, category, class, gender, department, unit, "
         "language, account group, payment terms, material type). "

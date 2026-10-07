@@ -200,3 +200,6 @@ plan.md
 # local launch scripts and Claude Code settings (per machine)
 start_appl.bat
 .claude/
+
+# Built offline reference data (python -m explorer_agent.tools.build_geo_postal)
+explorer_agent/reference_data/*.db

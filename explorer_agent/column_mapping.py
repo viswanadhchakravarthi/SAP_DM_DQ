@@ -470,6 +470,13 @@ def load_target_domains(path: Optional[str]) -> Dict[str, Dict[str, Any]]:
     return index
 
 
+def builtin_domains(pack: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """The rule pack's static reference domains in the same shape as load_target_domains."""
+    return {str(field).upper(): {"values": {str(v) for v in spec.get("values", [])},
+                                 "check_table": spec.get("check_table") or spec.get("label")}
+            for field, spec in (pack.get("reference_domains") or {}).items()}
+
+
 def attach_target_domains(mappings: Dict[str, Dict[str, Any]], domains: Dict[str, Dict[str, Any]]) -> int:
     """Put the allowed SAP values on each column whose target field has a domain: the
     Mapping Agent's targets, or the column itself for an SAP-standard table."""
