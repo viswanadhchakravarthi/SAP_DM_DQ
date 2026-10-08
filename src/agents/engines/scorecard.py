@@ -18,7 +18,9 @@ Pillars (each 0..1, None when the table gives it nothing to measure):
                  beyond the one that survives, from EXACT/PROBABLE groups, or
                  the reviewer's DUPLICATE verdicts once a group is decided -
                  including groups settled in earlier runs and no longer shown.
-                 SIMILAR groups (look-alikes) are only reported as "possible".
+                 SHARED_IDENTIFIER groups (same tax ID / bank account, different
+                 names) and SIMILAR groups (look-alikes) are only reported as
+                 "possible" until reviewed.
 * activeness   = records neither marked for deletion nor dormant / records.
                  Blocked records are reported, not deducted. Shown, but weighted
                  0 in the index by default: a deleted or dormant vendor is a
@@ -33,7 +35,7 @@ records that could be loaded as they are, with no open defect at all. A record i
 not ready when any deterministic completeness/correctness check flags it, or when
 it is a duplicate that will be merged away (the reviewer's DUPLICATE verdict, or
 the recommendation in an EXACT/PROBABLE group - the golden record stays ready;
-SIMILAR look-alikes are not counted). Records marked for deletion or dormant are
+SHARED_IDENTIFIER and SIMILAR groups are not counted before review). Records marked for deletion or dormant are
 OUT OF SCOPE (they are not migrated), so they count neither way. Each not-ready
 record keeps its reasons - the cleansing worklist (``/api/scorecard/not-ready``).
 A cell-based index sits near 100% because most cells are fine; readiness says how
@@ -48,6 +50,7 @@ import pandas as pd
 
 from src.agents.config import Config
 from src.agents.logging_config import get_logger
+from src.agents.engines.duplicate_detector import MATCH_RANK
 from src.agents.engines.rule_context import text
 
 logger = get_logger("scorecard")
@@ -75,7 +78,10 @@ def _completeness(df, columns, coverage, findings) -> Optional[Dict[str, Any]]:
     n_groups = len(groups) + (1 if any(b["concept"] == "TAX_ID" and b["required"] and str(c).upper() in covered
                                        for c, b in columns.items()) else 0)
     missing = sum(f["raw_tool_result"]["rows_flagged"] for f in findings if f["category"] == "COMPLETENESS")
-    return _pillar(missing, len(df) * n_groups, fields=n_groups)
+    # Conditionally required cells (a REGION only where the country uses regions) bring their own count.
+    conditional = sum(int(f["raw_tool_result"].get("cells_checked") or 0) for f in findings
+                      if f["category"] == "COMPLETENESS")
+    return _pillar(missing, len(df) * n_groups + conditional, fields=n_groups)
 
 
 def _correctness(df, coverage, findings) -> Optional[Dict[str, Any]]:
@@ -97,6 +103,12 @@ def _correctness(df, coverage, findings) -> Optional[Dict[str, Any]]:
     return _pillar(len(cells) + extra, total, columns=len(checked))
 
 
+def _strong(members: List[Dict[str, Any]]) -> bool:
+    """EXACT / PROBABLE group: counted as redundant before review. SHARED_IDENTIFIER (sister companies
+    sharing a tax ID or bank account) and SIMILAR stay 'possible' until a reviewer decides."""
+    return max(MATCH_RANK.get(m.get("match_type"), 0) for m in members) >= MATCH_RANK["PROBABLE"]
+
+
 def _uniqueness(df, duplicate_finding, stats) -> Optional[Dict[str, Any]]:
     if not Config.DUPLICATES_ENABLED:
         return None
@@ -105,15 +117,14 @@ def _uniqueness(df, duplicate_finding, stats) -> Optional[Dict[str, Any]]:
     groups: Dict[str, List[Dict[str, Any]]] = {}
     for row in (duplicate_finding or {}).get("detail_rows", []):
         groups.setdefault(row["duplicate_group_id"], []).append(row)
-    rank = {"EXACT": 3, "PROBABLE": 2, "SIMILAR": 1}
     for members in groups.values():
         verdicts = Counter(m.get("review_verdict") or "PENDING" for m in members)
         if verdicts["DUPLICATE"] or verdicts["UNIQUE"]:
             redundant += verdicts["DUPLICATE"]          # the reviewer's call wins
-        elif max(rank.get(m.get("match_type"), 0) for m in members) >= 2:
+        elif _strong(members):
             redundant += len(members) - 1               # all but the survivor
         else:
-            possible += len(members) - 1                # SIMILAR: unconfirmed look-alikes
+            possible += len(members) - 1                # SHARED_IDENTIFIER / SIMILAR: unconfirmed until reviewed
     return _pillar(redundant, len(df), possible_duplicates=possible,
                    decided_in_earlier_runs=int((stats or {}).get("settled_duplicates", 0)))
 
@@ -175,10 +186,9 @@ def _readiness(df, columns, findings, duplicate_finding, duplicate_stats) -> Dic
     groups: Dict[str, List[Dict[str, Any]]] = {}
     for row in (duplicate_finding or {}).get("detail_rows", []):
         groups.setdefault(row["duplicate_group_id"], []).append(row)
-    rank = {"EXACT": 3, "PROBABLE": 2, "SIMILAR": 1}
     for members in groups.values():
         golden = next((m for m in members if m.get("is_golden_record")), None)
-        strong = max(rank.get(m.get("match_type"), 0) for m in members) >= 2
+        strong = _strong(members)
         for m in members:
             verdict = m.get("review_verdict") or "PENDING"
             if verdict == "DUPLICATE" or (verdict in ("PENDING", "TO_BE_CONFIRMED") and strong

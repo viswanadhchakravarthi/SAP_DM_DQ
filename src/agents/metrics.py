@@ -28,6 +28,11 @@ class RunMetrics:
     duplicate_rule_hits: int = 0    # tables whose rules came from saved memory
     duplicate_rule_misses: int = 0  # tables with no saved rules for this schema
     duplicate_rule_concept_hits: int = 0  # tables whose rules were built from the column mapping (free)
+    # Duplicate groups by their strongest match type (duplicate_detector.MATCH_RANK).
+    duplicate_groups_exact: int = 0
+    duplicate_groups_probable: int = 0
+    duplicate_groups_shared_identifier: int = 0  # shared tax ID / bank account, different names: verify first
+    duplicate_groups_similar: int = 0
     # Local-model audit (local_auditor.py): records shown to the local model, capped per process.
     local_audit_records: int = 0
     local_audit_pairs_linked: int = 0     # borderline duplicate pairs the local model judged the same entity
@@ -58,7 +63,8 @@ class RunMetrics:
             "sap_rules_evaluated=%d sap_rule_findings=%d sap_rule_rows=%d planner_checks_covered_by_rules=%d "
             "anomaly_findings=%d column_mapping_standard=%d column_mapping_hits=%d column_mapping_llm_calls=%d "
             "column_mapping_failures=%d known_findings_skipped=%d skills_matched_by_similarity=%d "
-            "skills_similarity_rejected=%d",
+            "skills_similarity_rejected=%d duplicate_groups_exact=%d duplicate_groups_probable=%d "
+            "duplicate_groups_shared_identifier=%d duplicate_groups_similar=%d",
             self.planner_llm_calls, self.reflector_llm_calls,
             self.duplicate_rule_llm_calls, self.duplicate_rule_hits, self.duplicate_rule_misses,
             self.sandbox_executions, self.cache_hits, self.cache_misses,
@@ -67,6 +73,8 @@ class RunMetrics:
             self.planner_checks_covered_by_rules, self.anomaly_findings, self.column_mapping_standard,
             self.column_mapping_hits, self.column_mapping_llm_calls, self.column_mapping_failures,
             self.known_findings_skipped, self.skills_matched_by_similarity, self.skills_similarity_rejected,
+            self.duplicate_groups_exact, self.duplicate_groups_probable, self.duplicate_groups_shared_identifier,
+            self.duplicate_groups_similar,
         )
 
     def reset(self):
@@ -86,6 +94,10 @@ class RunMetrics:
         self.duplicate_rule_hits = 0
         self.duplicate_rule_misses = 0
         self.duplicate_rule_concept_hits = 0
+        self.duplicate_groups_exact = 0
+        self.duplicate_groups_probable = 0
+        self.duplicate_groups_shared_identifier = 0
+        self.duplicate_groups_similar = 0
         self.local_audit_records = 0
         self.local_audit_pairs_linked = 0
         self.local_audit_addresses_split = 0

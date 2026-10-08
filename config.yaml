@@ -80,6 +80,11 @@ duplicates:
   # matches always also need a matching location field, and names whose
   # numbers differ ("Plant 1" vs "Plant 2") never fuzzy-match.
   fuzzy_name_threshold: 85 # EXPLORER_DUPLICATE_FUZZY_THRESHOLD
+  # Records sharing a strong identifier (tax ID, bank account, e-mail) are EXACT only when their names
+  # agree too; PROBABLE when names are at least this alike; otherwise SHARED_IDENTIFIER (sister
+  # companies / branches sharing a GSTIN or bank account): shown for review, never pre-merged and not
+  # counted against uniqueness or readiness until a reviewer decides.
+  shared_identifier_name_min: 80 # EXPLORER_DUPLICATE_SHARED_IDENTIFIER_NAME_MIN
   # Last look at borderline name pairs with the LOCAL embedding model (all-MiniLM-L6-v2, no network):
   # pairs in the same location block whose fuzzy similarity is between min_fuzzy and the threshold
   # above are linked as SIMILAR (never EXACT/PROBABLE) when the names' embedding cosine is >= min_cosine.
@@ -153,6 +158,12 @@ enrichment:
   # The reverse direction (blank Postal Code from country + city). Off: a city usually has many postal
   # codes, so "most records in this city use 400001" is weak evidence for THIS record.
   postal_from_city: false # EXPLORER_ENRICHMENT_POSTAL_FROM_CITY
+  # Blank Region (SAP REGIO, concept REGION): proposed from the dataset first (same rule as City), then
+  # from the offline postal directory - but a GeoNames region code is used as-is only for these
+  # countries, where it is known to equal the SAP region key (T005S). Elsewhere it must already occur
+  # in the client's own records for that country. NOT DE: SAP keys German states 01-16 (09 = Bayern),
+  # GeoNames uses BY. Add a country only after checking its codes against the client's T005S.
+  region_countries: [US]  # EXPLORER_ENRICHMENT_REGION_COUNTRIES (comma-separated)
 
 reference_data:
   # Static offline reference files bundled with the agent (geo_postal.db, ...). Never fetched at run time.

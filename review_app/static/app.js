@@ -563,18 +563,24 @@ function renderGroupedRecordsTable(data) {
   const keyFieldNames = (data.records.find((r) => r.key_field) || {}).key_field || "";
   const staleNote = data.stale
     ? `<p class="hint-text helper-note">${escapeHtml(data.stale_note || "")}</p>` : "";
+  const nameColumn = data.name_column || null;
+  // Every pending proposed value in the grid, for "Apply all" (one call per finding).
+  const pendingCells = data.records.flatMap((r) => Object.values(r.cells)).filter(pendingSuggestion);
+  const suggestionFindings = [...new Set(pendingCells.map((c) => c.finding_id))];
   return `
     <p class="hint-text">${data.records.length} record${data.records.length === 1 ? "" : "s"}. A shaded cell
       shows that field's current value for context - it wasn't the one flagged for that record. The
       Disposition column has one column per flagged field - k=1 for a record flagged on just one.
       ${helperCols.length ? `Helper columns from ${escapeHtml(data.table_name)}: ${helperCols.map((c) => escapeHtml(c.name)).join(", ")}.` : ""}</p>
     ${staleNote}
+    ${applyAllBar(suggestionFindings, pendingCells.length)}
     <div class="grouped-records-scroll">
       <table class="items-table grouped-records-table">
         <thead>
           <tr>
-            <th>Row</th><th>Key Field${keyFieldNames ? `<div class="hint-text">${wrapTableColumnRef(data.table_name, keyFieldNames, "")}</div>` : ""}</th>
-            <th>Details</th>
+            <th class="col-row">Row</th><th class="col-key">Key${keyFieldNames ? `<div class="hint-text">${wrapTableColumnRef(data.table_name, keyFieldNames, "")}</div>` : ""}</th>
+            ${nameColumn ? `<th class="col-name">Name<div class="hint-text">${wrapTableColumnRef(data.table_name, nameColumn, "")}</div></th>` : ""}
+            <th class="col-summary">Defect Summary</th>
             ${data.fields.map((f) => `<th title="${escapeHtml(f.hypothesis || "")}">${escapeHtml(f.label)}</th>`).join("")}
             ${helperCols.map(helperHeader).join("")}
             <th>Disposition</th>
@@ -589,9 +595,10 @@ function renderGroupedRecordsTable(data) {
             const flaggedFields = data.fields.filter((f) => r.cells[f.key]);
             return `
               <tr>
-                <td>${escapeHtml(r.row_index ?? "-")}</td>
-                <td>${escapeHtml(r.key_value || "")}</td>
-                <td>${renderGroupedDetails(flaggedFields, r)}</td>
+                <td class="col-row">${escapeHtml(r.row_index ?? "-")}</td>
+                <td class="col-key">${escapeHtml(r.key_value || "")}</td>
+                ${nameColumn ? nameCellHtml(r.name) : ""}
+                <td class="col-summary">${renderGroupedDetails(flaggedFields, r, data.table_name)}</td>
                 ${data.fields.map((f) => renderCompactStatusCell(r.cells[f.key], f.label, values[f.column_name], editor)).join("")}
                 ${helperCols.map((c) => `<td class="helper-col">${values[c.name] ? escapeHtml(values[c.name]) : '<span class="blank-cell">—</span>'}</td>`).join("")}
                 <td class="dispo-matrix-cell">${renderDispositionMatrix(r, flaggedFields, groupedWorkflow().dispositions)}</td>
@@ -604,15 +611,22 @@ function renderGroupedRecordsTable(data) {
 
 // One entry per flagged field: its reason text plus a "Why flagged?" button (same explanation panel
 // as the single-field view; it is per record item, so a record flagged on several fields gets one each).
-function renderGroupedDetails(flaggedFields, record) {
+function renderGroupedDetails(flaggedFields, record, tableName) {
   const multi = flaggedFields.length > 1;
   const text = flaggedFields.map((f) => {
     const item = record.cells[f.key];
-    return `<div class="grouped-detail">${multi ? `<strong>${escapeHtml(f.label)}:</strong> ` : ""}${linkifyTableColumnRefs(escapeHtml(item.issue_detail || ""))}</div>`;
+    const summary = cleanDefectSummary(item.issue_detail, record.key_value, record.name, tableName);
+    return `<div class="grouped-detail" title="${escapeHtml(item.issue_detail || "")}">${multi ? `<strong>${escapeHtml(f.label)}:</strong> ` : ""}${linkifyTableColumnRefs(escapeHtml(summary))}</div>`;
   }).join("");
+  // Several blank fields with proposed values on one record (City + Region from the same postal code):
+  // accept them together. Each stays its own decision, undone one by one with ↺.
+  const proposed = flaggedFields.filter((f) => pendingSuggestion(record.cells[f.key]));
+  const applyBoth = proposed.length > 1
+    ? `<div><button type="button" class="btn-apply-suggestion" data-apply-items="${escapeHtml(JSON.stringify(proposed.map((f) => record.cells[f.key].id)))}">
+        ✓ Apply ${proposed.length === 2 ? "both" : `all ${proposed.length}`} (${proposed.map((f) => escapeHtml(f.label)).join(" + ")})</button></div>` : "";
   // ONE button per row; it opens every flagged field's explanation together.
   const targets = flaggedFields.map((f) => ({ id: record.cells[f.key].id, field: f.label }));
-  return `${text}<div><button type="button" class="btn-why" data-why-group="${escapeHtml(JSON.stringify(targets))}" aria-expanded="false">Why flagged?</button></div>`;
+  return `${text}${applyBoth}<div><button type="button" class="btn-why" data-why-group="${escapeHtml(JSON.stringify(targets))}" aria-expanded="false">Why flagged?</button></div>`;
 }
 
 // Same panel as toggleWhy(), once per flagged field of the row, each under its field name.
@@ -685,9 +699,12 @@ function flaggedFieldStatusHtml(item, fieldName, editor = true) {
     : `<span class="dispo-pending">Pending</span>`;
   const correctedNote = !editor ? ""
     : item.status === "PENDING"
-    ? renderInlineCorrected(item, false, fieldName)
+    ? suggestionHtml(item, fieldName) + renderInlineCorrected(item, false, fieldName)
     : (item.corrected_data ? `<div class="corrected-note">→ ${escapeHtml(item.corrected_data)}</div>` : "");
-  return `${badge}${correctedNote}`;
+  // Audit trail of a one-click Apply: proposed by the engine, accepted by a named person.
+  const applied = item.decision_source === "SUGGESTION_APPLIED"
+    ? `<div class="hint-text applied-note">Proposed value applied${item.reviewer ? ` by ${escapeHtml(item.reviewer)}` : ""}</div>` : "";
+  return `${badge}${correctedNote}${applied}`;
 }
 
 // The disposition matrix for one record: rows are the pillar's dispositions (`rows`, the shared
@@ -777,6 +794,7 @@ function attachGroupedRecordHandlers() {
   }
 
   container.querySelectorAll("[data-why-group]").forEach((btn) => btn.addEventListener("click", () => toggleWhyGroup(btn)));
+  attachSuggestionHandlers(container, refreshGroupedRecords);
 
   container.querySelectorAll("[data-edit-toggle]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -1111,9 +1129,154 @@ function verdictButton(itemId, verdict, label, requiresCorrectedInput) {
     ${requiresCorrectedInput ? 'data-requires-corrected="true"' : ""}>${escapeHtml(label)}</button>`;
 }
 
+// ---------------------------------------------------------------------------
+// Compact records table: the key and name have their own columns, so the defect text drops them, and a
+// proposed value (City / Region inferred from the postal code) is accepted in one click.
+// ---------------------------------------------------------------------------
+
+function escapeRegExp(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// The diagnostic part of a record's reason text, without what the Key / Name columns already show:
+// "0000001 - ...", "Vendor 0000001: ...", "Acme (0000001) is mandatory but blank", "... in table LFA1".
+function cleanDefectSummary(detailText, keyValue, nameValue, tableName) {
+  const original = String(detailText || "").trim();
+  let text = original;
+  const key = String(keyValue || "").trim();
+  const name = String(nameValue || "").trim();
+  if (key && name) {
+    text = text.replace(new RegExp(`^${escapeRegExp(name)}\\s*\\(${escapeRegExp(key)}\\)\\s+is mandatory but blank\\.?`, "i"),
+      "Mandatory field is blank");
+  }
+  if (key) {
+    text = text.replace(new RegExp(`^(?:[A-Za-z]+\\s+)?${escapeRegExp(key)}(?:\\s*\\([^)]*\\))?\\s*[-:–]\\s+`, ""), "");
+  }
+  if (name) text = text.replace(new RegExp(`^${escapeRegExp(name)}\\s*[-:–]\\s+`, "i"), "");
+  if (tableName) {
+    const t = escapeRegExp(tableName);
+    text = text.replace(new RegExp(`\\bmandatory in ${t}\\b`, "g"), "mandatory")
+      .replace(new RegExp(`\\s+in table ${t}\\b`, "g"), "");
+  }
+  text = text.trim();
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : original;
+}
+
+const SUGGESTION_SOURCES = {
+  dataset: "the client's own verified records (same country and postal code)",
+  reference: "the offline postal directory (GeoNames)",
+};
+
+// The proposed value of a pending blank field, with a one-click Apply - or, once applied, nothing
+// here (the field's status shows CORRECTED → value, and ↺ in the Disposition column undoes it).
+function suggestionHtml(item, fieldName) {
+  if (!item || !item.id || !item.suggested_value) return "";
+  if (item.status !== "PENDING" || (item.review_verdict || "PENDING") !== "PENDING") return "";
+  const field = item.suggested_field || fieldName;
+  const source = SUGGESTION_SOURCES[item.suggestion_source] || item.suggestion_source || "";
+  return `
+    <div class="inline-suggestion-box">
+      <span class="current-val-chip">${escapeHtml(field)}: <em>&lt;Missing&gt;</em></span>
+      <span class="suggestion-arrow" aria-hidden="true">→</span>
+      <span class="suggested-val-pill" data-tooltip="${escapeHtml(`Proposed from ${source}. Check it before applying.`)}">"${escapeHtml(item.suggested_value)}"</span>
+      <button type="button" class="btn-apply-suggestion" data-apply-item="${escapeHtml(item.id)}"
+        aria-label="Apply ${escapeHtml(field)} = ${escapeHtml(item.suggested_value)}">✓ Apply</button>
+    </div>`;
+}
+
+function pendingSuggestion(item) {
+  return !!(item && item.id && item.suggested_value && item.status === "PENDING"
+    && (item.review_verdict || "PENDING") === "PENDING");
+}
+
+// Accept proposed values (one record field, or several - "Apply both"). Disables the clicked button
+// while the request runs; `refresh` re-renders the open table afterwards.
+// The reviewer name recorded on an applied value (free text, same one the duplicate review keeps).
+function ensureReviewerName() {
+  let name = reviewerName();
+  if (!name) {
+    name = (prompt("Your name - recorded on the values you apply (audit trail):") || "").trim();
+    if (name) {
+      try { localStorage.setItem("reviewerName", name); } catch { /* private window */ }
+    }
+  }
+  return name;
+}
+
+async function applySuggestions(button, itemIds, refresh) {
+  ensureReviewerName();
+  button.disabled = true;
+  try {
+    for (const id of itemIds) {
+      await fetchJSON(`${API_BASE}/finding-items/${encodeURIComponent(id)}/apply-suggestion`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewer: reviewerName() }),
+      });
+    }
+    findingsDirty = true;
+    await refresh();
+  } catch (err) {
+    button.disabled = false;
+    alert(`Failed to apply the proposed value: ${err.message}`);
+  }
+}
+
+async function applyAllSuggestions(button, findingIds, count, refresh) {
+  ensureReviewerName();
+  if (!confirm(`Apply all ${count} proposed value${count === 1 ? "" : "s"}? Each record is marked Corrected with the`
+    + ` proposed value, in your name (${reviewerName() || "no reviewer name set"}). You can undo each one with ↺.`)) return;
+  button.disabled = true;
+  try {
+    for (const id of findingIds) {
+      await fetchJSON(`${API_BASE}/findings/${encodeURIComponent(id)}/apply-all-suggestions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewer: reviewerName() }),
+      });
+    }
+    findingsDirty = true;
+    await refresh();
+  } catch (err) {
+    button.disabled = false;
+    alert(`Failed to apply the proposed values: ${err.message}`);
+  }
+}
+
+function applyAllBar(findingIds, count) {
+  if (!count) return "";
+  return `<div class="apply-all-bar">
+    <span>${count} record${count === 1 ? " has a" : "s have a"} proposed value from verified data.</span>
+    <button type="button" class="btn-apply-suggestion" data-apply-all="${escapeHtml(JSON.stringify(findingIds))}"
+      data-apply-count="${count}">✓ Apply all ${count}</button>
+  </div>`;
+}
+
+function attachSuggestionHandlers(container, refresh) {
+  container.querySelectorAll("[data-apply-item]").forEach((btn) =>
+    btn.addEventListener("click", () => applySuggestions(btn, [btn.dataset.applyItem], refresh)));
+  container.querySelectorAll("[data-apply-items]").forEach((btn) =>
+    btn.addEventListener("click", () => applySuggestions(btn, JSON.parse(btn.dataset.applyItems), refresh)));
+  container.querySelectorAll("[data-apply-all]").forEach((btn) =>
+    btn.addEventListener("click", () => applyAllSuggestions(btn, JSON.parse(btn.dataset.applyAll),
+      Number(btn.dataset.applyCount), refresh)));
+}
+
+function nameCellHtml(name) {
+  return name
+    ? `<td class="col-name" title="${escapeHtml(name)}">${escapeHtml(name)}</td>`
+    : '<td class="col-name"><span class="blank-cell">—</span></td>';
+}
+
 function renderWorkflowItemsTable(finding, items, isSynthetic, workflowKey) {
   const cfg = PILLAR_WORKFLOWS[workflowKey];
   const helperCols = isSynthetic ? [] : helperColumnsFor(finding.id);
+  const helper = HELPER_CACHE[finding.id];
+  const nameColumn = !isSynthetic && helper && !helper.stale ? helper.name_column : null;
+  // The flagged value / proposed value / corrected value gets its own column, unless the reviewer
+  // chose the flagged field as a helper column (then it is edited in that column, as before).
+  const valueColumn = usesMatrix(cfg) && !isSynthetic && !helperCols.some((c) => c.name === finding.column_name);
+  const suggestions = isSynthetic ? 0 : items.filter(pendingSuggestion).length;
   // Completeness: key column names once in the header, values only in the cells - same as the
   // grouped multi-field view.
   const keyNamesInHeader = usesMatrix(cfg) && !isSynthetic
@@ -1131,16 +1294,22 @@ function renderWorkflowItemsTable(finding, items, isSynthetic, workflowKey) {
         ${escapeHtml(cfg.title)} ${isSynthetic ? "(no row-level detail captured)" : `(${items.length})`}
       </div>
       ${defaultHint}
+      ${applyAllBar([finding.id], suggestions)}
       ${isSynthetic ? "" : helperNote(finding.id)}
-      <table class="items-table">
+      <table class="items-table records-compact">
         <thead>
           <tr>
-            <th>Row</th><th>Key Field${keyNamesInHeader ? `<div class="hint-text">${wrapTableColumnRef(finding.table_name, keyNamesInHeader, "")}</div>` : ""}</th><th>Details</th>${helperCols.map(helperHeader).join("")}
-            <th>Disposition</th>
+            <th class="col-row">Row</th><th class="col-key">Key${keyNamesInHeader ? `<div class="hint-text">${wrapTableColumnRef(finding.table_name, keyNamesInHeader, "")}</div>` : ""}</th>
+            ${nameColumn ? `<th class="col-name">Name<div class="hint-text">${wrapTableColumnRef(finding.table_name, nameColumn, "")}</div></th>` : ""}
+            <th class="col-summary">Defect Summary</th>
+            ${valueColumn ? `<th class="col-value">Value / Suggestion<div class="hint-text">${wrapTableColumnRef(finding.table_name, finding.column_name, "")}</div></th>` : ""}
+            ${helperCols.map(helperHeader).join("")}
+            <th class="col-actions">Disposition</th>
           </tr>
         </thead>
         <tbody>
-          ${items.map((item) => renderWorkflowRow(finding, item, isSynthetic, cfg, helperCols)).join("")}
+          ${items.map((item) => renderWorkflowRow(finding, item, isSynthetic, cfg, helperCols,
+            { nameColumn, valueColumn, name: nameColumn ? helper.names?.[item.id] : "" })).join("")}
         </tbody>
       </table>
       ${isSynthetic ? `<p class="hint-text">This check did not produce row-level detail. Use "Approve Finding" / "Reject Finding" below.</p>` : ""}
@@ -1169,10 +1338,12 @@ function renderInlineCorrected(item, disabled, fieldName) {
     </div>`;
 }
 
-function renderWorkflowRow(finding, item, isSynthetic, cfg, helperCols = []) {
+function renderWorkflowRow(finding, item, isSynthetic, cfg, helperCols = [], layout = {}) {
   const disabled = isSynthetic || item.status !== "PENDING";
   const keyCell = item.key_field ? wrapTableColumnRef(finding.table_name, item.key_field, "") : "";
   const fieldName = finding.column_name || "value";
+  const summary = isSynthetic ? item.issue_detail
+    : cleanDefectSummary(item.issue_detail, item.key_value, layout.name, finding.table_name);
 
   // finding.column_name is the same field for every row of a Completeness finding (one finding =
   // one column), so if it's among the chosen helper columns, edit it there; otherwise fall back
@@ -1184,7 +1355,8 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, helperCols = []) {
   const inlineCorrected = useMatrix ? flaggedFieldStatusHtml(item, fieldName, !!cfg.inlineCorrectedInput)
     : (cfg.inlineCorrectedInput ? renderInlineCorrected(item, disabled, fieldName) : "");
 
-  const detailsCell = linkifyTableColumnRefs(escapeHtml(item.issue_detail || "")) + (targetHelperCol ? "" : inlineCorrected);
+  const detailsCell = `<span title="${escapeHtml(item.issue_detail || "")}">${linkifyTableColumnRefs(escapeHtml(summary || ""))}</span>`
+    + (targetHelperCol || layout.valueColumn ? "" : inlineCorrected);
 
   const whyButton = !isSynthetic && item.id
     ? `<div><button type="button" class="btn-why" data-why-item="${escapeHtml(item.id)}" aria-expanded="false">Why flagged?</button></div>` : "";
@@ -1216,9 +1388,11 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, helperCols = []) {
 
   return `
     <tr data-item-id="${escapeHtml(item.id || "")}" class="item-row status-${escapeHtml(item.status)}${isSynthetic ? " synthetic-row" : ""}">
-      <td>${escapeHtml(item.row_index ?? "-")}</td>
-      <td>${useMatrix ? escapeHtml(item.key_value || "") : `${keyCell}${item.key_value ? `: ${escapeHtml(item.key_value)}` : ""}`}</td>
-      <td>${detailsCell}${whyButton}</td>
+      <td class="col-row">${escapeHtml(item.row_index ?? "-")}</td>
+      <td class="col-key">${useMatrix ? escapeHtml(item.key_value || "") : `${keyCell}${item.key_value ? `: ${escapeHtml(item.key_value)}` : ""}`}</td>
+      ${layout.nameColumn ? nameCellHtml(layout.name) : ""}
+      <td class="col-summary">${detailsCell}${whyButton}</td>
+      ${layout.valueColumn ? `<td class="col-value">${cfg.inlineCorrectedInput ? "" : flaggedValueHtml(HELPER_CACHE[finding.id]?.rows?.[item.id]?.[fieldName])}${inlineCorrected}</td>` : ""}
       ${helperCols.map((c) => c === targetHelperCol
         ? `<td class="helper-col helper-col-editable">${cfg.inlineCorrectedInput ? "" : flaggedValueHtml(HELPER_CACHE[finding.id]?.rows?.[item.id]?.[c.name])}${inlineCorrected}</td>`
         : helperCell(finding.id, item.id, c)).join("")}
@@ -1328,6 +1502,10 @@ function attachPillarWorkflowHandlers(findingId, finding, isSynthetic) {
   if (isSynthetic) return;
   const section = document.getElementById("lazySectionRecords");
   section.querySelectorAll("[data-why-item]").forEach((btn) => btn.addEventListener("click", () => toggleWhy(btn)));
+  attachSuggestionHandlers(section, async () => {
+    await loadFindings();
+    await reopenRecordsSection(findingId, finding);
+  });
 
   section.querySelectorAll("[data-edit-toggle]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -1405,8 +1583,23 @@ const DUP_FILTERS = [
   { key: "open", label: "Needs review", test: (g) => g.members.some((m) => isOpenVerdict(m.review_verdict)) },
   { key: "EXACT", label: "Exact", test: (g) => g.match_type === "EXACT" },
   { key: "PROBABLE", label: "Probable", test: (g) => g.match_type === "PROBABLE" },
+  { key: "SHARED_IDENTIFIER", label: "Shared identifier", test: (g) => g.match_type === "SHARED_IDENTIFIER" },
   { key: "SIMILAR", label: "Similar", test: (g) => g.match_type === "SIMILAR" },
 ];
+
+// Badge of a duplicate group: "EXACT · 100%", "SHARED IDENTIFIER · 42%" (the % of a shared identifier
+// is the NAME similarity, so it is left out when the names could not be compared).
+function matchBadge(group) {
+  const typeClass = { EXACT: "sim-exact", PROBABLE: "sim-probable", SHARED_IDENTIFIER: "sim-shared",
+    SIMILAR: "sim-similar" }[group.match_type] || "sim-similar";
+  const score = Number(group.similarity_score ?? 0);
+  const shared = group.match_type === "SHARED_IDENTIFIER";
+  const label = String(group.match_type || "").replace(/_/g, " ");
+  const tip = shared ? "Same tax ID / bank account / e-mail, different names - may be sister companies or branches. "
+    + "The % is how alike the names are. Not pre-merged." : "";
+  return `<span class="similarity-badge ${typeClass}"${tip ? ` data-tooltip="${escapeHtml(tip)}"` : ""}>${escapeHtml(label)}${
+    shared && !score ? "" : ` · ${score}%`}</span>`;
+}
 
 const SCORE_PARTS = { completeness: "Completeness", active: "Active", usage: "Usage", recency: "Recency" };
 
@@ -1541,7 +1734,11 @@ function scoreCell(m) {
 function actionText(m, verdict, survivorKey) {
   if (verdict === "KEEP") return "Golden record";
   if (verdict === "UNIQUE") return "Separate entity";
-  if (verdict !== "DUPLICATE") return m.suggested_action === "CONFIRM_DUPLICATE_FIRST" ? "Confirm duplicate first" : "";
+  if (verdict !== "DUPLICATE") {
+    if (m.suggested_action === "CONFIRM_DUPLICATE_FIRST") return "Confirm duplicate first";
+    if (m.suggested_action === "VERIFY_SHARED_IDENTIFIER_FIRST") return "Verify same legal entity first";
+    return "";
+  }
   const block = (m.suggested_action || "").startsWith("BLOCK");
   return block ? `Block & delete (dup. of ${survivorKey})` : `Merge into ${survivorKey}`;
 }
@@ -1566,7 +1763,6 @@ function renderDuplicateGroup(group) {
   });
   const reasons = [...new Set(group.members.flatMap((m) =>
     (m.match_reasons || "").split(/(?:^|;\s)vs [^:]+:\s/).map((r) => r.trim()).filter(Boolean)))];
-  const typeClass = { EXACT: "sim-exact", PROBABLE: "sim-probable", SIMILAR: "sim-similar" }[group.match_type] || "sim-similar";
   const open = group.members.filter((m) => isOpenVerdict(m.review_verdict)).length;
   const parked = group.members.every((m) => m.review_verdict === "TO_BE_CONFIRMED");
   const survivor = group.members.find((m) => m.id === draft.survivor);
@@ -1585,7 +1781,7 @@ function renderDuplicateGroup(group) {
       <div class="dup-group-header">
         <div class="dup-group-title">
           <span class="group-id-title">${escapeHtml(group.duplicate_group_id)}</span>
-          <span class="similarity-badge ${typeClass}">${escapeHtml(group.match_type)} · ${Number(group.similarity_score ?? 0)}%</span>
+          ${matchBadge(group)}
           <span class="dup-group-count">${group.member_count} records · ${status}</span>
         </div>
         <div class="dup-group-actions">
@@ -1602,7 +1798,11 @@ function renderDuplicateGroup(group) {
       ${recommended ? `<div class="recommendation-note">Recommended golden record: <strong>${escapeHtml(recommended.key_value)}</strong>
           (quality score ${Math.round(recommended.quality_score ?? 0)}) - most complete, active, used and recent record.</div>`
         : group.match_type === "SIMILAR" && open ? `<div class="recommendation-note">Similar match only - these may be look-alikes.
-          Confirm they are duplicates before choosing a golden record.</div>` : ""}
+          Confirm they are duplicates before choosing a golden record.</div>`
+        : group.match_type === "SHARED_IDENTIFIER" && open ? `<div class="recommendation-note recommendation-shared">These records
+          share a tax ID, bank account or e-mail but their names differ - sister companies and branches often do.
+          Nothing is pre-merged: confirm they are one legal entity before choosing a golden record, otherwise mark each
+          record Unique.</div>` : ""}
       <div class="dup-table-wrap">
         <table class="dup-table">
           <thead>

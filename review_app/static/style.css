@@ -1264,6 +1264,8 @@ header .btn-icon:hover {
 .sim-exact { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
 .sim-probable { background: #ffedd5; color: #c2410c; border: 1px solid #fdba74; }
 .sim-similar { background: #fef9c3; color: #a16207; border: 1px solid #fde047; }
+/* Shared tax ID / bank account, different names: amber, "verify first" - never shown as EXACT */
+.sim-shared { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
 
 .group-reasons-note {
   font-size: 12px;
@@ -1984,6 +1986,49 @@ tr.why-row > td { background: #f8fafc; padding: 0; }
 .btn-why-ai { font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 8px; cursor: pointer; background: #7c3aed; color: #fff; border: none; }
 .btn-why-ai:hover { background: #6d28d9; }
 .link-btn { background: none; border: none; color: #4338ca; cursor: pointer; padding: 0; font: inherit; text-decoration: underline; }
+
+.recommendation-note.recommendation-shared { color: #92400e; background: #fffbeb; border-color: #fcd34d; }
+
+/* Compact records tables: Row | Key | Name | Defect Summary | Value / Suggestion | Disposition.
+   Fixed widths for the narrow columns; the summary takes the rest and wraps, so a 1366px screen
+   needs no horizontal scroll. */
+.records-compact { table-layout: fixed; width: 100%; }
+.records-compact .col-row { width: 60px; text-align: center; }
+.records-compact .col-key { width: 120px; }
+.records-compact .col-name { width: 200px; }
+.records-compact .col-value { width: 240px; }
+.records-compact .col-actions { width: 260px; }
+.records-compact .helper-col { width: 140px; overflow-wrap: anywhere; }
+.records-compact .col-summary { overflow-wrap: anywhere; }
+.records-compact td.col-actions, .records-compact td.dispo-matrix-cell { overflow-x: auto; }
+td.col-key { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-weight: 600; }
+td.col-row { text-align: center; }
+td.col-name { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* the grouped grid keeps one column per flagged field, but its summary wraps instead of stretching the row */
+.grouped-records-table td.col-summary { white-space: normal; min-width: 240px; max-width: 420px; }
+.grouped-records-table td.col-summary .grouped-detail { overflow-wrap: anywhere; }
+.grouped-records-table td.grouped-cell { white-space: normal; }
+
+/* Proposed value (City / Region from the postal code) with one-click Apply */
+.inline-suggestion-box {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 4px 0;
+  padding: 4px 6px; background: #f0fdf4; border: 1px dashed #86efac; border-radius: 6px; font-size: 12px;
+}
+.current-val-chip { color: #64748b; }
+.current-val-chip em { color: #b91c1c; font-style: normal; }
+.suggestion-arrow { color: #64748b; }
+.suggested-val-pill { font-weight: 600; color: #166534; background: #dcfce7; border-radius: 999px; padding: 1px 8px; }
+.btn-apply-suggestion {
+  font: inherit; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 6px; cursor: pointer;
+  background: #16a34a; color: #fff; border: 1px solid #15803d; white-space: nowrap;
+}
+.btn-apply-suggestion:hover { background: #15803d; }
+.btn-apply-suggestion:disabled { background: #94a3b8; border-color: #94a3b8; cursor: progress; }
+.apply-all-bar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+  margin: 8px 0; padding: 8px 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; font-size: 13px;
+}
+.applied-note { margin-top: 2px; }
 
 /* Finding source badges: built-in rule vs LLM-proposed check vs duplicate engine */
 .badge-source-BUILT_IN { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }

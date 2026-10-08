@@ -326,6 +326,7 @@ def _enrich_grouped(data: dict, run_id: str, table: str) -> dict:
     data["helper_columns"] = []
     data["stale"] = False
     data["stale_note"] = None
+    data["name_column"] = None
     if not data["records"]:
         return data
 
@@ -350,14 +351,18 @@ def _enrich_grouped(data: dict, run_id: str, table: str) -> dict:
     meta = {c["name"]: c for c in details["columns"]}
     field_names = {f["column_name"] for f in data["fields"] if f["column_name"] in meta}
     helper_names = [c for c in details["helper_columns"] if c not in field_names]
-    all_columns = list(dict.fromkeys([f["column_name"] for f in data["fields"] if f["column_name"] in meta] + helper_names))
+    name_col = _name_column(client_id, table_up, list(meta))
+    all_columns = list(dict.fromkeys([f["column_name"] for f in data["fields"] if f["column_name"] in meta]
+                                     + helper_names + ([name_col] if name_col else [])))
     row_indexes = sorted({r["row_index"] for r in data["records"] if r["row_index"] is not None})
     values = client_workspace.helper_values(client_id, table_up, row_indexes, all_columns)
 
     data["helper_columns"] = [meta[c] for c in helper_names if c in meta]
+    data["name_column"] = name_col
     for rec in data["records"]:
         ri = rec["row_index"]
         rec["values"] = values.get(ri, {}) if ri is not None else {}
+        rec["name"] = rec["values"].get(name_col, "") if name_col else ""
     return data
 
 
@@ -456,7 +461,8 @@ def get_finding_helper_columns(finding_id: str):
     finding = store.get_finding(finding_id)
     if not finding:
         raise HTTPException(status_code=404, detail="Finding not found")
-    empty = {"table": finding["table_name"], "columns": [], "rows": {}, "stale": False, "note": None}
+    empty = {"table": finding["table_name"], "columns": [], "rows": {}, "stale": False, "note": None,
+             "name_column": None, "names": {}}
     run = store.get_run(finding["run_id"]) or {}
     client_id = run.get("client_id")
     if not client_id:
@@ -468,18 +474,38 @@ def get_finding_helper_columns(finding_id: str):
     except (KeyError, client_workspace.WorkspaceError):
         return empty
     chosen = details["helper_columns"]
-    if not chosen or not info:
-        return empty
     meta = {c["name"]: c for c in details["columns"]}
+    name_col = _name_column(client_id, table, list(meta))
+    if not info or not (chosen or name_col):
+        return empty
     columns = [meta[c] for c in chosen]
     if (info.get("uploaded_at") or "") > (run.get("started_at") or ""):
         return {**empty, "columns": columns, "stale": True,
                 "note": f"{table} was uploaded again after this run, so its helper columns are hidden "
                         "(the rows may have moved). Run the explorer again to see them."}
     items = [i for i in store.get_finding_items(finding_id) if i.get("row_index") is not None]
-    values = client_workspace.helper_values(client_id, table, sorted({int(i["row_index"]) for i in items}), chosen)
-    rows = {i["id"]: values[int(i["row_index"])] for i in items if int(i["row_index"]) in values}
-    return {**empty, "columns": columns, "rows": rows}
+    wanted = list(dict.fromkeys(chosen + ([name_col] if name_col else [])))
+    values = client_workspace.helper_values(client_id, table, sorted({int(i["row_index"]) for i in items}), wanted)
+    rows = {i["id"]: {c: values[int(i["row_index"])][c] for c in chosen}
+            for i in items if int(i["row_index"]) in values}
+    names = {i["id"]: values[int(i["row_index"])][name_col]
+             for i in items if name_col and int(i["row_index"]) in values}
+    return {**empty, "columns": columns, "rows": rows, "name_column": name_col, "names": names}
+
+
+def _name_column(client_id: str, table: str, columns: List[str]) -> Optional[str]:
+    """The table's name column (concept LEGAL_NAME, the required one first) for the review grid's Name
+    column: from the client's saved column mapping, else the SAP-standard pack. None (column omitted)
+    when the table has no name, e.g. a company-code or purchasing-data table."""
+    from src.agents.engines import column_mapping
+    from src.agents.engines.rule_context import load_pack
+    try:
+        saved = column_mapping.load_saved(table, columns, client_id)
+        bindings = saved["columns"] if saved else ((load_pack().get("standard_columns") or {}).get(table) or {})
+    except Exception:   # a mapping that can't be read only costs the Name column
+        return None
+    names = [c for c, b in bindings.items() if b.get("concept") == "LEGAL_NAME" and c in columns]
+    return next((c for c in names if bindings[c].get("required")), names[0] if names else None)
 
 
 @app.get("/api/findings/{finding_id}")
@@ -747,6 +773,32 @@ def set_item_verdict_endpoint(item_id: str, body: ItemVerdictRequest):
         # Partners' pair knowledge depends on this verdict too, so sync the whole group.
         memory = _remember_duplicate_groups(item["finding_id"], {item["duplicate_group_id"]})
     return {"ok": True, "item_id": item_id, "verdict": body.verdict, "memory": memory}
+
+
+class ApplySuggestionRequest(BaseModel):
+    reviewer: Optional[str] = ""   # free text from the review page (no SSO yet)
+
+
+@app.post("/api/finding-items/{item_id}/apply-suggestion")
+def apply_suggestion_endpoint(item_id: str, body: ApplySuggestionRequest):
+    """Accept a record's proposed value (e.g. City from postal code) in one click: CORRECTED with that
+    value, decision_source SUGGESTION_APPLIED, reviewer recorded. Undo via /verdict with PENDING."""
+    item = store.get_finding_item(item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    updated = store.apply_suggestion(item_id, (body.reviewer or "").strip())
+    if not updated:
+        raise HTTPException(status_code=409, detail="No pending proposed value on this record")
+    return {"ok": True, "item": updated}
+
+
+@app.post("/api/findings/{finding_id}/apply-all-suggestions")
+def apply_all_suggestions_endpoint(finding_id: str, body: ApplySuggestionRequest):
+    """apply-suggestion for every pending record of the finding that has a proposed value."""
+    if not store.get_finding(finding_id):
+        raise HTTPException(status_code=404, detail="Finding not found")
+    applied = store.apply_all_suggestions(finding_id, (body.reviewer or "").strip())
+    return {"ok": True, "finding_id": finding_id, "applied_count": applied}
 
 
 @app.post("/api/finding-items/{item_id}/autofill")

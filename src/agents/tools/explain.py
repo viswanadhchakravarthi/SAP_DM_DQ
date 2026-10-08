@@ -49,6 +49,9 @@ _FAMILIES = [
     ("postal", "Postal code format",
      "The postal code does not fit the format for the record's country. SAP can reject it on load, and address or "
      "tax processing fails later."),
+    ("region", "Region (state / province)",
+     "The region key is blank for a country whose addresses use one. SAP derives tax jurisdiction (US sales tax, "
+     "Indian GST, ...) and address checks from it, so postings can fail or be taxed wrongly without it."),
     ("tax.format", "Tax number format",
      "The tax number does not fit the formats valid for the record's country (EU VAT or national), or it is a "
      "placeholder. Tax reporting and invoicing can fail on it."),

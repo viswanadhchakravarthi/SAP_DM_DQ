@@ -40,7 +40,8 @@ logger = get_logger("skill_reuse")
 CONCEPT_WORDS = {
     "KEY": "identifier", "ORG_UNIT": "organisational unit", "DELETION_FLAG": "deletion flag",
     "BLOCK_FLAG": "block flag", "CREATED_DATE": "creation date", "DATE": "date", "COUNTRY": "country",
-    "POSTAL_CODE": "postal code", "CITY": "city", "STREET": "street address", "TAX_ID": "tax number",
+    "POSTAL_CODE": "postal code", "CITY": "city", "STREET": "street address", "REGION": "region or state",
+    "TAX_ID": "tax number",
     "LEGAL_NAME": "name", "SEARCH_TERM": "search term", "EMAIL": "e-mail address", "PHONE": "phone number",
     "AMOUNT": "amount of money", "QUANTITY": "quantity", "CURRENCY": "currency", "CODE": "code",
     "TEXT": "free text", "OTHER": "",

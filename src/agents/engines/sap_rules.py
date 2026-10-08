@@ -17,7 +17,8 @@ Rule families (one finding per rule and table, with every offending row):
                  than N years AND no row in any child table that extends the
                  record to an ORG_UNIT.
 * COMPLETENESS - required columns blank (MANUAL_FIX unless the client agreed a
-                 default in config.yaml).
+                 default in config.yaml); a blank REGION where the country uses
+                 regions (proposed from the data / postal directory when possible).
 * CORRECTNESS  - invalid ISO COUNTRY; POSTAL_CODE against its country's format;
                  TAX_ID columns evaluated together, by country.
                  Also: IBAN check digits and tax-number check digits (offline, ``checksums``),
@@ -214,6 +215,69 @@ def _mandatory_rules(ctx: Ctx) -> List[Dict[str, Any]]:
     if covered:
         ctx.covered.add(f"mandatory fields blank: {', '.join(covered)} - COMPLETENESS",
                         [c for g in covered for c in g.split("/")], "COMPLETENESS")
+    return out
+
+
+def _region_rules(ctx: Ctx) -> List[Dict[str, Any]]:
+    """A blank REGION (SAP REGIO) where the record's country uses regions and its postal code is valid.
+
+    Not a plain mandatory field: SAP requires a region only for some countries (T005 settings), so a
+    blank one counts only where the country is in ``enrichment.region_countries`` or the client's own
+    records use regions for that country (at least ``enrichment.min_support`` of them). Rows whose
+    region can be inferred (enrichment.infer_missing) become an AUTO_FIXABLE finding of their own."""
+    out = []
+    formats = ctx.pack["_postal"]
+    for col in ctx.cols("REGION"):
+        country_col = ctx.country_for(col)
+        postals = [c for c in ctx.cols("POSTAL_CODE") if ctx.country_for(c) == country_col]
+        rule_id = f"region.{ctx.table}.{col}"
+        if not country_col or len(postals) != 1 or not ctx.enabled(rule_id):
+            continue
+        postal = postals[0]
+        countries = _valid_country(ctx, country_col)
+        codes = upper(ctx.df[postal])
+        region_blank = blank(ctx.df[col])
+        used = countries[~region_blank & (countries != "")].value_counts()
+        applies = set(Config.ENRICHMENT_REGION_COUNTRIES) | set(used[used >= Config.ENRICHMENT_MIN_SUPPORT].index)
+        ctx.covered.add(f"{col} region blank where {country_col} uses regions and {postal} is valid - COMPLETENESS",
+                        [col], "COMPLETENESS")
+        # Valid country that uses regions, postal code filled and fitting its country's format.
+        mask = region_blank & countries.isin(applies) & (codes != "")
+        for country in set(countries[mask]) & set(formats):
+            mask &= ~((countries == country) & ~codes.str.match(formats[country][0]))
+        hits = ctx.df.index[mask]
+        # Cells the rule judged, for the scorecard's completeness denominator.
+        checked = int((countries.isin(applies) & (codes != "")).sum())
+        if not len(hits):
+            continue
+        label, used_cols = ctx.label(col), [col, country_col, postal]
+        inferred = enrichment.infer_missing(ctx, col, hits)
+        manual = [i for i in hits if int(i) not in inferred]
+        if manual:
+            rows = [ctx.row(i, f"{label} ({col}) is blank for country {countries[i]} - value must come from "
+                               f"the business.") for i in manual]
+            f = finding(ctx, rule_id, col, f"Missing {label} ({col})",
+                        f"{ctx.table}.{col} must hold the region key for countries whose addresses use one "
+                        f"(here: {', '.join(sorted(applies))}).", rows, "COMPLETENESS", "MEDIUM",
+                        columns_used=used_cols, fix_type="MANUAL_FIX")
+            f["raw_tool_result"]["cells_checked"] = checked
+            out.append(f)
+            checked = 0   # counted once per column, on whichever finding comes first
+        if inferred:
+            rows = []
+            for i in (int(i) for i in hits if int(i) in inferred):
+                guess = inferred[i]
+                row = ctx.row(i, f"{label} ({col}) is blank - proposed value '{guess['value']}': {guess['evidence']}.")
+                row["suggested_action"] = f"SET {col} = {guess['value']}"
+                rows.append(row)
+            values = {inferred[int(r['row_index'])]["value"] for r in rows}
+            sources = {inferred[int(r['row_index'])]["source"] for r in rows}
+            f = finding(ctx, f"{rule_id}.inferred", col, f"Missing {label} ({col}) - value proposed",
+                        enrichment.hypothesis("REGION", "reference" in sources), rows, "COMPLETENESS", "MEDIUM",
+                        columns_used=used_cols, fix_type="AUTO_FIXABLE",
+                        auto_fix_value=values.pop() if len(values) == 1 else "inferred per record")
+            f["raw_tool_result"]["cells_checked"] = checked
+            out.append(f)
     return out
 
 
@@ -573,7 +637,7 @@ def _propagation_rules(ctx: Ctx) -> List[Dict[str, Any]]:
 # Entry point
 # ---------------------------------------------------------------------------
 
-_FAMILIES = (_flag_rules, _dormancy_rules, _mandatory_rules, _country_rules, _postal_rules, _street_rules, _tax_rules,
+_FAMILIES = (_flag_rules, _dormancy_rules, _mandatory_rules, _region_rules, _country_rules, _postal_rules, _street_rules, _tax_rules,
              _bank_rules, _domain_rules, _orphan_rules, _propagation_rules)
 
 

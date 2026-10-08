@@ -20,10 +20,16 @@ evidence based. Two records (with different business keys) are linked only
 when at least one of these holds:
 
 * EXACT    - they share a strong identifier (tax ID, e-mail, phone, IBAN,
-             bank key + account, ...), or have the same normalized name AND
-             agree on at least two location fields.
-* PROBABLE - same normalized name and at least one matching location field,
-             or a fuzzy name match >= 90% corroborated by a location field.
+             bank key + account, ...) AND the same normalized name (or names
+             >= 95% alike plus a matching location field), or have the same
+             normalized name AND agree on at least two location fields.
+* PROBABLE - a shared identifier with names at least
+             ``duplicates.shared_identifier_name_min`` (80%) alike; same normalized
+             name and at least one matching location field; or a fuzzy name match
+             >= 90% corroborated by a location field.
+* SHARED_IDENTIFIER - a shared identifier, but the names differ (or cannot be
+             compared): sister companies and branches share GSTINs, PANs and bank
+             accounts. Shown for review, never pre-merged, not a uniqueness defect.
 * SIMILAR  - fuzzy name match between the configured threshold and 90% with a
              matching location field, or the same name in a different place.
 
@@ -54,16 +60,18 @@ from src.agents.llm import local_auditor
 from src.agents.config import Config
 from src.agents.logging_config import get_logger
 from src.agents.metrics import metrics
-from src.agents.profilers.profiler_primitives import (fuzzy_token_similarity, normalize_address_series, normalize_name_series,
-                                  normalize_text, place_contains)
+from src.agents.profilers.profiler_primitives import (fuzzy_token_similarity, mask_value, normalize_address_series,
+                                  normalize_name_series, normalize_text, place_contains)
 
 logger = get_logger("duplicate_detector")
 
-MATCH_RANK = {"EXACT": 3, "PROBABLE": 2, "SIMILAR": 1}
+# The one ranking of match types (survivorship, scorecard and the review store read it from here).
+MATCH_RANK = {"EXACT": 4, "PROBABLE": 3, "SHARED_IDENTIFIER": 2, "SIMILAR": 1}
 # Per-table stats of this process's last detection (incl. groups settled in earlier
 # runs, which produce no rows) - read by the scorecard.
 LAST_STATS: Dict[str, Dict[str, Any]] = {}
 _PROBABLE_NAME_SIMILARITY = 90.0
+_EXACT_NAME_SIMILARITY = 95.0   # with a shared identifier and a matching location field
 
 _PLACEHOLDER_RE = re.compile(
     r"^(invalid.*|n/?a|none|null|nil|tbd|unknown|test.*|dummy.*|x+|0+|9+|(.)\2+)$",
@@ -249,8 +257,10 @@ def find_duplicate_groups(df: pd.DataFrame, rules: Dict[str, Any],
     key_cols = [c for c in rules["key"] if c in df.columns]
     key_label = " + ".join(key_cols) or "Row"
     location_cols = [c for c in rules["location"] if c in df.columns]
-    # A name match needs location fields to confirm it - without them, names aren't used.
+    # A name match needs location fields to confirm it - without them, names don't link records.
     name_col = rules["name"] if rules["name"] in df.columns and location_cols else None
+    # ...but they are still compared when an identifier links two records (EXACT vs SHARED_IDENTIFIER).
+    compare_name_col = rules["name"] if rules["name"] in df.columns else None
     identifiers = [cols for cols in rules["identifiers"] if all(c in df.columns for c in cols)]
     display_cols = [c for c in (rules["display"] or list(df.columns)) if c in df.columns and c not in key_cols]
 
@@ -258,7 +268,7 @@ def find_duplicate_groups(df: pd.DataFrame, rules: Dict[str, Any],
     fuzzy_threshold = Config.DUPLICATE_FUZZY_NAME_THRESHOLD
     max_block = Config.DUPLICATE_MAX_BLOCK_SIZE
 
-    records = _Records(df, key_cols, name_col, location_cols, identifiers, display_cols)
+    records = _Records(df, key_cols, compare_name_col, location_cols, identifiers, display_cols)
     keys, norm_names = records.keys, records.norm_names
 
     # pair (i, j) -> evidence
@@ -409,7 +419,7 @@ def find_duplicate_groups(df: pd.DataFrame, rules: Dict[str, Any],
         for p in positions[1:]:
             link(positions[0], p, ("EXACT", 100.0, f"identical rows - all {df.shape[1]} columns are equal"))
 
-    empty_stats = {"groups": 0, "records": 0, "EXACT": 0, "PROBABLE": 0, "SIMILAR": 0,
+    empty_stats = {"groups": 0, "records": 0, **{t: 0 for t in MATCH_RANK},
                    "suppressed_pairs": suppressed, "remembered_records": 0}
     if not links:
         return [], empty_stats
@@ -478,6 +488,8 @@ def find_duplicate_groups(df: pd.DataFrame, rules: Dict[str, Any],
     for g_num, (members, member_links, group_type, group_score) in enumerate(assembled, 1):
         group_id = f"DUP-{g_num:03d}"
         stats[group_type] += 1
+        counter = f"duplicate_groups_{group_type.lower()}"
+        setattr(metrics, counter, getattr(metrics, counter) + 1)
         stats["records"] += len(members)
         for m in sorted(members, key=lambda p: keys[p]):
             own = [(pair, link) for pair, link in member_links if m in pair]
@@ -560,8 +572,7 @@ def _classify_pair(a: Dict[str, Any], b: Dict[str, Any], ev: Dict[str, Any],
     location_text = ", ".join(f"same {c}" for c in same_location)
 
     if ev["identifiers"]:
-        shared = "; ".join(f"same {label} ({a['raw_identifiers'][label]})" for label in ev["identifiers"])
-        return "EXACT", 100.0, shared + (f"; {location_text}" if location_text else "")
+        return _classify_shared_identifier(a, b, ev["identifiers"], same_location, location_text)
 
     if not (a["norm_name"] and b["norm_name"]):
         return None
@@ -590,6 +601,33 @@ def _classify_pair(a: Dict[str, Any], b: Dict[str, Any], ev: Dict[str, Any],
         return None
     match_type = "PROBABLE" if similarity >= _PROBABLE_NAME_SIMILARITY else "SIMILAR"
     return match_type, similarity, f"similar names ({similarity:g}%: '{a['name']}' vs '{b['name']}'); {location_text}"
+
+
+def _classify_shared_identifier(a: Dict[str, Any], b: Dict[str, Any], labels: List[str], same_location: List[str],
+                                location_text: str) -> Tuple[str, float, str]:
+    """Two records sharing a strong identifier. The identifier alone is not proof of ONE legal entity:
+    sister companies, branches and group entities share GSTINs, PANs, bank accounts and e-mail domains,
+    and merging them corrupts open items and tax filings. So the names decide how strong the match is."""
+    located = f"; {location_text}" if location_text else ""
+    if a["norm_name"] and b["norm_name"]:
+        name_sim = (100.0 if a["norm_name"] == b["norm_name"]
+                    else round(fuzzy_token_similarity(a["norm_name"], b["norm_name"]), 1))
+    else:
+        name_sim = None   # no name column, or a blank name: cannot be told apart by name
+    shared = "; ".join(f"same {label} ({a['raw_identifiers'][label]})" for label in labels)
+    # Same rule as fuzzy name matching: "Acme Plant 1" and "Acme Plant 2" are two entities, however alike.
+    alike = name_sim is not None and a["numbers"] == b["numbers"]
+    if a["norm_name"] and a["norm_name"] == b["norm_name"] or (
+            alike and name_sim >= _EXACT_NAME_SIMILARITY and same_location):
+        return "EXACT", 100.0, shared + located
+    names = f"'{a['name']}' vs '{b['name']}'"
+    if alike and name_sim >= Config.DUPLICATE_SHARED_IDENTIFIER_NAME_MIN:
+        return "PROBABLE", name_sim, f"{shared}; similar names ({name_sim:g}%: {names}){located}"
+    masked = ", ".join(f"{label} ({mask_value(a['raw_identifiers'][label])})" for label in labels)
+    if name_sim is None:
+        return "SHARED_IDENTIFIER", 0.0, f"shared {masked} | names not compared - verify it is one legal entity{located}"
+    return ("SHARED_IDENTIFIER", name_sim,
+            f"shared {masked} | name similarity {name_sim:g}% ({names}) - verify it is one legal entity{located}")
 
 
 # ---------------------------------------------------------------------------
@@ -643,15 +681,15 @@ def detect_table_duplicates(table_name: str, df: pd.DataFrame, client_id: Option
     if not rows and stats.get("settled_groups"):
         logger.info("[%s] all %d duplicate group(s) were fully decided in earlier runs - nothing new to review",
                     table_name, stats["settled_groups"])
-    logger.info("[%s] duplicate detection: %d group(s), %d record(s) (EXACT=%d PROBABLE=%d SIMILAR=%d) | "
+    logger.info("[%s] duplicate detection: %d group(s), %d record(s) (%s) | "
                 "client=%s remembered decisions=%d, unique pairs skipped=%d, verdicts pre-filled=%d",
                 table_name, stats.get("groups", 0), stats.get("records", 0),
-                stats.get("EXACT", 0), stats.get("PROBABLE", 0), stats.get("SIMILAR", 0),
+                " ".join(f"{t}={stats.get(t, 0)}" for t in MATCH_RANK),
                 client_id, len(decisions), stats.get("suppressed_pairs", 0), stats.get("remembered_records", 0))
     if not rows:
         return None
 
-    breakdown = ", ".join(f"{stats[t]} {t.lower()}" for t in ("EXACT", "PROBABLE", "SIMILAR") if stats[t])
+    breakdown = ", ".join(f"{stats[t]} {t.lower().replace('_', ' ')}" for t in MATCH_RANK if stats[t])
     memory_notes = []
     if stats.get("settled_groups"):
         memory_notes.append(f"{stats['settled_groups']} group(s) fully decided in earlier runs not shown again")
@@ -660,7 +698,7 @@ def detect_table_duplicates(table_name: str, df: pd.DataFrame, client_id: Option
     if stats["remembered_records"]:
         memory_notes.append(f"{stats['remembered_records']} earlier decision(s) pre-filled")
     memory_text = f" {'; '.join(memory_notes).capitalize()}." if memory_notes else ""
-    severity = "HIGH" if stats["EXACT"] else ("MEDIUM" if stats["PROBABLE"] else "LOW")
+    severity = "HIGH" if stats["EXACT"] else ("MEDIUM" if stats["PROBABLE"] or stats["SHARED_IDENTIFIER"] else "LOW")
 
     return {
         "table": table_name,

@@ -12,7 +12,7 @@
 # switched off per client in config.yaml (sap_rules.client_overrides).
 #
 # Rule ids: flag.<T>.<C>, dormant.<T>, mandatory.<T>.<C>, country.<T>.<C>,
-# postal.<T>.<C>, tax.<T>.missing, tax.<T>.format, orphan.<T>.<PARENT>,
+# postal.<T>.<C>, region.<T>.<C>[.inferred], tax.<T>.missing, tax.<T>.format, orphan.<T>.<PARENT>,
 # propagation.<T>.<C>, anomaly.<check>.<T>.<C>, text.<check>.<T>.<C>.
 
 version: 2
@@ -49,6 +49,7 @@ standard_columns:
     ORT01: {concept: CITY, required: true}
     PSTLZ: {concept: POSTAL_CODE, related_column: LAND1, required: true}
     LAND1: {concept: COUNTRY, required: true}
+    REGIO: {concept: REGION, related_column: LAND1}
     SPRAS: {concept: CODE}
     TELF1: {concept: PHONE}
     SMTP_ADDR: {concept: EMAIL}
@@ -72,6 +73,7 @@ standard_columns:
     ORT01: {concept: CITY, required: true}
     PSTLZ: {concept: POSTAL_CODE, related_column: LAND1, required: true}
     LAND1: {concept: COUNTRY, required: true}
+    REGIO: {concept: REGION, related_column: LAND1}
     SPRAS: {concept: CODE}
     TELF1: {concept: PHONE}
     SMTP_ADDR: {concept: EMAIL}
@@ -250,7 +252,7 @@ standard_columns:
     CITY1: {concept: CITY}
     POST_CODE1: {concept: POSTAL_CODE, related_column: COUNTRY, required: true}
     COUNTRY: {concept: COUNTRY, required: true}
-    REGION: {concept: CODE}
+    REGION: {concept: REGION, related_column: COUNTRY}
     TEL_NUMBER: {concept: PHONE}
     SMTP_ADDR: {concept: EMAIL}
   CVI_VEND_LINK:

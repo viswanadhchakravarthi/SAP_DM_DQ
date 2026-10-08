@@ -259,7 +259,7 @@ class AddressParts(BaseModel):
 # mapped by ONE LLM call per client+schema from metadata only, then saved.
 ColumnConcept = Literal[
     "KEY", "ORG_UNIT", "DELETION_FLAG", "BLOCK_FLAG", "CREATED_DATE", "DATE",
-    "COUNTRY", "POSTAL_CODE", "CITY", "STREET", "TAX_ID", "LEGAL_NAME", "SEARCH_TERM",
+    "COUNTRY", "POSTAL_CODE", "CITY", "STREET", "REGION", "TAX_ID", "LEGAL_NAME", "SEARCH_TERM",
     "EMAIL", "PHONE", "AMOUNT", "QUANTITY", "CURRENCY", "CODE", "TEXT", "OTHER",
     "BANK_KEY", "BANK_ACCOUNT", "IBAN",
 ]
@@ -275,7 +275,8 @@ class ColumnBinding(BaseModel):
         "(company code, purchasing/sales organisation, plant, storage location, valuation area). "
         "DELETION_FLAG: marks the record for deletion. BLOCK_FLAG: blocks the record for posting, "
         "purchasing, sales or in general. CREATED_DATE: when the record was created. DATE: any other date. "
-        "COUNTRY: a country key. POSTAL_CODE, CITY, STREET: address parts. TAX_ID: a tax, VAT, GST or "
+        "COUNTRY: a country key. POSTAL_CODE, CITY, STREET: address parts. REGION: a state / province / "
+        "region key of the address (SAP REGIO). TAX_ID: a tax, VAT, GST or "
         "company-registration number issued by a tax authority or business register - NOT an insurance, "
         "membership, patient, employee, passport or licence number (those are OTHER, or KEY when they identify "
         "the row). LEGAL_NAME: a name of a person or organisation (incl. account holder). "
@@ -293,7 +294,7 @@ class ColumnBinding(BaseModel):
         "match there (e.g. a vendor number in a bank-details table pointing to the vendor master). Only use "
         "tables and columns from the list you were given."))
     related_column: Optional[str] = Field(default=None, description=(
-        "For POSTAL_CODE and TAX_ID: the COUNTRY column in this table that decides the valid format. "
+        "For POSTAL_CODE, REGION and TAX_ID: the COUNTRY column in this table that decides the valid format. "
         "For AMOUNT: the CURRENCY column in this table it is expressed in."))
     required: bool = Field(default=False, description=(
         "True only when a record cannot be migrated or used without this value (a name, a country, the "

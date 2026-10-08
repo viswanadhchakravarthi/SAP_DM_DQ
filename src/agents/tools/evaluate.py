@@ -152,7 +152,7 @@ def survivorship_score(run_id: str, key: pd.DataFrame) -> Optional[str]:
     as_dup = rows[[(t, o) in obs for t, o in zip(rows["table_name"], rows["obj"])]]
     lines = [f"Survivorship: key survivors are in {total} of {len(wanted)} detected group(s); recommended survivor "
              f"correct in {right}/{total}"
-             + (f", {no_pick} without a recommendation (SIMILAR match)" if no_pick else "") + ".",
+             + (f", {no_pick} without a recommendation (SHARED_IDENTIFIER or SIMILAR match)" if no_pick else "") + ".",
              f"Key 'obsolete duplicates' found in groups: {len(as_dup)}/{len(obs)}; recommended DUPLICATE: "
              f"{int((as_dup['recommended_verdict'] == 'DUPLICATE').sum())}."]
     if wrong:

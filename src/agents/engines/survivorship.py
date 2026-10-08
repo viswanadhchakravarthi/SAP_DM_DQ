@@ -23,8 +23,9 @@ survivor when they have org-level data to move over, else BLOCK_AND_DELETE.
 A survivor remembered from an earlier review wins over the score.
 
 Only EXACT/PROBABLE groups get a recommendation (``survivorship.recommend_for``);
-SIMILAR groups contain look-alikes, so their members are scored but nothing is
-pre-selected. This is a SUGGESTION: rows keep review_verdict PENDING until a
+SHARED_IDENTIFIER groups (same tax ID / bank account, different names) and
+SIMILAR groups contain possible separate entities, so their members are scored
+but nothing is pre-selected. This is a SUGGESTION: rows keep review_verdict PENDING until a
 reviewer accepts (review_app ``/accept``) - the human gate stays closed.
 """
 
@@ -35,13 +36,13 @@ import pandas as pd
 
 from src.agents.config import Config
 from src.agents.logging_config import get_logger
+from src.agents.engines.duplicate_detector import MATCH_RANK
 from src.agents.engines.rule_context import text, upper
 
 logger = get_logger("survivorship")
 
 _IMPORTANT = ("KEY", "LEGAL_NAME", "COUNTRY", "POSTAL_CODE", "CITY", "STREET", "TAX_ID", "EMAIL", "PHONE",
               "SEARCH_TERM", "CURRENCY", "ORG_UNIT")
-_MATCH_RANK = {"EXACT": 3, "PROBABLE": 2, "SIMILAR": 1}
 
 
 def _set_values(binding: Dict[str, Any]) -> set:
@@ -147,11 +148,15 @@ def annotate(finding: Dict[str, Any], table: str, df: pd.DataFrame, mappings: Di
             m["score_breakdown"] = json.dumps({k: round(v, 2) for k, v in parts.items()})
             m["_extensions"] = extensions
 
-        strong = max((_MATCH_RANK.get(m.get("match_type"), 0) for m in members), default=0)
+        strong = max((MATCH_RANK.get(m.get("match_type"), 0) for m in members), default=0)
         remembered = next((m for m in members if m.get("is_golden_record")), None)
-        if remembered is None and strong < min(_MATCH_RANK[t] for t in Config.SURVIVORSHIP_RECOMMEND_MATCH_TYPES):
+        if remembered is None and strong < min(MATCH_RANK[t] for t in Config.SURVIVORSHIP_RECOMMEND_MATCH_TYPES):
+            # A shared tax ID / bank account with different names may be a sister company: nothing is
+            # pre-merged, the reviewer first confirms it is one legal entity.
+            action = ("VERIFY_SHARED_IDENTIFIER_FIRST" if strong == MATCH_RANK["SHARED_IDENTIFIER"]
+                      else "CONFIRM_DUPLICATE_FIRST")
             for m in members:
-                m["suggested_action"] = "CONFIRM_DUPLICATE_FIRST"
+                m["suggested_action"] = action
                 m.pop("_extensions", None)
             continue
         # Human decision from an earlier run first, then score, usage, completeness, key.

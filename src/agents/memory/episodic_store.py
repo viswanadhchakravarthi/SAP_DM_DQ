@@ -8,6 +8,7 @@ is also what Week 3's promotion pipeline will read from later to build
 procedural/semantic memory - so schema decisions here matter downstream.
 """
 
+import re
 import sqlite3
 import uuid
 import json
@@ -814,7 +815,31 @@ def get_finding_items(finding_id: str) -> List[Dict[str, Any]]:
             "SELECT * FROM finding_items WHERE finding_id = ? ORDER BY duplicate_group_id, is_golden_record DESC, row_index",
             (finding_id,)
         ).fetchall()
-        return [dict(r) for r in rows]
+        return [_with_suggestion(dict(r)) for r in rows]
+
+
+# A proposed value is stored as the row's suggested_action "SET <column> = <value>" (sap_rules, from
+# enrichment.infer_missing). Other actions (MERGE_INTO, SPLIT ..., GOLDEN_RECORD) are not one-click values.
+_SUGGESTION_RE = re.compile(r"^SET\s+([A-Za-z0-9_./-]+)\s*=\s*(.+)$")
+SUGGESTION_APPLIED = "SUGGESTION_APPLIED"
+
+
+def parse_suggestion(suggested_action: Optional[str], issue_detail: Optional[str] = "") -> Optional[Dict[str, str]]:
+    """{'field', 'value', 'source'} of a one-click proposed value, else None. The source is where the
+    evidence came from: 'reference' (offline postal directory) or 'dataset' (the client's own records)."""
+    match = _SUGGESTION_RE.match((suggested_action or "").strip())
+    if not match:
+        return None
+    source = "reference" if "offline postal directory" in (issue_detail or "") else "dataset"
+    return {"field": match.group(1), "value": match.group(2).strip(), "source": source}
+
+
+def _with_suggestion(item: Dict[str, Any]) -> Dict[str, Any]:
+    s = parse_suggestion(item.get("suggested_action"), item.get("issue_detail"))
+    item["suggested_field"] = s["field"] if s else None
+    item["suggested_value"] = s["value"] if s else None
+    item["suggestion_source"] = s["source"] if s else None
+    return item
 
 
 _NOT_PROMOTABLE = "NOT (reusable = 1 AND COALESCE(check_code, '') != '')"
@@ -895,7 +920,11 @@ def _grouped_by_table(run_id: str, table_name: str, where_sql: str, cell_key: st
             "id": it["id"], "finding_id": it["finding_id"], "issue_detail": it["issue_detail"],
             "status": it["status"], "review_verdict": it.get("review_verdict") or "PENDING",
             "corrected_data": it.get("corrected_data") or "",
+            "decision_source": it.get("decision_source"), "reviewer": it.get("reviewer"),
         }
+        s = parse_suggestion(it.get("suggested_action"), it.get("issue_detail"))
+        rec["cells"][col].update(suggested_field=s and s["field"], suggested_value=s and s["value"],
+                                 suggestion_source=s and s["source"])
 
     # A finding with no row-level items at all (a "synthetic" whole-table check, reviewed via its
     # own card's Approve/Reject, not a disposition) must not become a column here - every record
@@ -968,6 +997,15 @@ def update_item_verdict(item_id: str, verdict: str, comment: str = "",
     status = "PENDING" if verdict in _OPEN_VERDICTS else "APPROVED"
     now = datetime.now(timezone.utc).isoformat()
     with get_connection() as conn:
+        if verdict == "PENDING":
+            # Undo of a one-click Apply restores the row exactly as it was: no value, no reviewer, no source.
+            cur = conn.execute(
+                """UPDATE finding_items SET review_verdict = 'PENDING', status = 'PENDING', corrected_data = '',
+                   reviewed_at = NULL, reviewer_comment = NULL, reviewer = NULL, decision_source = NULL
+                   WHERE id = ? AND decision_source = ?""", (item_id, SUGGESTION_APPLIED))
+            if cur.rowcount:
+                _sync_for_item(conn, item_id)
+                return True
         if corrected_data is None:
             cur = conn.execute(
                 """UPDATE finding_items SET review_verdict = ?, status = ?,
@@ -982,6 +1020,39 @@ def update_item_verdict(item_id: str, verdict: str, comment: str = "",
             )
         _sync_for_item(conn, item_id)
         return cur.rowcount > 0
+
+
+def apply_suggestion(item_id: str, reviewer: str = "") -> Optional[Dict[str, Any]]:
+    """Accept a record's proposed value in one click: verdict CORRECTED with the proposed value as the
+    corrected data, decision_source SUGGESTION_APPLIED (the audit trail: proposed by the engine, accepted
+    by a person), reviewer recorded. Only for a still-pending record that has a proposal; returns the
+    updated item, or None when there is nothing to apply. Undo = the usual reset to PENDING."""
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM finding_items WHERE id = ?", (item_id,)).fetchone()
+        if not row or row["status"] != "PENDING" or (row["review_verdict"] or "PENDING") != "PENDING":
+            return None
+        s = parse_suggestion(row["suggested_action"], row["issue_detail"])
+        if not s:
+            return None
+        conn.execute(
+            """UPDATE finding_items SET review_verdict = 'CORRECTED', status = 'APPROVED', corrected_data = ?,
+               reviewed_at = ?, reviewer_comment = ?, reviewer = ?, decision_source = ? WHERE id = ?""",
+            (s["value"], datetime.now(timezone.utc).isoformat(),
+             f"Proposed value applied ({s['field']} = {s['value']}, source: {s['source']})",
+             reviewer or None, SUGGESTION_APPLIED, item_id))
+        _sync_for_item(conn, item_id)
+        updated = conn.execute("SELECT * FROM finding_items WHERE id = ?", (item_id,)).fetchone()
+    return _with_suggestion(dict(updated))
+
+
+def apply_all_suggestions(finding_id: str, reviewer: str = "") -> int:
+    """apply_suggestion for every pending record of a finding that has a proposed value."""
+    with get_connection() as conn:
+        ids = [r["id"] for r in conn.execute(
+            "SELECT id FROM finding_items WHERE finding_id = ? AND status = 'PENDING' "
+            "AND COALESCE(review_verdict, 'PENDING') = 'PENDING' AND suggested_action LIKE 'SET %'",
+            (finding_id,)).fetchall()]
+    return sum(1 for i in ids if apply_suggestion(i, reviewer))
 
 
 _UNDO_FIELDS = ("review_verdict", "status", "is_golden_record", "suggested_action", "decision_source",
@@ -1072,7 +1143,8 @@ def set_cluster_verdict(finding_id: str, group_id: str, verdict: str, comment: s
         return cur.rowcount
 
 
-_MATCH_TYPE_RANK = {"EXACT": 3, "PROBABLE": 2, "SIMILAR": 1}
+# Same order as duplicate_detector.MATCH_RANK (not imported: the store must not pull in the engines).
+_MATCH_TYPE_RANK = {"EXACT": 4, "PROBABLE": 3, "SHARED_IDENTIFIER": 2, "SIMILAR": 1}
 
 
 def get_duplicate_groups(finding_id: str) -> List[Dict[str, Any]]:

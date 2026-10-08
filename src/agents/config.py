@@ -233,6 +233,11 @@ class Config:
     DUPLICATE_FUZZY_NAME_THRESHOLD = _env_float(
         "EXPLORER_DUPLICATE_FUZZY_THRESHOLD", _get("duplicates.fuzzy_name_threshold", 85)
     )
+    # A shared strong identifier (tax ID, bank account, e-mail) with names less alike than this is
+    # SHARED_IDENTIFIER (sister companies, branches), never EXACT: no golden record, no uniqueness penalty.
+    DUPLICATE_SHARED_IDENTIFIER_NAME_MIN = _env_float(
+        "EXPLORER_DUPLICATE_SHARED_IDENTIFIER_NAME_MIN", _get("duplicates.shared_identifier_name_min", 80)
+    )
     DUPLICATE_MAX_IDENTIFIER_SHARE = _env_int(
         "EXPLORER_DUPLICATE_MAX_IDENTIFIER_SHARE", _get("duplicates.max_identifier_share", 5)
     )
@@ -286,6 +291,10 @@ class Config:
     ENRICHMENT_POSTAL_FROM_CITY = _env_bool("EXPLORER_ENRICHMENT_POSTAL_FROM_CITY",
                                             _get("enrichment.postal_from_city", False))
     ENRICHMENT_MIN_SUPPORT =_env_int("EXPLORER_ENRICHMENT_MIN_SUPPORT", _get("enrichment.min_support", 2))
+    # Countries whose GeoNames region code (admin code 1) is known to equal the SAP region key (T005S).
+    # Elsewhere a GeoNames region is proposed only when the client's own records already use that code.
+    ENRICHMENT_REGION_COUNTRIES = [c.upper() for c in _env_list(
+        "EXPLORER_ENRICHMENT_REGION_COUNTRIES", _get("enrichment.region_countries", ["US"]))]
 
     # Static offline reference data bundled with the agent (see data/reference/README.md).
     REFERENCE_DATA_DIR = _resolve_path(_env_str("EXPLORER_REFERENCE_DATA_DIR",
