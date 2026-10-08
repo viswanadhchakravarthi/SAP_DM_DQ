@@ -280,9 +280,9 @@ python -c "import llama_cpp; print('llama_cpp loaded successfully:', llama_cpp._
 
 ### 2. Run Deterministic Engine Test (No LLM Required)
 
-Test the profiling pipeline immediately on the bundled synthetic client `acme-retail` using deterministic engines (zero API costs):
+Test the profiling pipeline immediately on the bundled synthetic client `acme-retail` using deterministic engines (zero API costs). `--client` and `--data-dir` are both required:
 ```bash
-python -m orchestrator.runner --client acme-retail --deterministic-only
+python -m orchestrator.runner --client acme-retail --data-dir data/clients/acme-retail --deterministic-only
 ```
 
 ### 3. Full Profiling Run (with LLM Exploration)
@@ -295,12 +295,16 @@ python -m orchestrator.runner --client acme-retail --data-dir data/clients/acme-
 python -m orchestrator.runner --client acme-retail --data-dir data/clients/acme-retail --no-dictionary
 
 # Duplicate detection only
-python -m orchestrator.runner --client acme-retail --duplicates-only
+python -m orchestrator.runner --client acme-retail --data-dir data/clients/acme-retail --duplicates-only
 ```
 
 ### 4. Benchmark Evaluation
 
-Score run findings against the client's answer key to measure precision and recall:
+Score run findings against the client's answer key to measure precision and recall. This needs
+`data/answer_keys/<client_id>_ANSWER_KEY.csv`, which is **not bundled** - supply your own key
+(columns: `Object,Table,Key_Field,Key,Org_Key,Field,Issue_Type,Issue_Description`) or pass one
+with `--answer-key <path>`. Keys must stay out of `data/clients/`, where every CSV is profiled
+as a table:
 ```bash
 python -m src.agents.tools.evaluate --client acme-retail
 ```
