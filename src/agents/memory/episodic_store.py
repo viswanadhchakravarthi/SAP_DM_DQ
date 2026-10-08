@@ -55,6 +55,11 @@ CREATE INDEX IF NOT EXISTS idx_findings_run ON findings(run_id);
 
 @contextmanager
 def get_connection():
+    # storage/ is gitignored, so on a fresh clone the DB's parent folder does not exist and
+    # sqlite3 cannot create the file in it ("unable to open database file"). Every other writer
+    # in the codebase creates its own directory; this is the one entry point to every caller of
+    # the store (CLI, review app, evaluate, promotion), so it is ensured here.
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     try:
