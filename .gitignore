@@ -212,5 +212,9 @@ plan.md
 start_appl.bat
 .claude/
 
+# Internal / Developer Scratchpads and Guides (never committed to GitHub)
+CLAUDE.md
+implementation.md
+
 # Built offline reference data (python -m src.agents.tools.build_geo_postal)
 data/reference/*.db

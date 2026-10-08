@@ -1,4 +1,3 @@
-
 # SAP_DM_DQ
 
 Agentic SAP Data Migration and Data Quality (DQ) Profiler equipped with modular episodic, procedural, and semantic memory layers.
@@ -7,29 +6,181 @@ Agentic SAP Data Migration and Data Quality (DQ) Profiler equipped with modular 
 
 ## Overview
 
-`SAP_DM_DQ` is an intelligent, memory-augmented exploration agent built for SAP data migration and quality assessment workflows. The agent shifts from basic pandas-style table profiling into persistent, reusable data check generation.
+`SAP_DM_DQ` is an intelligent, memory-augmented exploration agent built for enterprise SAP data migration and quality assessment workflows. The platform moves beyond basic static profiling into persistent, reusable data check generation, deterministic SAP business validation, and human-in-the-loop governance.
 
-**Key Features:**
-* **LangGraph Exploration:** Manages structured batch data profiling workflows.
+### Key Capabilities
+
+* **LangGraph Orchestration:** Manages structured batch data profiling workflows (Plan → Execute → Repair → Reflect).
 * **Tri-Tier Memory System:**
-  * **Episodic Store (SQLite):** Tracks execution history, individual run logs, and pending validation items.
-  * **Procedural Registry (JSON/Filesystem):** Serves as the human-readable, auditable source of truth for promoted check skills.
-  * **Semantic Memory (ChromaDB Vector Store):** Enables fuzzy/semantic retrieval of relevant historical checks for prompt injection during profiling.
-* **Gated Promotion Pipeline:** Near-duplicate check detection and human-in-the-loop approval before promoting findings into reusable skills.
-* **Isolated Sandbox Execution:** Runs agent-generated data checks safely using multiprocessing isolation.
-* **Privacy & PII Protection:** Heuristic-based result scrubbing (`privacy_guard.py`) and strict column allow-listing (`ydata-profiling`).
+  * **Episodic Store (SQLite):** Tracks execution history, individual run logs, scorecard history, and pending validation items.
+  * **Procedural Registry (JSON/Filesystem):** Serves as the human-readable, auditable source of truth for promoted check skills and schema-compiled duplicate matching rules.
+  * **Semantic Memory (ChromaDB Vector Store):** Enables fuzzy/semantic retrieval of historical checks for prompt injection during profiling.
+* **Deterministic SAP Master Data Rules:** Built-in validation pack (`rules/packs/sap_master_data.yaml`) executing Priority 1 master data checks (activeness, completeness, ISO formats, tax/IBAN checksums) with **zero LLM cost**.
+* **Concept-Driven Duplicate Detection:** Vectorized blocking and clustering with automated survivorship scoring to establish Golden Records.
+* **Gated Promotion Pipeline:** Near-duplicate check detection and human review before promoting findings into permanent procedural skills.
+* **Isolated Sandbox Execution:** Runs agent-generated data checks safely using multiprocessing process isolation.
+* **Privacy & PII Protection:** Heuristic-based result scrubbing (`privacy_guard.py`) and strict column allow-listing (`table_profiler.py`) ensuring no raw data reaches hosted LLMs.
+
+---
+
+## Repository Architecture & Directory Layout
+
+The repository is organized into distinct, modular boundaries:
+
+```text
+SAP_DM_DQ/
+├── data/                                  # ─── DATASETS ROOT ────────────────────────────────────
+│   ├── clients/                           # Active client working datasets (gitignored)
+│   │   ├── acme-retail/
+│   │   │   ├── Data_Dictionary.csv        # Table and field descriptions
+│   │   │   ├── LFA1.csv                   # Table extracts
+│   │   │   ├── LFB1.csv
+│   │   │   └── workspace.json             # Workspace metadata & helper column preferences
+│   │   └── preflight-test/
+│   ├── answer_keys/                       # Ground-truth benchmark files (isolated from discovery)
+│   │   └── acme-retail_ANSWER_KEY.csv
+│   └── reference/                         # Offline reference datasets
+│       ├── README.md
+│       └── geo_postal.db                  # GeoNames postal/city database
+│
+├── rules/                                 # ─── CONFIGURATION RULES (.JSON & .YAML) ─────────────
+│   ├── local/                             # Local & client-specific configuration rules (.json)
+│   │   ├── clients/                       # Per-client rule configurations
+│   │   │   └── acme-retail/
+│   │   │       ├── client.json            # Client profile and domain metadata (.json)
+│   │   │       ├── duplicate_rules.json   # Schema-compiled duplicate detection rules (.json)
+│   │   │       ├── duplicate_decisions.json# Remembered reviewer decisions (.json)
+│   │   │       └── column_mappings.json   # Business concept column mappings (.json)
+│   │   └── industries/                    # Industry-specific configuration rules (.json)
+│   │       ├── fmcg/industry.json
+│   │       ├── manufacturing/industry.json
+│   │       ├── pharma/industry.json
+│   │       └── retail/industry.json
+│   ├── procedural/                        # Shared procedural rules & promoted check skills
+│   │   ├── duplicate_rules.json           # Universal duplicate matching rules (.json)
+│   │   ├── skill_registry.json            # Promoted DQ check registry (.json)
+│   │   └── skills/                        # Extracted Python check code for skills
+│   ├── packs/                             # Standard deterministic rule packs (.yaml)
+│   │   └── sap_master_data.yaml           # SAP P1 standards, ISO formats, tax/IBAN rules
+│   └── schemas/                           # Pipeline handoff contract schemas & examples (.json)
+│       ├── sap-dm.field-value-mapping.v1.schema.json
+│       ├── sap-dm.pipeline-event.v1.schema.json
+│       ├── sap-dm.structural-profile.v1.schema.json
+│       └── sap-dm.target-domains.v1.schema.json
+│
+├── orchestrator/                          # ─── WORKFLOW ORCHESTRATOR ────────────────────────────
+│   ├── runner.py                          # Primary CLI runner & table exploration loop
+│   ├── graph.py                           # LangGraph StateGraph (plan -> execute -> repair -> reflect)
+│   ├── cache_runner.py                    # Exact & semantic skill cache execution router
+│   ├── check_executor.py                  # Executes checks in sandbox with pre-flight checks
+│   ├── preflight.py                       # AST static validator rejecting invalid code
+│   ├── repair.py                          # Bounded LLM self-repair loop for failed checks
+│   ├── sandbox.py                         # Multiprocessing isolated execution environment
+│   └── job_manager.py                     # Async child process supervisor for web review runs
+│
+├── src/agents/                            # ─── AGENT DOMAIN ENGINES & LOGIC ─────────────────────
+│   ├── config.py                          # Central settings resolver (config.yaml + .env)
+│   ├── schemas.py                         # Pydantic data models for checks, plans, and judgments
+│   ├── contracts.py                       # Pydantic schemas for handoff contracts
+│   ├── events.py                          # Pipeline outbox event emitter
+│   ├── metrics.py                         # RunMetrics instrumentation
+│   ├── logging_config.py                  # Structured console and rotating file logger
+│   │
+│   ├── engines/                           # Core profiling & evaluation engines
+│   │   ├── sap_rules.py                   # P1 standard SAP business rules engine
+│   │   ├── anomaly_rules.py               # P2 statistical anomalies, IQR fence, text hygiene
+│   │   ├── duplicate_detector.py          # Deterministic duplicate clustering & blocking
+│   │   ├── duplicate_rule_planner.py      # Metadata-only LLM duplicate rule generator
+│   │   ├── duplicate_rules.py             # Duplicate rule resolution hierarchy
+│   │   ├── column_mapping.py              # Semantic concept mapper (SAP standard + LLM)
+│   │   ├── survivorship.py                # Golden record quality scoring & survivorship
+│   │   ├── scorecard.py                   # 4-pillar DQ Index and readiness calculator
+│   │   ├── enrichment.py                  # City/postal code inference engine
+│   │   ├── checksums.py                   # Mod-97 IBAN and tax registration check digits
+│   │   └── geo_reference.py               # Offline GeoNames spatial resolver
+│   │
+│   ├── memory/                            # Tri-Tier Memory System
+│   │   ├── base.py                        # MemoryStore ABC abstraction layer
+│   │   ├── episodic_store.py              # Tier 1: SQLite episodic store & review gate
+│   │   ├── skill_registry.py              # Tier 2: Procedural skill registry manager
+│   │   ├── duplicate_rule_store.py        # Procedural & client duplicate rule store
+│   │   ├── client_knowledge.py            # Client-specific durable memory manager
+│   │   ├── chroma_store.py                # Tier 3: ChromaDB vector store adapter
+│   │   ├── retriever.py                   # Semantic skill retriever for prompt injection
+│   │   ├── promotion.py                   # Gated episodic -> procedural promotion
+│   │   └── reindex.py                     # Vector index rebuild utility from procedural store
+│   │
+│   ├── profilers/                         # Statistical profiling & privacy boundary
+│   │   ├── table_profiler.py              # ydata-profiling distillation & allowlist
+│   │   ├── structural_profile.py          # Structural profiling generator (OUT contract)
+│   │   ├── profiler_primitives.py         # Text hygiene, address normalizer, IQR fence
+│   │   └── privacy_guard.py               # PII sanitization boundary before LLM egress
+│   │
+│   ├── llm/                               # Model providers and token governance
+│   │   ├── llm_providers.py               # Gemini & local provider factory
+│   │   ├── llm_usage.py                   # Token usage tracking & SQLite logger
+│   │   ├── local_llms.py                  # QwenCoder GGUF llama-cpp wrapper
+│   │   └── local_auditor.py               # Offline local LLM audit for duplicates/addresses
+│   │
+│   ├── data_loader/                       # Data ingestion & client workspace management
+│   │   ├── data_loader.py                 # CSV ingestion, dynamic typing, dictionary parser
+│   │   └── client_workspace.py            # Workspace directory discovery & metadata
+│   │
+│   └── tools/                             # Utilities & offline builders
+│       ├── build_geo_postal.py            # GeoNames offline postal DB compiler
+│       ├── explain.py                     # Deterministic & LLM "Why flagged?" explainer
+│       ├── evaluate.py                    # Answer-key precision/recall scoring harness
+│       ├── skill_reuse.py                 # Semantic skill similarity matcher
+│       └── storage_layout.py              # Legacy storage migration helper
+│
+├── review_app/                            # ─── HUMAN-IN-THE-LOOP WEB APPLICATION ────────────────
+│   ├── main.py                            # FastAPI backend REST API
+│   └── static/                            # Lightweight frontend (HTML, CSS, JS)
+│       ├── index.html                     # Client selection & dataset upload portal
+│       ├── review.html                    # Profiling review dashboard & disposition matrix
+│       ├── setup.js                       # Workspace management scripts
+│       ├── app.js                         # Review UI interaction & mini-windows
+│       └── style.css                      # Application styling
+│
+├── storage/                               # ─── RUNTIME PERSISTENCE (GITIGNORED) ─────────────────
+│   ├── perm/
+│   │   ├── episodic_memory.db             # SQLite episodic store (runs, findings, verdicts)
+│   │   ├── chroma/                        # Derived ChromaDB vector index
+│   │   └── handoff/                       # Pipeline outbox (events.jsonl, structural_profile)
+│   └── tmp/
+│       └── logs/                          # Process log tails and run logs
+│
+├── config.yaml                            # Global framework settings and defaults
+├── requirements.txt                       # Core Python dependencies
+├── start_appl.bat                         # Windows quick start script for review app
+└── clean_memory.bat                       # Local cache cleanup utility
+```
+
+---
+
+## Where Key Components Live: Quick Reference
+
+| Component | Directory Location | Description |
+|---|---|---|
+| **The Orchestrator** | [`orchestrator/`](orchestrator/) | State machine ([`graph.py`](orchestrator/graph.py)), CLI runner ([`runner.py`](orchestrator/runner.py)), execution sandbox, AST pre-flight checks, and repair loops. |
+| **Local Configuration Rules** | [`rules/local/`](rules/local/) | Client-specific JSON files (`column_mappings.json`, `duplicate_rules.json`, `client.json`). Edit here to adjust column concepts or matching rules without changing code. |
+| **Procedural Rules & Packs** | [`rules/procedural/`](rules/procedural/), [`rules/packs/`](rules/packs/) | Promoted skill catalog (`skill_registry.json`), shared duplicate rules, and YAML SAP rule packs (`sap_master_data.yaml`). |
+| **Contract Schemas** | [`rules/schemas/`](rules/schemas/) | Versioned JSON schemas defining data migration handoff contracts. |
+| **Datasets & Answer Keys** | [`data/`](data/) | Client CSV tables under [`data/clients/<client_id>/`](data/clients/), ground-truth defect answer keys under [`data/answer_keys/`](data/answer_keys/), and offline reference DBs under [`data/reference/`](data/reference/). |
+| **Web Review Application** | [`review_app/`](review_app/) | FastAPI service and frontend for interactive review, dispositioning, and skill promotion. |
+| **Runtime Persistence** | [`storage/`](storage/) | Ephemeral run databases, vector indexes, and log files. Gitignored and safe to reset. |
 
 ---
 
 ## Prerequisites
 
-* **Python**: 3.13+
+* **Python**: 3.13+ (or 3.11+)
 * **OS**: Windows / Linux / macOS
-* **Virtual Environment**: `venv` or `conda`
+* **Virtual Environment**: Python `venv` or `conda`
 
 ---
 
-## Installation
+## Installation & Setup
 
 ### 1. Clone Repository & Setup Virtual Environment
 
@@ -41,183 +192,136 @@ cd SAP_DM_DQ
 python -m venv .venv
 
 # Activate virtual environment
-# Windows (CMD / PowerShell):
-.venv\Scripts\activate
-
+# Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+# Windows (CMD):
+.venv\Scripts\activate.bat
 # Linux / macOS:
 source .venv/bin/activate
+```
 
-
-### 2. Install Core Dependencies
+### 2. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
-
 ```
 
----
+### 3. Installing `llama-cpp-python` (Windows / Python 3.13)
 
-## Installing `llama-cpp-python` (Windows / Python 3.13)
+Compiling `llama-cpp-python` on Windows typically requires Visual Studio C++ Build Tools (`MSVC`) and `CMake`. To bypass compilation errors and avoid installing heavy C++ toolchains on Python 3.13, install pre-compiled wheels:
 
-Compiling `llama-cpp-python` on Windows typically requires Visual Studio C++ Build Tools (`MSVC`) and `CMake`. To bypass compilation errors and avoid installing heavy C++ toolchains on Python 3.13, install pre-compiled wheels.
-
-### Workaround 1: Local Binary Wheel (Recommended)
+#### Workaround 1: Local Binary Wheel (Recommended)
 
 1. Download the pre-compiled binary wheel matching your system architecture:
-* **File:** `llama_cpp_python-0.3.35-py3-none-win_amd64.whl`
+   * **File:** `llama_cpp_python-0.3.35-py3-none-win_amd64.whl`
+2. Run inside your active `.venv`:
+   ```bash
+   pip install "path\to\llama_cpp_python-0.3.35-py3-none-win_amd64.whl"
+   ```
 
-
-2. Place the file in a local path (e.g., `D:\Downloads\`).
-3. Run the following command inside your active `.venv`:
+#### Workaround 2: Remote Wheel Index
 
 ```bash
-pip install "D:\Downloads\llama_cpp_python-0.3.35-py3-none-win_amd64.whl"
+# CPU Only:
+pip install llama-cpp-python==0.3.35 --extra-index-url https://abetlen.github.io/llama-cpp-python/wheels/cpu
 
+# CUDA Acceleration:
+pip install llama-cpp-python==0.3.35 --extra-index-url https://abetlen.github.io/llama-cpp-python/wheels/cu121
 ```
 
-### Workaround 2: Remote Wheel Index
+### 4. Local Model Download (`kagglehub`)
 
-If you do not have the local `.whl` file, pull pre-built wheels directly:
-
-* **CPU Only:**
-```bash
-pip install llama-cpp-python==0.3.35 --extra-index-url [https://abetlen.github.io/llama-cpp-python/wheels/cpu](https://abetlen.github.io/llama-cpp-python/wheels/cpu)
-
-```
-
-
-* **CUDA Acceleration:**
-```bash
-pip install llama-cpp-python==0.3.35 --extra-index-url [https://abetlen.github.io/llama-cpp-python/wheels/cu121](https://abetlen.github.io/llama-cpp-python/wheels/cu121)
-
-```
-
-
-
----
-
-## Local Model Download (`kagglehub`)
-
-To run inference locally using GGUF quantization formats without external APIs, download the preferred model weights via `kagglehub`.
-
-### 1. Install `kagglehub`
+To run inference locally using GGUF quantization formats without external APIs:
 
 ```bash
 pip install kagglehub
-
 ```
 
-### 2. Download Model Weights (Python / Jupyter Notebook)
-
+Download the model weights via Python:
 ```python
 import kagglehub
 
-# Download latest GGUF version of Qwen2.5-Coder 3B Instruct
+# Download GGUF version of Qwen2.5-Coder 3B Instruct
 path = kagglehub.model_download("qwen-lm/qwen2.5-coder/gguf/3b-instruct")
-
 print("Path to model files:", path)
-
 ```
+
+Configure `llm.local.model_path` in `config.yaml` with the printed path.
 
 ---
 
-## Configuration
+## Configuration & Environment Variables
 
-Non-secret, shareable settings (LLM provider/model, dictionary and upload settings, sandbox
-limits, memory/log paths, etc.) live in [`config.yaml`](config.yaml) at the
-project root - edit that file to change defaults for everyone.
+### `config.yaml` (Project Root)
+Contains non-secret, shareable defaults:
+* LLM provider selection (`google` or `local`)
+* Sandbox execution limits (timeouts, worker counts)
+* Data and memory path bindings
+* Composite scorecard weights and readiness thresholds
 
-Secrets and machine-specific values (API keys, tokens, a local GGUF model
-path) go in a local, gitignored `.env` file instead. Every `config.yaml`
-setting can also be overridden per-machine by an environment variable - see
-the comments in `config.yaml` and `src/agents/config.py` for the exact
-variable names.
-
-## Environment Setup
-
-Create a `.env` file in your **home directory** (`C:\Users\<you>\.env` on Windows,
-`~/.env` on Linux/macOS), outside the repository. The location is set by
-`env_file` in `config.yaml` (`~` and `%VAR%` are expanded; `EXPLORER_ENV_FILE`
-overrides it). If that file is missing, a legacy `<project>/.env` is used with a warning.
-
+### `.env` File (Secrets)
+Create a `.env` file in your **home directory** (`~/.env` or `C:\Users\<user>\.env`):
 ```env
-GEMINI_API_KEY="your-gemini-key"
-KAGGLE_API_TOKEN="kaggle-api-token"
-
-
+GEMINI_API_KEY="your-gemini-api-key"
+KAGGLE_API_TOKEN="your-kaggle-api-token"
 ```
-
-The local GGUF model path is not a secret: set `llm.local.model_path` in
-`config.yaml` (only used when `llm.provider` is `local`; the other option is `google`).
+*Note: Any setting in `config.yaml` can be overridden per-machine via matching environment variables (see `src/agents/config.py`).*
 
 ---
 
-## Verification
+## Quick Start & Usage
 
-Confirm that `llama-cpp-python` and its C++ bindings load correctly without DLL issues:
+### 1. Verify Environment
 
+Verify that the local runtime and C++ bindings load correctly:
 ```bash
-python -c "import llama_cpp; print(llama_cpp.__file__)"
-
+python -c "import llama_cpp; print('llama_cpp loaded successfully:', llama_cpp.__file__)"
 ```
 
-*Expected Output:*
+### 2. Run Deterministic Engine Test (No LLM Required)
 
-```text
-D:\GitHub\SAP_DM_DQ\.venv\Lib\site-packages\llama_cpp\__init__.py
-
+Test the profiling pipeline immediately on the bundled synthetic client `acme-retail` using deterministic engines (zero API costs):
+```bash
+python -m orchestrator.runner --client acme-retail --deterministic-only
 ```
 
----
-
-## Usage
+### 3. Full Profiling Run (with LLM Exploration)
 
 ```bash
-# Profile a client's tables (--client is required; tables are every CSV under --data-dir)
-python -m orchestrator.runner --client "<client name>" --data-dir <path>
+# Profile all tables for a client
+python -m orchestrator.runner --client acme-retail --data-dir data/clients/acme-retail
 
-# Client has no data dictionary: column meaning comes from names, statistics and the rule pack
-python -m orchestrator.runner --client "<client name>" --data-dir <path> --no-dictionary
+# Profile without a data dictionary (infers types and meanings dynamically)
+python -m orchestrator.runner --client acme-retail --data-dir data/clients/acme-retail --no-dictionary
 
-# Recreate findings that earlier runs already produced (by default they are skipped)
-python -m orchestrator.runner --client "<client name>" --data-dir <path> --no-skip-known
+# Duplicate detection only
+python -m orchestrator.runner --client acme-retail --duplicates-only
+```
 
-# LLM-free engines only (duplicate matching + built-in SAP rules)
-python -m orchestrator.runner --client "<client name>" --data-dir <path> --deterministic-only
+### 4. Benchmark Evaluation
 
-# Human review app: page 1 picks the client and uploads its data, page 2 reviews findings
+Score run findings against the client's answer key to measure precision and recall:
+```bash
+python -m src.agents.tools.evaluate --client acme-retail
+```
+
+### 5. Launch Human Review Web Application
+
+Start the FastAPI review server:
+```bash
 uvicorn review_app.main:app --reload
+# Or on Windows:
+start_appl.bat
 ```
-
-* **Data dictionary is optional.** On page 1, tick "I don't have a data dictionary" to proceed with tables alone.
-* **Re-runs don't repeat themselves.** A finding that is in progress or already decided by a human is not recreated unless the table file changed (`profiling.skip_known_findings`).
-* **Skills are reused by meaning.** A promoted skill first applies to the exact table + column it was learned on; otherwise it can be matched to a differently named column by its meaning, using the local embedding model (`cache.similarity_*`). Adapted code is pre-flight checked and still goes through human review.
+* **Page 1 (`http://localhost:8000/`)**: Select or create a client workspace, upload CSV tables and data dictionaries.
+* **Page 2 (`http://localhost:8000/review.html?client=<client_id>`)**: Interactive review dashboard, DQ scorecard, survivorship acceptance, and skill promotion.
 
 ---
 
-## Module Index
+## Architectural Principles & Invariants
 
-Four top-level concerns: **where the orchestrator lives**, **where the rules sit**, **where the
-datasets belong**, and the agent's domain logic. See `implementation.md` for the full layout.
-
-* `orchestrator/` — the execution subsystem (CLI: `python -m orchestrator.runner`)
-  * `runner.py` — entry point; discovers tables, resolves mappings, runs the deterministic engines, invokes the graph. `graph.py` — LangGraph plan → execute → repair → reflect flow.
-  * `sandbox.py`, `check_executor.py` — isolated execution of LLM-generated checks; `preflight.py` — free static checks that reject code that can't run; `repair.py` — the bounded loop that sends failed checks back to the planner once.
-  * `cache_runner.py` — re-runs promoted skills instead of calling the planner.
-  * `job_manager.py` — runs the orchestrator as a child process for the review app.
-* `rules/` — version-controlled, human-auditable rule state
-  * `packs/sap_master_data.yaml` — the deterministic SAP standards, ISO lists and tax/IBAN formats.
-  * `local/clients/<client_id>/` — per-client `column_mappings.json` (the manual correction path), `duplicate_rules.json`, `duplicate_decisions.json`, `client.json`. `local/industries/` — industry baselines.
-  * `procedural/` — `skill_registry.json` (source of truth for promoted checks) and the shared duplicate rules.
-  * `schemas/` — JSON Schemas and examples for the pipeline handoff contracts.
-* `data/` — datasets only, no databases: `clients/<client_id>/` (uploaded CSVs, `workspace.json`; gitignored), `answer_keys/` (ground truth, deliberately outside the table-discovery path), `reference/` (offline GeoNames postal DB).
-* `src/agents/` — the agent's domain logic
-  * `config.py` + `config.yaml` — all settings; secrets come from the `.env` named by `env_file`. `schemas.py`, `contracts.py`, `events.py`, `metrics.py`, `logging_config.py`.
-  * `engines/` — `sap_rules.py`, `anomaly_rules.py`, `rule_context.py` (deterministic rule engines); `column_mapping.py` (column meaning); `duplicate_detector.py`, `duplicate_rule_planner.py`, `duplicate_rules.py` (matching and its per-client rules); `survivorship.py`, `scorecard.py` (golden record and DQ index); `enrichment.py`, `checksums.py`, `geo_reference.py`.
-  * `memory/` — `episodic_store.py` (SQLite run/finding history and the human review gate), `client_knowledge.py` (per-client durable memory), `skill_registry.py` (procedural source of truth), `base.py` (MemoryStore interface), `chroma_store.py` (Chroma adapter), `__init__.py` (backend factory `get_memory_store`), `retriever.py`, `promotion.py` (episodic → procedural → semantic), `reindex.py`, `duplicate_rule_store.py`.
-  * `profilers/` — `table_profiler.py` (allowlisted statistical profile), `structural_profile.py` (the OUT handoff document), `profiler_primitives.py`, `privacy_guard.py` (heuristic scrubbing before any LLM egress).
-  * `llm/` — `llm_providers.py` (builds the single LLM: Gemini or local GGUF), `local_llms.py` (the GGUF chat model), `llm_usage.py` (token counts per request), `local_auditor.py`.
-  * `data_loader/` — `data_loader.py` (CSV ingestion and table discovery), `client_workspace.py` (uploaded data on disk).
-  * `tools/` — `explain.py` ("Why flagged?"), `evaluate.py` (scores a run against an answer key), `skill_reuse.py` (reuse a skill by meaning), `storage_layout.py`, `build_geo_postal.py`.
-* `review_app/` — FastAPI + vanilla JS review UI (`uvicorn review_app.main:app`).
-* `storage/` — gitignored runtime artifacts only: the episodic SQLite DB, the derived vector index, the handoff outbox and logs.
+1. **No Raw Data to LLMs:** Planner inputs use distilled statistical profiles with allowlisted fields. Reflector inputs pass through `privacy_guard.py`. Only column names, masked values (`mask_value`), and metadata reach LLMs.
+2. **Bounded LLM Budget:** Every table costs at most 2 LLM calls (planner + reflector). Column mappings and duplicate matching rules are drafted once per schema signature and saved as human-auditable JSON in `rules/local/` for future free runs.
+3. **Deterministic Where Feasible:** Known SAP standards, ISO lookups, tax checksums, and duplicate blocking algorithms run as native Python engines without LLM dependencies.
+4. **Human-in-the-Loop Gate:** Proposed checks require explicit human approval in the review UI before they can be promoted into permanent procedural skills (`rules/procedural/skill_registry.json`).
+5. **Procedural JSON is the Source of Truth:** Procedural rules and check registries are stored in human-readable JSON files. The vector index (`ChromaDB`) is a derived search index that can be completely rebuilt anytime (`python -m src.agents.memory.reindex`).
