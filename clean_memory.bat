@@ -26,11 +26,18 @@ exit /b 1
 :UNLOCK
 echo Credentials confirmed. Deleting target files and directories...
 
-:: Everything the agent creates lives under storage\ (perm = database, memory, client data,
-:: handoff; tmp = logs, vector index). This wipes BOTH. To drop only the disposable part,
-:: delete storage\tmp instead.
+:: This wipes the DISPOSABLE runtime state under storage\: perm = episodic DB + vector index +
+:: handoff outbox, tmp = logs. To drop only the truly throwaway part, delete storage\tmp instead.
 if exist storage\tmp rmdir /s /q storage\tmp
 if exist storage\perm rmdir /s /q storage\perm
+
+:: NOT deleted here, on purpose - these moved OUT of storage\ and are version-controlled now:
+::   rules\local\clients\<id>\   per-client duplicate rules, column mappings, remembered decisions
+::   rules\procedural\           promoted skill registry and shared duplicate rules
+::   data\clients\<id>\          uploaded client CSVs and workspace.json
+:: Deleting them is a git operation, not a cache wipe: remove the folder and commit, or
+:: `git checkout -- rules/` to get the committed rules back. Wiping storage\ alone leaves the
+:: agent with its learned rules but no run history, which is usually what you want.
 
 :: Leftovers from before the storage\ layout (a first start of the new layout moves these).
 if exist logs rmdir /s /q logs

@@ -1,0 +1,486 @@
+# Deterministic SAP master-data knowledge, executed by src/agents/engines/sap_rules.py
+# (Priority 1: domain rules) and src/agents/engines/anomaly_rules.py (Priority 2:
+# statistical and formatting anomalies).
+#
+# The rules are written against business CONCEPTS (KEY, DELETION_FLAG, COUNTRY,
+# POSTAL_CODE, TAX_ID, AMOUNT, ...), never against column names. Which column
+# plays which concept is the COLUMN MAPPING (src/agents/engines/column_mapping.py):
+#   * for SAP-standard layouts it comes from `standard_columns` below - free;
+#   * for anything else one LLM call maps the table once per client+schema from
+#     metadata only, and the result is saved under rules/local/clients/<client>/.
+# Every rule is skipped when the concepts it needs are not mapped, and can be
+# switched off per client in config.yaml (sap_rules.client_overrides).
+#
+# Rule ids: flag.<T>.<C>, dormant.<T>, mandatory.<T>.<C>, country.<T>.<C>,
+# postal.<T>.<C>, tax.<T>.missing, tax.<T>.format, orphan.<T>.<PARENT>,
+# propagation.<T>.<C>, anomaly.<check>.<T>.<C>, text.<check>.<T>.<C>.
+
+version: 2
+
+# ---------------------------------------------------------------------------
+# COLUMN MAPPING for SAP-standard tables. A table is mapped from here only when
+# EVERY uploaded column of it is listed (a Z-field or repurposed layout goes to
+# the LLM instead, which sees the whole table). Attributes, same as the LLM's
+# ColumnBinding (schemas.py):
+#   concept          business meaning (see schemas.ColumnConcept)
+#   part_of_key      the columns that together identify one row
+#   references       TABLE.COLUMN this column must exist in (orphan checks)
+#   related_column   COUNTRY for a POSTAL_CODE/TAX_ID, CURRENCY for an AMOUNT
+#   required         mandatory; `required_group` = any one of the group is enough.
+#                    Only SAP-standard mandatory fields - client requirements go
+#                    in client_overrides.<client>.mandatory (KOINH is optional in SAP).
+#                    For TAX_ID, required means "at least one tax field filled".
+#   block_type       POSTING / PURCHASING / SALES / GENERAL, for BLOCK_FLAG
+#   cascades         a master flag that standard SAP also sets on the org-level
+#                    rows (central deletion flag XK06/XD06 -> LFB1/LFM1) - so a
+#                    blank child flag is legacy data. Not MARA-LVORM: the client
+#                    level already covers every plant.
+#   dictionary_override  regex on the client's dictionary text -> attributes to
+#                    change: a field documented differently follows the client.
+# ---------------------------------------------------------------------------
+standard_columns:
+  LFA1:
+    LIFNR: {concept: KEY, part_of_key: true}
+    KTOKK: {concept: CODE, required: true}
+    NAME1: {concept: LEGAL_NAME, required: true}
+    NAME2: {concept: LEGAL_NAME}
+    SORTL: {concept: SEARCH_TERM, required: true}
+    STRAS: {concept: STREET}
+    ORT01: {concept: CITY, required: true}
+    PSTLZ: {concept: POSTAL_CODE, related_column: LAND1, required: true}
+    LAND1: {concept: COUNTRY, required: true}
+    SPRAS: {concept: CODE}
+    TELF1: {concept: PHONE}
+    SMTP_ADDR: {concept: EMAIL}
+    STCD1: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCD2: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCD3: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCD4: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCD5: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCEG: {concept: TAX_ID, related_column: LAND1, required: true}
+    LOEVM: {concept: DELETION_FLAG, cascades: true}
+    ERDAT: {concept: CREATED_DATE}
+    SPERM: {concept: BLOCK_FLAG, block_type: PURCHASING, cascades: true, dictionary_override: [{regex: posting, set: {block_type: POSTING}}]}
+    SPERR: {concept: BLOCK_FLAG, block_type: POSTING, cascades: true}
+  KNA1:
+    KUNNR: {concept: KEY, part_of_key: true}
+    KTOKD: {concept: CODE, required: true}
+    NAME1: {concept: LEGAL_NAME, required: true}
+    NAME2: {concept: LEGAL_NAME}
+    SORTL: {concept: SEARCH_TERM, required: true}
+    STRAS: {concept: STREET}
+    ORT01: {concept: CITY, required: true}
+    PSTLZ: {concept: POSTAL_CODE, related_column: LAND1, required: true}
+    LAND1: {concept: COUNTRY, required: true}
+    SPRAS: {concept: CODE}
+    TELF1: {concept: PHONE}
+    SMTP_ADDR: {concept: EMAIL}
+    STCD1: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCD2: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCD3: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCD4: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCD5: {concept: TAX_ID, related_column: LAND1, required: true}
+    STCEG: {concept: TAX_ID, related_column: LAND1, required: true}
+    LOEVM: {concept: DELETION_FLAG, cascades: true}
+    ERDAT: {concept: CREATED_DATE}
+    SPERM: {concept: BLOCK_FLAG, block_type: PURCHASING, cascades: true, dictionary_override: [{regex: posting, set: {block_type: POSTING}}]}
+    SPERR: {concept: BLOCK_FLAG, block_type: POSTING, cascades: true}
+  LFB1:
+    LIFNR: {concept: KEY, part_of_key: true, references: LFA1.LIFNR}
+    BUKRS: {concept: ORG_UNIT, part_of_key: true, required: true}
+    AKONT: {concept: CODE, required: true}
+    ZTERM: {concept: CODE, required: true}
+    ZWELS: {concept: CODE}
+    HBKID: {concept: CODE}
+    SPERR: {concept: BLOCK_FLAG, block_type: POSTING}
+    LOEVM: {concept: DELETION_FLAG}
+  KNB1:
+    KUNNR: {concept: KEY, part_of_key: true, references: KNA1.KUNNR}
+    BUKRS: {concept: ORG_UNIT, part_of_key: true, required: true}
+    AKONT: {concept: CODE, required: true}
+    ZTERM: {concept: CODE, required: true}
+    ZWELS: {concept: CODE}
+    HBKID: {concept: CODE}
+    SPERR: {concept: BLOCK_FLAG, block_type: POSTING}
+    LOEVM: {concept: DELETION_FLAG}
+  LFM1:
+    LIFNR: {concept: KEY, part_of_key: true, references: LFA1.LIFNR}
+    EKORG: {concept: ORG_UNIT, part_of_key: true, required: true}
+    WAERS: {concept: CURRENCY, required: true}
+    ZTERM: {concept: CODE}
+    INCO1: {concept: CODE}
+    MINBW: {concept: AMOUNT, related_column: WAERS}
+    SPERM: {concept: BLOCK_FLAG, block_type: PURCHASING, dictionary_override: [{regex: purchas, set: {block_type: PURCHASING}}]}
+    LOEVM: {concept: DELETION_FLAG}
+  KNVV:
+    KUNNR: {concept: KEY, part_of_key: true, references: KNA1.KUNNR}
+    VKORG: {concept: ORG_UNIT, part_of_key: true, required: true}
+    WAERS: {concept: CURRENCY, required: true}
+    ZTERM: {concept: CODE}
+    INCO1: {concept: CODE}
+    MINBW: {concept: AMOUNT, related_column: WAERS}
+    SPERM: {concept: BLOCK_FLAG, block_type: SALES, dictionary_override: [{regex: purchas, set: {block_type: PURCHASING}}]}
+    LOEVM: {concept: DELETION_FLAG}
+  LFBK:
+    LIFNR: {concept: KEY, part_of_key: true, references: LFA1.LIFNR}
+    BANKS: {concept: COUNTRY, part_of_key: true, required: true}
+    BANKL: {concept: BANK_KEY, part_of_key: true, required: true}
+    BANKN: {concept: BANK_ACCOUNT, part_of_key: true, required: true, required_group: account}
+    BKONT: {concept: OTHER}
+    KOINH: {concept: LEGAL_NAME}
+    IBAN: {concept: IBAN, required: true, required_group: account}
+  KNBK:
+    KUNNR: {concept: KEY, part_of_key: true, references: KNA1.KUNNR}
+    BANKS: {concept: COUNTRY, part_of_key: true, required: true}
+    BANKL: {concept: BANK_KEY, part_of_key: true, required: true}
+    BANKN: {concept: BANK_ACCOUNT, part_of_key: true, required: true, required_group: account}
+    BKONT: {concept: OTHER}
+    KOINH: {concept: LEGAL_NAME}
+    IBAN: {concept: IBAN, required: true, required_group: account}
+  MARA:
+    MATNR: {concept: KEY, part_of_key: true}
+    MTART: {concept: CODE, required: true}
+    MBRSH: {concept: CODE}
+    MATKL: {concept: CODE, required: true}
+    MEINS: {concept: CODE, required: true}
+    BISMT: {concept: OTHER}
+    EAN11: {concept: OTHER}
+    NUMTP: {concept: CODE}
+    BRGEW: {concept: QUANTITY}
+    NTGEW: {concept: QUANTITY}
+    GEWEI: {concept: CODE}
+    MSTAE: {concept: CODE}
+    LVORM: {concept: DELETION_FLAG, cascades: false}
+    ERSDA: {concept: CREATED_DATE}
+    ERNAM: {concept: OTHER}
+  MARC:
+    MATNR: {concept: KEY, part_of_key: true, references: MARA.MATNR}
+    WERKS: {concept: ORG_UNIT, part_of_key: true, required: true}
+    EKGRP: {concept: CODE}
+    DISPO: {concept: CODE}
+    DISMM: {concept: CODE}
+    BESKZ: {concept: CODE}
+    PLIFZ: {concept: QUANTITY}
+    EISBE: {concept: QUANTITY}
+    MINBE: {concept: QUANTITY}
+    MAABC: {concept: CODE}
+    MMSTA: {concept: CODE}
+    LVORM: {concept: DELETION_FLAG}
+  MARD:
+    MATNR: {concept: KEY, part_of_key: true, references: MARC.MATNR}
+    WERKS: {concept: ORG_UNIT, part_of_key: true, references: MARC.WERKS}
+    LGORT: {concept: ORG_UNIT, part_of_key: true}
+    LABST: {concept: QUANTITY}
+    INSME: {concept: QUANTITY}
+    SPEME: {concept: QUANTITY}
+    LGPBE: {concept: OTHER}
+    LVORM: {concept: DELETION_FLAG}
+  MBEW:
+    MATNR: {concept: KEY, part_of_key: true, references: MARA.MATNR}
+    BWKEY: {concept: ORG_UNIT, part_of_key: true}
+    VPRSV: {concept: CODE}
+    BKLAS: {concept: CODE}
+    VERPR: {concept: AMOUNT}
+    STPRS: {concept: AMOUNT}
+    PEINH: {concept: QUANTITY}
+    LBKUM: {concept: QUANTITY}
+    SALK3: {concept: AMOUNT}
+  MVKE:
+    MATNR: {concept: KEY, part_of_key: true, references: MARA.MATNR}
+    VKORG: {concept: ORG_UNIT, part_of_key: true}
+    VTWEG: {concept: ORG_UNIT, part_of_key: true}
+    DWERK: {concept: CODE}
+    VERSG: {concept: CODE}
+    KONDM: {concept: CODE}
+    KTGRM: {concept: CODE}
+    MTPOS: {concept: CODE}
+    MVGR1: {concept: CODE}
+    LVORM: {concept: DELETION_FLAG}
+  MAKT:
+    MATNR: {concept: KEY, part_of_key: true, references: MARA.MATNR}
+    SPRAS: {concept: CODE, part_of_key: true}
+    MAKTX: {concept: TEXT}
+  ASMD:
+    ASNUM: {concept: KEY, part_of_key: true}
+    ASTYP: {concept: CODE}
+    MATKL: {concept: CODE, required: true}
+    MEINS: {concept: CODE, required: true}
+    BKLAS: {concept: CODE}
+    TAXIM: {concept: CODE}
+    LOEKZ: {concept: DELETION_FLAG}
+    ERNAM: {concept: OTHER}
+    ERDAT: {concept: CREATED_DATE}
+  ASMDT:
+    ASNUM: {concept: KEY, part_of_key: true, references: ASMD.ASNUM}
+    SPRAS: {concept: CODE, part_of_key: true}
+    ASKTX: {concept: TEXT}
+  BUT000:
+    PARTNER: {concept: KEY, part_of_key: true}
+    TYPE: {concept: CODE}
+    BU_GROUP: {concept: CODE}
+    BPKIND: {concept: CODE}
+    NAME_ORG1: {concept: LEGAL_NAME}
+    NAME_ORG2: {concept: LEGAL_NAME}
+    NAME_FIRST: {concept: LEGAL_NAME}
+    NAME_LAST: {concept: LEGAL_NAME}
+    BU_SORT1: {concept: SEARCH_TERM}
+    XBLCK: {concept: BLOCK_FLAG, block_type: GENERAL}
+    XDELE: {concept: DELETION_FLAG}
+    CRDAT: {concept: CREATED_DATE}
+    CRNAM: {concept: OTHER}
+  BUT020:
+    PARTNER: {concept: KEY, part_of_key: true, references: BUT000.PARTNER}
+    ADDRNUMBER: {concept: KEY, part_of_key: true, references: ADRC.ADDRNUMBER}
+    XDFADR: {concept: OTHER}
+  BUT0ID:
+    PARTNER: {concept: KEY, part_of_key: true, references: BUT000.PARTNER}
+    IDTYPE: {concept: CODE, part_of_key: true}
+    IDNUMBER: {concept: OTHER}
+    COUNTRY: {concept: COUNTRY}
+  BUT100:
+    PARTNER: {concept: KEY, part_of_key: true, references: BUT000.PARTNER}
+    RLTYP: {concept: CODE, part_of_key: true}
+    VALID_FROM: {concept: DATE}
+    VALID_TO: {concept: DATE}
+  ADRC:
+    ADDRNUMBER: {concept: KEY, part_of_key: true}
+    NAME1: {concept: LEGAL_NAME}
+    STREET: {concept: STREET}
+    HOUSE_NUM1: {concept: OTHER}
+    CITY1: {concept: CITY}
+    POST_CODE1: {concept: POSTAL_CODE, related_column: COUNTRY, required: true}
+    COUNTRY: {concept: COUNTRY, required: true}
+    REGION: {concept: CODE}
+    TEL_NUMBER: {concept: PHONE}
+    SMTP_ADDR: {concept: EMAIL}
+  CVI_VEND_LINK:
+    PARTNER: {concept: KEY, part_of_key: true, references: BUT000.PARTNER}
+    LIFNR: {concept: KEY, part_of_key: true, references: LFA1.LIFNR}
+  CVI_CUST_LINK:
+    PARTNER: {concept: KEY, part_of_key: true, references: BUT000.PARTNER}
+    KUNNR: {concept: KEY, part_of_key: true, references: KNA1.KUNNR}
+
+# What a record of each SAP table is called, for the duplicate matching rules (review text only).
+duplicate_labels: {LFA1: vendors, KNA1: customers, LFBK: vendor bank accounts, KNBK: customer bank accounts, MARA: materials, BUT000: business partners, ADRC: addresses}
+
+# ---------------------------------------------------------------------------
+# Built-in reference domains (static check tables). A column of an SAP-standard table listed here
+# gets the same 'Invalid code' rule (domain.<T>.<C>) a Metadata Repository domain would give, and
+# the domain replaces the statistical rare-code check for it. A target-domains file from the
+# Metadata Repository (sap-dm.target-domains) always wins over these. Countries (T005), currencies
+# (TCURC) and their formats are checked by the country.* rules and the ISO lists below.
+# ---------------------------------------------------------------------------
+reference_domains:
+  LFM1.INCO1: &incoterms {check_table: TINC, label: "Incoterms 2020 (ICC)", values: [EXW, FCA, CPT, CIP, DAP, DPU, DDP, FAS, FOB, CFR, CIF]}
+  KNVV.INCO1: *incoterms
+# ---------------------------------------------------------------------------
+# Migration objects, for the DQ scorecard: which SAP tables make up each object.
+# A non-SAP table joins the object of the SAP tables it is mapped to.
+# ---------------------------------------------------------------------------
+objects:
+  Vendor: [LFA1, LFB1, LFBK, LFM1]
+  Customer: [KNA1, KNB1, KNBK, KNVV]
+  Material: [MARA, MARC, MARD, MBEW, MVKE, MAKT]
+  Service: [ASMD, ASMDT]
+  Business Partner: [BUT000, BUT020, BUT0ID, BUT100, ADRC, CVI_VEND_LINK, CVI_CUST_LINK]
+
+# ---------------------------------------------------------------------------
+# ACTIVENESS
+# ---------------------------------------------------------------------------
+# Values meaning "set" for a flag whose mapping gives none.
+flag_values: ["X"]
+
+# Dormancy: CREATED_DATE older than this AND no row in any child table that
+# extends the record to an organisational level (a table with an ORG_UNIT key
+# column that references it). ERDAT is a creation date, so age alone says
+# nothing; without transaction data (BSIK/BSAK/EKKO) this is the best evidence.
+dormant_after_years: 3
+
+# ---------------------------------------------------------------------------
+# CORRECTNESS - country keys (ISO 3166-1 alpha-2). Postal and tax formats
+# depend on a valid country, so an invalid one is reported and skipped there.
+# ---------------------------------------------------------------------------
+# Common legacy mistakes -> the ISO code, used only to suggest a correction.
+country_aliases: {UK: GB, GER: DE, DEU: DE, USA: US, IND: IN, MEX: MX, SWI: CH, CHE: CH, UAE: AE, EL: GR}
+
+iso_countries: >-
+  AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ
+  BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM
+  DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS
+  GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN
+  KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ
+  MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM
+  PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV
+  SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI
+  VN VU WF WS YE YT ZA ZM ZW
+
+# ---------------------------------------------------------------------------
+# CORRECTNESS - postal code format by country (full match, upper-cased,
+# trimmed). Countries not listed are skipped, never failed.
+# ---------------------------------------------------------------------------
+postal:
+  formats:
+    DE: {regex: '\d{5}', example: '10115'}
+    AT: {regex: '\d{4}', example: '1010'}
+    CH: {regex: '\d{4}', example: '8001'}
+    FR: {regex: '\d{5}', example: '75001'}
+    IT: {regex: '\d{5}', example: '00118'}
+    ES: {regex: '\d{5}', example: '28001'}
+    PT: {regex: '\d{4}-\d{3}', example: '1000-001'}
+    NL: {regex: '\d{4} ?[A-Z]{2}', example: '1012 AB'}
+    BE: {regex: '\d{4}', example: '1000'}
+    LU: {regex: '(L-)?\d{4}', example: '1111'}
+    DK: {regex: '\d{4}', example: '1050'}
+    "NO": {regex: '\d{4}', example: '0150'}
+    FI: {regex: '\d{5}', example: '00100'}
+    SE: {regex: '\d{3} ?\d{2}', example: '111 22'}
+    CZ: {regex: '\d{3} ?\d{2}', example: '110 00'}
+    SK: {regex: '\d{3} ?\d{2}', example: '811 01'}
+    GR: {regex: '\d{3} ?\d{2}', example: '105 57'}
+    PL: {regex: '\d{2}-\d{3}', example: '00-950'}
+    HU: {regex: '\d{4}', example: '1051'}
+    RO: {regex: '\d{6}', example: '010011'}
+    IE: {regex: '[A-Z]\d[\dW] ?[A-Z\d]{4}', example: 'D02 X285'}
+    GB: {regex: '[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}', example: 'EC1A 1BB'}
+    US: {regex: '\d{5}(-\d{4})?', example: '10001'}
+    CA: {regex: '[A-Z]\d[A-Z] ?\d[A-Z]\d', example: 'K1A 0B1'}
+    MX: {regex: '\d{5}', example: '06600'}
+    BR: {regex: '\d{5}-?\d{3}', example: '01310-100'}
+    IN: {regex: '[1-9]\d{5}', example: '400001'}
+    CN: {regex: '\d{6}', example: '100000'}
+    JP: {regex: '\d{3}-?\d{4}', example: '100-0001'}
+    KR: {regex: '\d{5}', example: '03051'}
+    TR: {regex: '\d{5}', example: '34000'}
+    VN: {regex: '\d{6}', example: '100000'}
+    BD: {regex: '\d{4}', example: '1000'}
+    AU: {regex: '\d{4}', example: '2000'}
+    SG: {regex: '\d{6}', example: '018956'}
+    RU: {regex: '\d{6}', example: '101000'}
+    ZA: {regex: '\d{4}', example: '0001'}
+
+# ---------------------------------------------------------------------------
+# CORRECTNESS - tax numbers, evaluated across ALL TAX_ID columns of a row
+# together. SAP keeps a country's number in different fields (India: GSTIN in
+# STCD3; EU: VAT in STCEG; US: EIN in STCD2), and legacy data often has it in
+# STCD1 anyway. So a row is missing a tax number only when none of its TAX_ID
+# columns holds a real value, and each filled value must match one of its
+# country's formats. A blank STCD1 is never an error on its own.
+# ---------------------------------------------------------------------------
+tax:
+  # Where SAP expects the number, used only to word the finding.
+  expected_field: {IN: STCD3 (GSTIN), US: STCD2 (EIN), EU: STCEG (VAT registration number)}
+  placeholder_regex: '(TBD|TBA|N/?A|NONE|NULL|NIL|UNKNOWN|PENDING|TEST.*|DUMMY.*|X+|0+|9+|1234.*|-+|\.+|\?+)'
+  eu_members: [AT, BE, BG, CY, CZ, DE, DK, EE, ES, FI, FR, GR, HR, HU, IE, IT, LT, LU, LV, MT, NL, PL, PT, RO, SE, SI, SK]
+  # EU VAT registration numbers (VIES formats). Accepted in any tax field.
+  eu_vat:
+    AT: 'ATU\d{8}'
+    BE: 'BE[01]\d{9}'
+    BG: 'BG\d{9,10}'
+    CY: 'CY\d{8}[A-Z]'
+    CZ: 'CZ\d{8,10}'
+    DE: 'DE\d{9}'
+    DK: 'DK\d{8}'
+    EE: 'EE\d{9}'
+    ES: 'ES[A-Z0-9]\d{7}[A-Z0-9]'
+    FI: 'FI\d{8}'
+    FR: 'FR[A-HJ-NP-Z0-9]{2}\d{9}'
+    GR: 'EL\d{9}'
+    HR: 'HR\d{11}'
+    HU: 'HU\d{8}'
+    IE: 'IE(\d{7}[A-W][A-IW]?|\d[A-Z+*]\d{5}[A-W])'
+    IT: 'IT\d{11}'
+    LT: 'LT(\d{9}|\d{12})'
+    LU: 'LU\d{8}'
+    LV: 'LV\d{11}'
+    MT: 'MT\d{8}'
+    NL: 'NL\d{9}B\d{2}'
+    PL: 'PL\d{10}'
+    PT: 'PT\d{9}'
+    RO: 'RO\d{2,10}'
+    SE: 'SE\d{12}'
+    SI: 'SI\d{8}'
+    SK: 'SK\d{10}'
+  # National tax numbers, by name. Spaces are removed before matching.
+  national:
+    DE: {Steuernummer: '\d{10,13}|\d{2,3}/\d{3,4}/\d{4,5}'}
+    AT: {Steuernummer: '\d{9}'}
+    GB: {UK VAT: 'GB(\d{9}|\d{12}|GD\d{3}|HA\d{3})', UTR: '\d{10}'}
+    CH: {UID/MWST: 'CHE-?\d{3}\.?\d{3}\.?\d{3}(MWST|TVA|IVA)?'}
+    FR: {SIREN/SIRET: '\d{9}|\d{14}'}
+    IT: {Partita IVA: '\d{11}', Codice fiscale: '[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]'}
+    ES: {NIF/CIF: '[A-Z0-9]\d{7}[A-Z0-9]'}
+    NL: {RSIN/BTW: '\d{9}(B\d{2})?'}
+    PL: {NIP: '\d{10}|\d{3}-\d{3}-\d{2}-\d{2}'}
+    PT: {NIF: '\d{9}'}
+    SE: {Organisationsnummer: '\d{6}-?\d{4}'}
+    IE: {TRN: '\d{7}[A-W][A-IW]?'}
+    US: {EIN: '\d{2}-?\d{7}', SSN/ITIN: '\d{3}-?\d{2}-?\d{4}'}
+    CA: {Business Number: '\d{9}(RT\d{4})?'}
+    MX: {RFC: '[A-Z&Ñ]{3,4}\d{6}[A-Z0-9]{3}'}
+    BR: {CNPJ: '\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}', CPF: '\d{3}\.?\d{3}\.?\d{3}-?\d{2}'}
+    IN: {GSTIN: '\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]', PAN: '[A-Z]{5}\d{4}[A-Z]'}
+    CN: {Unified Social Credit Code: '[0-9A-Z]{18}'}
+    JP: {Corporate Number: 'T?\d{13}'}
+    KR: {Business Registration Number: '\d{3}-?\d{2}-?\d{5}'}
+    TR: {VKN/TCKN: '\d{10,11}'}
+    VN: {MST: '\d{10}(-\d{3})?'}
+    BD: {BIN/TIN: '\d{9}(-\d{4})?|\d{12,13}'}
+    AE: {TRN: '\d{15}'}
+    AU: {ABN: '\d{11}'}
+    SG: {UEN: '\d{8,9}[A-Z]|[TSR]\d{2}[A-Z]{2}\d{4}[A-Z]'}
+  # Check-digit validation (src/agents/engines/checksums.py, python-stdnum, offline). Keyed by the SAME
+  # format names as above; the value is the stdnum module(s) that validate it. A number is reported
+  # (rule tax.<T>.checksum) only when it fits a format listed here and every listed validator rejects
+  # it - a format without an entry here (US SSN, DE Steuernummer, ...) is never judged.
+  checksum:
+    EU VAT: eu.vat
+    IN: {GSTIN: in_.gstin, PAN: in_.pan}
+    US: {EIN: us.ein}
+    GB: {UK VAT: gb.vat, UTR: gb.utr}
+    FR: {SIREN/SIRET: [fr.siren, fr.siret]}
+    IT: {Partita IVA: it.iva, Codice fiscale: it.codicefiscale}
+    ES: {NIF/CIF: [es.nif, es.cif]}
+    PL: {NIP: pl.nip}
+    PT: {NIF: pt.nif}
+    SE: {Organisationsnummer: se.orgnr}
+    CH: {UID/MWST: [ch.uid, ch.vat]}
+    BR: {CNPJ: br.cnpj, CPF: br.cpf}
+    CN: {Unified Social Credit Code: cn.uscc}
+    AU: {ABN: au.abn}
+    MX: {RFC: mx.rfc}
+    CA: {Business Number: ca.bn}
+    TR: {VKN/TCKN: [tr.vkn, tr.tckimlik]}
+    SG: {UEN: sg.uen}
+    JP: {Corporate Number: jp.cn}
+    KR: {Business Registration Number: kr.brn}
+    VN: {MST: vn.mst}
+
+# ---------------------------------------------------------------------------
+# PRIORITY 2 - formatting anomalies on text concepts (anomaly_rules.py).
+# ---------------------------------------------------------------------------
+text:
+  # Not allowed in a legal name. `& . , - / ' ( ) +` are normal ("Procter & Gamble").
+  illegal_name_chars: '^*#$~|<>{}[]\=_!?%;@'
+  # Left behind by a wrong UTF-8 / Latin-1 conversion (e.g. 'HochstÃ¤tt'), or the
+  # replacement character for bytes that could not be decoded.
+  mojibake_markers: ['Ã', 'Â', 'â€', 'Ð', 'Å', '\ufffd']
+  html_entity_regex: '&(amp|lt|gt|quot|apos|nbsp|#\d+|#x[0-9a-fA-F]+);'
+  placeholder_regex: '(X{2,}|TEST.*|DUMMY.*|N/?A|TBD|TBA|UNKNOWN|NONE|NULL|DO NOT USE.*|DELETE.*|\.+|-+|\?+|0+)'
+  # A value written entirely in capitals is flagged only when at least this share of
+  # the column is mixed case - an all-caps column is a convention, not an anomaly.
+  mixed_case_share: 0.7
+  # \w is Unicode-aware: internationalised domains ('bäckerei-brandes.de') are valid
+  # (RFC 6531); empty labels ('food..com') are not.
+  email_regex: '[\w.%+\-'']+@[\w\-]+(\.[\w\-]+)*\.[^\W\d_]{2,}'
+  # A phone number: digits and + ( ) - / . spaces, optionally an extension.
+  phone_regex: '\+?[\d\s()\-/.]{6,}((ext\.?|x)\s*\d{1,5})?'
+  phone_min_digits: 6
+
+# ISO 4217 currency codes in circulation (no X-codes: XXX means "no currency").
+iso_currencies: >-
+  AED AFN ALL AMD ANG AOA ARS AUD AWG AZN BAM BBD BDT BGN BHD BIF BMD BND BOB BRL BSD BTN BWP BYN BZD CAD CDF CHF CLP CNY
+  COP CRC CUP CVE CZK DJF DKK DOP DZD EGP ERN ETB EUR FJD FKP GBP GEL GHS GIP GMD GNF GTQ GYD HKD HNL HTG HUF IDR ILS INR
+  IQD IRR ISK JMD JOD JPY KES KGS KHR KMF KPW KRW KWD KYD KZT LAK LBP LKR LRD LSL LYD MAD MDL MGA MKD MMK MNT MOP MRU MUR
+  MVR MWK MXN MYR MZN NAD NGN NIO NOK NPR NZD OMR PAB PEN PGK PHP PKR PLN PYG QAR RON RSD RUB RWF SAR SBD SCR SDG SEK SGD
+  SHP SLE SOS SRD SSP STN SYP SZL THB TJS TMT TND TOP TRY TTD TWD TZS UAH UGX USD UYU UZS VES VND VUV WST XAF XCD XOF XPF
+  YER ZAR ZMW ZWL

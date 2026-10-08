@@ -15,9 +15,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from explorer_agent import client_knowledge, client_workspace, data_loader, explain, episodic_store as store
-from explorer_agent.config import Config
-from . import job_manager
+from src.agents.memory import client_knowledge, episodic_store as store
+from src.agents.data_loader import client_workspace, data_loader
+from src.agents.tools import explain
+from src.agents.config import Config
+from orchestrator import job_manager
 
 app = FastAPI(title="SAP DM Data Quality - Human Review")
 
@@ -50,7 +52,7 @@ class DecisionRequest(BaseModel):
 
 
 class ItemVerdictRequest(BaseModel):
-    verdict: str  # see explorer_agent.episodic_store.ALL_VALID_VERDICTS
+    verdict: str  # see src.agents.memory.episodic_store.ALL_VALID_VERDICTS
     comment: Optional[str] = ""
     # None (the default, e.g. the ACTIVENESS/CORRECTNESS_RELATIONSHIP/ANOMALY dispositions that
     # never show a corrected-value field) leaves the stored value untouched; "" is a deliberate
@@ -530,7 +532,7 @@ def get_scorecard(client_id: str, run_id: Optional[str] = None):
 
 # Promotion endpoints
 # ======================================
-from explorer_agent.memory.promotion import promote_approved_findings
+from src.agents.memory.promotion import promote_approved_findings
 
 
 @app.post("/api/promote")
@@ -541,7 +543,7 @@ def promote(run_id: Optional[str] = None):
 
 @app.get("/api/skills")
 def list_skills():
-    from explorer_agent.memory import skill_registry as registry
+    from src.agents.memory import skill_registry as registry
     return registry.get_all_skills()
 
 
@@ -620,13 +622,13 @@ def get_not_ready_records(client_id: str, table: str, run_id: Optional[str] = No
         "records", "in_scope", "out_of_scope", "ready", "not_ready", "unlisted", "score", "top_reasons", "worklist")}}
 
 
-# Handoff to / from the neighbouring agents (explorer_agent/contracts.py)
+# Handoff to / from the neighbouring agents (src/agents/contracts.py)
 # ======================================
 @app.get("/api/clients/{client_id}/handoff/structural-profile")
 def get_structural_profile(client_id: str, run_id: Optional[str] = None):
     """The structural profile for the Mapping / Value Mapping Agent: the latest run's, or one run's."""
     from fastapi.responses import FileResponse
-    from explorer_agent import structural_profile
+    from src.agents.profilers import structural_profile
     path = structural_profile.profile_path(client_id, run_id)
     if not path.exists():
         raise HTTPException(status_code=404, detail="No structural profile yet - run the explorer for this client")
@@ -636,7 +638,7 @@ def get_structural_profile(client_id: str, run_id: Optional[str] = None):
 @app.get("/api/handoff/schemas/{name}")
 def get_contract_schema(name: str):
     """JSON Schema of a handoff contract: sap-dm.structural-profile or sap-dm.field-value-mapping."""
-    from explorer_agent import contracts
+    from src.agents import contracts
     models = {contracts.STRUCTURAL_PROFILE: contracts.StructuralProfile,
               contracts.FIELD_VALUE_MAPPING: contracts.FieldValueMapping,
               contracts.TARGET_DOMAINS: contracts.TargetDomains,
@@ -650,7 +652,7 @@ def get_contract_schema(name: str):
 async def put_field_mapping(client_id: str, request: Request):
     """The Mapping Agent delivers its field/value mapping here. It is validated against the
     contract and stored in the client's data folder, where the next run picks it up."""
-    from explorer_agent import contracts
+    from src.agents import contracts
     if not client_knowledge.get_client(client_id):
         raise HTTPException(status_code=404, detail="Unknown client")
     try:
@@ -669,7 +671,7 @@ async def put_field_mapping(client_id: str, request: Request):
 @app.put("/api/clients/{client_id}/handoff/target-domains")
 async def put_target_domains(client_id: str, request: Request):
     """The Metadata Repository delivers the allowed SAP values per target field (check tables)."""
-    from explorer_agent import contracts
+    from src.agents import contracts
     if not client_knowledge.get_client(client_id):
         raise HTTPException(status_code=404, detail="Unknown client")
     try:
@@ -691,7 +693,7 @@ def get_pipeline_events(client_id: Optional[str] = None, type: Optional[str] = N
                         limit: int = 100):
     """Pipeline events (sap-dm.pipeline-event), oldest first; pass the last seen event_id as
     `after` to resume. The POC outbox - a queue replaces the transport in production."""
-    from explorer_agent import events
+    from src.agents import events
     return events.read(client_id=client_id, event_type=type, after=after, limit=limit)
 
 
@@ -763,7 +765,7 @@ def item_stats(finding_id: str):
 # Run Explorer Agent (background subprocess + polling)
 # ======================================
 def _build_explorer_cli_args(body: RunExplorerRequest, client: dict, workspace: dict) -> List[str]:
-    """Mirrors explorer_agent.main's argparse semantics: only pass flags the
+    """Mirrors orchestrator.runner's argparse semantics: only pass flags the
     user actually set, so config.yaml/CLI defaults still apply otherwise.
     Data folder and dictionary always come from the client's workspace, never
     from a path in the request."""

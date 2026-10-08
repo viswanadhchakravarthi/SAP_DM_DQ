@@ -130,7 +130,7 @@ project root - edit that file to change defaults for everyone.
 Secrets and machine-specific values (API keys, tokens, a local GGUF model
 path) go in a local, gitignored `.env` file instead. Every `config.yaml`
 setting can also be overridden per-machine by an environment variable - see
-the comments in `config.yaml` and `explorer_agent/config.py` for the exact
+the comments in `config.yaml` and `src/agents/config.py` for the exact
 variable names.
 
 ## Environment Setup
@@ -174,16 +174,16 @@ D:\GitHub\SAP_DM_DQ\.venv\Lib\site-packages\llama_cpp\__init__.py
 
 ```bash
 # Profile a client's tables (--client is required; tables are every CSV under --data-dir)
-python -m explorer_agent.main --client "<client name>" --data-dir <path>
+python -m orchestrator.runner --client "<client name>" --data-dir <path>
 
 # Client has no data dictionary: column meaning comes from names, statistics and the rule pack
-python -m explorer_agent.main --client "<client name>" --data-dir <path> --no-dictionary
+python -m orchestrator.runner --client "<client name>" --data-dir <path> --no-dictionary
 
 # Recreate findings that earlier runs already produced (by default they are skipped)
-python -m explorer_agent.main --client "<client name>" --data-dir <path> --no-skip-known
+python -m orchestrator.runner --client "<client name>" --data-dir <path> --no-skip-known
 
 # LLM-free engines only (duplicate matching + built-in SAP rules)
-python -m explorer_agent.main --client "<client name>" --data-dir <path> --deterministic-only
+python -m orchestrator.runner --client "<client name>" --data-dir <path> --deterministic-only
 
 # Human review app: page 1 picks the client and uploads its data, page 2 reviews findings
 uvicorn review_app.main:app --reload
@@ -197,19 +197,27 @@ uvicorn review_app.main:app --reload
 
 ## Module Index
 
-* `explorer_agent/` — the profiling pipeline (CLI: `python -m explorer_agent.main`)
-  * `main.py` — entry point; runs the per-table pipeline. `graph.py` — LangGraph plan → execute → reflect flow.
-  * `config.py` + `config.yaml` — all settings; secrets come from the `.env` named by `env_file`.
-  * `llm_providers.py` — builds the single LLM (Gemini or local GGUF); `local_llms.py` — the GGUF chat model; `llm_usage.py` — token counts per LLM request.
-  * `duplicate_detector.py`, `duplicate_rule_planner.py`, `duplicate_rules.py` — duplicate matching and its per-client rules.
-  * `column_mapping.py`, `sap_rules.py`, `anomaly_rules.py`, `rule_packs/` — column meaning and the deterministic SAP rule engines.
-  * `survivorship.py`, `scorecard.py` — golden-record recommendation and the DQ scorecard.
-  * `structural_profile.py`, `contracts.py`, `events.py` — pipeline handoff documents and events.
-  * `explain.py` — "Why flagged?": the exact reason per record, plus an optional local-model paraphrase (off by default).
-  * `privacy_guard.py` — heuristic scrubbing of check results before they reach an LLM; `table_profiler.py` — allowlisted statistical profile.
+Four top-level concerns: **where the orchestrator lives**, **where the rules sit**, **where the
+datasets belong**, and the agent's domain logic. See `implementation.md` for the full layout.
+
+* `orchestrator/` — the execution subsystem (CLI: `python -m orchestrator.runner`)
+  * `runner.py` — entry point; discovers tables, resolves mappings, runs the deterministic engines, invokes the graph. `graph.py` — LangGraph plan → execute → repair → reflect flow.
   * `sandbox.py`, `check_executor.py` — isolated execution of LLM-generated checks; `preflight.py` — free static checks that reject code that can't run; `repair.py` — the bounded loop that sends failed checks back to the planner once.
-  * `episodic_store.py` — SQLite run/finding history and human review state; `client_knowledge.py`, `client_workspace.py` — per-client memory and uploaded data.
-  * `cache_runner.py`, `skill_reuse.py` — re-run promoted skills: exact table + column first, then by meaning.
-  * `evaluate.py` — scores a run against a client's answer key.
-* `explorer_agent/memory/` — `base.py` (MemoryStore interface), `chroma_store.py` (Chroma adapter), `__init__.py` (backend factory `get_memory_store`), `skill_registry.py` (procedural JSON source of truth), `retriever.py`, `promotion.py` (episodic → procedural → semantic), `reindex.py` (rebuild the vector index), `duplicate_rule_store.py`.
-* `review_app/` — FastAPI + vanilla JS review UI (`uvicorn review_app.main:app`); `job_manager.py` runs the explorer as a child process.
+  * `cache_runner.py` — re-runs promoted skills instead of calling the planner.
+  * `job_manager.py` — runs the orchestrator as a child process for the review app.
+* `rules/` — version-controlled, human-auditable rule state
+  * `packs/sap_master_data.yaml` — the deterministic SAP standards, ISO lists and tax/IBAN formats.
+  * `local/clients/<client_id>/` — per-client `column_mappings.json` (the manual correction path), `duplicate_rules.json`, `duplicate_decisions.json`, `client.json`. `local/industries/` — industry baselines.
+  * `procedural/` — `skill_registry.json` (source of truth for promoted checks) and the shared duplicate rules.
+  * `schemas/` — JSON Schemas and examples for the pipeline handoff contracts.
+* `data/` — datasets only, no databases: `clients/<client_id>/` (uploaded CSVs, `workspace.json`; gitignored), `answer_keys/` (ground truth, deliberately outside the table-discovery path), `reference/` (offline GeoNames postal DB).
+* `src/agents/` — the agent's domain logic
+  * `config.py` + `config.yaml` — all settings; secrets come from the `.env` named by `env_file`. `schemas.py`, `contracts.py`, `events.py`, `metrics.py`, `logging_config.py`.
+  * `engines/` — `sap_rules.py`, `anomaly_rules.py`, `rule_context.py` (deterministic rule engines); `column_mapping.py` (column meaning); `duplicate_detector.py`, `duplicate_rule_planner.py`, `duplicate_rules.py` (matching and its per-client rules); `survivorship.py`, `scorecard.py` (golden record and DQ index); `enrichment.py`, `checksums.py`, `geo_reference.py`.
+  * `memory/` — `episodic_store.py` (SQLite run/finding history and the human review gate), `client_knowledge.py` (per-client durable memory), `skill_registry.py` (procedural source of truth), `base.py` (MemoryStore interface), `chroma_store.py` (Chroma adapter), `__init__.py` (backend factory `get_memory_store`), `retriever.py`, `promotion.py` (episodic → procedural → semantic), `reindex.py`, `duplicate_rule_store.py`.
+  * `profilers/` — `table_profiler.py` (allowlisted statistical profile), `structural_profile.py` (the OUT handoff document), `profiler_primitives.py`, `privacy_guard.py` (heuristic scrubbing before any LLM egress).
+  * `llm/` — `llm_providers.py` (builds the single LLM: Gemini or local GGUF), `local_llms.py` (the GGUF chat model), `llm_usage.py` (token counts per request), `local_auditor.py`.
+  * `data_loader/` — `data_loader.py` (CSV ingestion and table discovery), `client_workspace.py` (uploaded data on disk).
+  * `tools/` — `explain.py` ("Why flagged?"), `evaluate.py` (scores a run against an answer key), `skill_reuse.py` (reuse a skill by meaning), `storage_layout.py`, `build_geo_postal.py`.
+* `review_app/` — FastAPI + vanilla JS review UI (`uvicorn review_app.main:app`).
+* `storage/` — gitignored runtime artifacts only: the episodic SQLite DB, the derived vector index, the handoff outbox and logs.

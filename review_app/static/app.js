@@ -1393,7 +1393,7 @@ function attachPillarWorkflowHandlers(findingId, finding, isSynthetic) {
 
 // ---------------------------------------------------------------------------
 // Duplicates: one cluster at a time. The recommended golden record (highest
-// record quality score, explorer_agent/survivorship.py) is pre-selected: the
+// record quality score, src/agents/engines/survivorship.py) is pre-selected: the
 // Unique record the others merge into. Every other record is a Duplicate of it,
 // unless the reviewer marks it Unique = a separate entity (look-alike).
 // Nothing is saved until "Accept"; "To be confirmed" parks the whole cluster.
@@ -1796,7 +1796,7 @@ async function saveGroup(groupId, endpoint, body, applyLocally) {
 
 // ---------------------------------------------------------------------------
 // Record readiness (dashboard panel) and the DQ Index (mini window behind the
-// small "DQ" chip under Promote). Both from /api/scorecard (explorer_agent/scorecard.py).
+// small "DQ" chip under Promote). Both from /api/scorecard (src/agents/engines/scorecard.py).
 // Meters: the fill carries the status band, the track is a lighter step of the
 // same hue, and the value is always printed next to it (never color alone).
 // ---------------------------------------------------------------------------

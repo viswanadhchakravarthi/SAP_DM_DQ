@@ -6,7 +6,7 @@
 # see README.md.
 #
 # Every value below can also be overridden per-machine via an environment
-# variable without editing this file - see explorer_agent/config.py for the
+# variable without editing this file - see src/agents/config.py for the
 # exact variable name behind each setting.
 
 # Where secrets (API keys, tokens) are read from. Kept outside the repository so
@@ -52,8 +52,12 @@ data:
 
   # Files uploaded on the review app's first page, one folder per client:
   # <client_data_dir>/<client_id>/ (the tables, the dictionary and workspace.json).
-  # Raw client data - under storage/perm, gitignored. EXPLORER_CLIENT_DATA_DIR
-  client_data_dir: storage/perm/client_data
+  # Raw client data - gitignored. EXPLORER_CLIENT_DATA_DIR
+  client_data_dir: data/clients
+  # Ground-truth answer keys for the synthetic clients, deliberately OUTSIDE
+  # client_data_dir so data_loader.discover_table_files can never profile one
+  # and leak the answers into a prompt. EXPLORER_ANSWER_KEY_DIR
+  answer_key_dir: data/answer_keys
   max_upload_mb: 200 # per file; EXPLORER_MAX_UPLOAD_MB
 
   # One-line business meaning per SAP table, shown in the review app's
@@ -66,10 +70,10 @@ data:
     LFM1: "Vendor Master (Purchasing Organization Data) - a vendor's purchasing terms within one purchasing organization."
 
 duplicates:
-  # Deterministic duplicate MATCHING (explorer_agent/duplicate_detector.py): runs
+  # Deterministic duplicate MATCHING (src/agents/engines/duplicate_detector.py): runs
   # locally with zero LLM calls, and the planner no longer proposes DUPLICATE checks.
   # WHICH columns it matches on is drafted by the LLM once per client+schema
-  # (explorer_agent/duplicate_rule_planner.py) and then reused from memory.
+  # (src/agents/engines/duplicate_rule_planner.py) and then reused from memory.
   # EXPLORER_DUPLICATES_ENABLED
   enabled: true
   # Minimum fuzzy name similarity (0-100) for a name-based match. Fuzzy name
@@ -94,13 +98,13 @@ duplicates:
   # Don't show a group again when a reviewer already decided every record in it
   # (each one DUPLICATE or UNIQUE against all its current partners). A new member
   # or a changed record brings it back. Decisions stay in
-  # memory_store/clients/<client>/duplicate_decisions.json. EXPLORER_DUPLICATE_HIDE_DECIDED
+  # rules/local/clients/<client>/duplicate_decisions.json. EXPLORER_DUPLICATE_HIDE_DECIDED
   hide_decided_groups: true
 
   rules:
-    # How the matching rules for a table are produced (explorer_agent/duplicate_rules.py):
+    # How the matching rules for a table are produced (src/agents/engines/duplicate_rules.py):
     # the LLM drafts them once from the client's data dictionary and sanitized column
-    # statistics, they are saved under memory_store/clients/<client_id>/duplicate_rules.json,
+    # statistics, they are saved under rules/local/clients/<client_id>/duplicate_rules.json,
     # and every later run for that client reuses them with no LLM call. A table whose
     # column set changed is re-drafted on its own; the others stay free.
 
@@ -141,7 +145,7 @@ duplicates:
 
 enrichment:
   # A blank mandatory City (or Postal Code) gets a proposed value - fix_type AUTO_FIXABLE - when the
-  # client's own verified records agree on it (explorer_agent/enrichment.py): same country + postal code
+  # client's own verified records agree on it (src/agents/engines/enrichment.py): same country + postal code
   # (or city) held by at least min_support records, of which at least min_cooccurrence share one value.
   enabled: true           # EXPLORER_ENRICHMENT_ENABLED
   min_cooccurrence: 0.9   # EXPLORER_ENRICHMENT_MIN_COOCCURRENCE
@@ -152,10 +156,10 @@ enrichment:
 
 reference_data:
   # Static offline reference files bundled with the agent (geo_postal.db, ...). Never fetched at run time.
-  dir: explorer_agent/reference_data   # EXPLORER_REFERENCE_DATA_DIR
+  dir: data/reference   # EXPLORER_REFERENCE_DATA_DIR
 
 scorecard:
-  # Composite DQ Index per table, migration object and run (explorer_agent/scorecard.py),
+  # Composite DQ Index per table, migration object and run (src/agents/engines/scorecard.py),
   # computed during the run from the deterministic engines only (reproducible; LLM
   # checks are left out). Weighted average of the pillars that have a score.
   # Activeness is shown but weighted 0: a deleted or dormant record is a migration-scope
@@ -170,7 +174,7 @@ scorecard:
   max_worklist: 5000 # EXPLORER_READINESS_MAX_WORKLIST
 
 handoff:
-  # Priority 4 - the pipeline around this agent (explorer_agent/contracts.py):
+  # Priority 4 - the pipeline around this agent (src/agents/contracts.py):
   #   Extract -> structural profile -> Mapping Agent -> field/value mapping -> DQ rules -> Cleansing
   # OUT: every run writes the structural profile (types, lengths, value shapes/regexes,
   # distinct values of code columns) for the Mapping / Value Mapping Agent to
@@ -196,7 +200,7 @@ handoff:
 
 survivorship:
   # Record quality score (0-100) for every member of a duplicate group, and a
-  # recommended survivor ("Unique") the others merge into (explorer_agent/survivorship.py).
+  # recommended survivor ("Unique") the others merge into (src/agents/engines/survivorship.py).
   # It is only a pre-selection in the review app: nothing is decided until a
   # reviewer clicks Accept. EXPLORER_SURVIVORSHIP_ENABLED
   enabled: true
@@ -215,19 +219,19 @@ survivorship:
   recommend_for: [EXACT, PROBABLE]
 
 sap_rules:
-  # Deterministic SAP domain rules (explorer_agent/sap_rules.py): deletion flags,
+  # Deterministic SAP domain rules (src/agents/engines/sap_rules.py): deletion flags,
   # blocks, dormancy, mandatory fields, country-aware tax and postal-code formats,
   # orphan child records and flags not carried from a master to its org-level rows.
   # They run before the planner with zero LLM calls, and the planner is told which
   # checks they already cover so it does not re-invent them. They are written
-  # against the column MAPPING (explorer_agent/column_mapping.py), not column names:
+  # against the column MAPPING (src/agents/engines/column_mapping.py), not column names:
   # SAP-standard tables are mapped from the pack for free, any other layout by one
-  # LLM call per client+schema (saved under memory_store/clients/<client>/
+  # LLM call per client+schema (saved under rules/local/clients/<client>/
   # column_mappings.json - edit that file to correct a mapping). EXPLORER_SAP_RULES_ENABLED
   enabled: true
   # The rules themselves are data, not code - edit the pack to add a table, field,
   # country format or relationship. EXPLORER_SAP_RULES_PACK
-  pack_file: explorer_agent/rule_packs/sap_master_data.yaml
+  pack_file: rules/packs/sap_master_data.yaml
   # Offending rows stored per finding (all of them go to the local store only,
   # never to an LLM). EXPLORER_SAP_RULES_MAX_ROWS
   max_rows_per_finding: 1000
@@ -248,7 +252,7 @@ sap_rules:
   client_overrides: {}
 
 anomalies:
-  # Statistical and formatting anomalies (explorer_agent/anomaly_rules.py), run with
+  # Statistical and formatting anomalies (src/agents/engines/anomaly_rules.py), run with
   # the SAP rules on every table, zero LLM calls. They read the column mapping, so
   # they work on any schema: amounts/quantities, codes, currencies, names, e-mail
   # and phone columns are found by meaning, not by name. EXPLORER_ANOMALIES_ENABLED
@@ -327,17 +331,23 @@ privacy:
 
 memory:
   vector_backend: chroma
-  base_dir: storage/perm/memory_store # skills, client knowledge, duplicate rules, column mappings
-  # Derived from the procedural registry (`python -m explorer_agent.memory.reindex` rebuilds it),
-  # but kept under storage/perm so a rebuild (which needs the embedding model) is never forced on
-  # an offline server. EXPLORER_CHROMA_DIR
+  # Human-readable, version-controllable rule state: promoted skills, client knowledge,
+  # duplicate rules and column mappings. <base_dir>/procedural holds the skill registry
+  # and the shared duplicate rules. EXPLORER_MEMORY_DIR
+  base_dir: rules
+  # Derived from the procedural registry (`python -m src.agents.memory.reindex` rebuilds it),
+  # so it stays under storage/perm: it is disposable, and a rebuild (which needs the embedding
+  # model) is never forced on an offline server. EXPLORER_CHROMA_DIR
   chroma_dir: storage/perm/chroma
   chroma_collection: procedural_skills
   retrieval_top_k: 3
   dedup_distance_threshold: 0.25
   # Client-specific knowledge, one folder per client (company): human decisions
   # that must survive across runs, e.g. duplicate review verdicts.
-  clients_dir: storage/perm/memory_store/clients # EXPLORER_CLIENTS_DIR
+  clients_dir: rules/local/clients # EXPLORER_CLIENTS_DIR
+  # JSON Schemas of the pipeline handoff contracts, written by
+  # `python -m src.agents.contracts`. EXPLORER_SCHEMA_DIR
+  schema_dir: rules/schemas
 
   # Semantic-memory embeddings: all-MiniLM-L6-v2 as ONNX, run locally on CPU
   # via onnxruntime - free, no API calls, and never contacts Hugging Face.
@@ -358,13 +368,14 @@ memory:
     #    Set false on locked-down servers to fail fast instead of downloading.
     allow_download: true # EXPLORER_EMBEDDING_ALLOW_DOWNLOAD
 
-# Everything the agent creates at runtime lives under storage/ (gitignored), split by how much it
-# matters. Back up storage/perm; storage/tmp can be deleted at any time.
-#   storage/perm/  episodic_memory.db (+ backups), memory_store/, chroma/ (the vector index),
-#                  client_data/, handoff/
+# storage/ (gitignored) holds only what is disposable or purely runtime. The state worth keeping
+# moved out of it: rule state to rules/, datasets to data/ (see the directory layout in
+# implementation.md). Back up storage/perm; storage/tmp can be deleted at any time.
+#   storage/perm/  episodic_memory.db (+ backups), chroma/ (the vector index: derived, rebuilt by
+#                  `python -m src.agents.memory.reindex`), handoff/ (the pipeline outbox)
 #   storage/tmp/   logs/
 # Folders left in the project root by older versions are moved here once at startup
-# (explorer_agent/storage_layout.py); nothing is deleted.
+# (src/agents/tools/storage_layout.py); nothing is deleted.
 storage:
   episodic_db_path: storage/perm/episodic_memory.db # EXPLORER_EPISODIC_DB
 

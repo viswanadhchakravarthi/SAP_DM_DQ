@@ -1,0 +1,519 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "table": "LFA1",
+      "signature": "bdc8f8710a218a7d",
+      "columns": [
+        "LIFNR",
+        "KTOKK",
+        "NAME1",
+        "NAME2",
+        "SORTL",
+        "STRAS",
+        "ORT01",
+        "PSTLZ",
+        "LAND1",
+        "SPRAS",
+        "TELF1",
+        "SMTP_ADDR",
+        "STCD1",
+        "LOEVM",
+        "SPERM",
+        "ERDAT"
+      ],
+      "rules": {
+        "key": [
+          "LIFNR"
+        ],
+        "key_unique": true,
+        "name": "NAME1",
+        "identifiers": [
+          [
+            "TELF1"
+          ],
+          [
+            "STCD1"
+          ]
+        ],
+        "location": [
+          "STRAS",
+          "ORT01",
+          "PSTLZ",
+          "LAND1"
+        ],
+        "display": [
+          "LIFNR",
+          "NAME1",
+          "STRAS",
+          "ORT01",
+          "PSTLZ",
+          "LAND1",
+          "TELF1",
+          "SMTP_ADDR",
+          "STCD1"
+        ],
+        "label": "vendors",
+        "rule_scope": "UNIVERSAL",
+        "industry": null,
+        "notes": "SMTP_ADDR was categorized as CONTEXT due to low value distinctness (8.6%), likely indicating shared corporate or placeholder email addresses.",
+        "why": {
+          "LIFNR": "key - Primary key identifying the vendor master record.",
+          "KTOKK": "context - Account group categorizes vendors but does not identify duplicate entities.",
+          "NAME1": "name - Primary legal and trading name of the vendor used for entity matching.",
+          "NAME2": "context - Additional name line with low fill rate (34.3%), helpful only as supplemental context.",
+          "STRAS": "location - Street address populated in 100% of rows to corroborate name matches.",
+          "ORT01": "location - City location corroborating vendor entity matches.",
+          "PSTLZ": "location - Postal code field supporting geographic location verification.",
+          "LAND1": "location - Country key defining the primary location context.",
+          "TELF1": "identifier - Main phone number with 99.0% distinctness serving as a strong standalone entity identifier.",
+          "SMTP_ADDR": "context - Email field has a low distinctness rate (8.6%), indicating generic or shared values that could cause false positives if matched directly.",
+          "STCD1": "identifier - Tax and VAT identifier with 98.1% distinctness providing unique legal entity identification.",
+          "LOEVM": "context - Deletion flag indicating record status during review."
+        }
+      },
+      "rule_scope": "UNIVERSAL",
+      "industry": null,
+      "created_at": "2026-09-24T19:32:54.698099+00:00",
+      "created_by": "google:gemini-3.6-flash",
+      "client_id": "preflight-test2",
+      "reuse_count": 0
+    },
+    {
+      "table": "LFB1",
+      "signature": "6bb8c88737c62938",
+      "columns": [
+        "LIFNR",
+        "BUKRS",
+        "AKONT",
+        "ZTERM",
+        "ZWELS",
+        "HBKID",
+        "SPERR",
+        "LOEVM"
+      ],
+      "rules": {
+        "key": [
+          "LIFNR"
+        ],
+        "key_unique": false,
+        "name": null,
+        "identifiers": [],
+        "location": [],
+        "display": [
+          "LIFNR",
+          "BUKRS",
+          "AKONT",
+          "ZTERM"
+        ],
+        "label": "vendor company code settings",
+        "rule_scope": "UNIVERSAL",
+        "industry": null,
+        "notes": "LFB1 contains company-code-specific financial data for vendors; matching should be conducted at the vendor master level (LFA1) using LIFNR as key.",
+        "why": {
+          "LIFNR": "key - LIFNR is the vendor account number linking company code settings to the core vendor entity.",
+          "BUKRS": "context - Company code indicates the financial organizational unit for these settings.",
+          "AKONT": "context - GL reconciliation account is an accounting setting rather than an entity identifier.",
+          "ZTERM": "context - Payment terms represent vendor transaction settings within this company code.",
+          "ZWELS": "context - Allowed payment methods are organizational configuration settings with low variation across rows.",
+          "HBKID": "context - House bank key is internal master configuration data and not an identifying attribute of the vendor."
+        }
+      },
+      "rule_scope": "UNIVERSAL",
+      "industry": null,
+      "created_at": "2026-09-24T19:34:15.096227+00:00",
+      "created_by": "google:gemini-3.6-flash",
+      "client_id": "preflight-test2",
+      "reuse_count": 0
+    },
+    {
+      "table": "LFBK",
+      "signature": "b053e3ee3441be98",
+      "columns": [
+        "LIFNR",
+        "BANKS",
+        "BANKL",
+        "BANKN",
+        "BKONT",
+        "KOINH",
+        "IBAN"
+      ],
+      "rules": {
+        "key": [
+          "LIFNR"
+        ],
+        "key_unique": false,
+        "name": null,
+        "identifiers": [
+          [
+            "BANKS",
+            "BANKL",
+            "BANKN"
+          ],
+          [
+            "IBAN"
+          ]
+        ],
+        "location": [],
+        "display": [
+          "LIFNR",
+          "BANKS",
+          "BANKL",
+          "BANKN",
+          "KOINH",
+          "IBAN"
+        ],
+        "label": "vendor bank accounts",
+        "rule_scope": "UNIVERSAL",
+        "industry": null,
+        "notes": null,
+        "why": {
+          "LIFNR": "key - Identifies the vendor business object owning the bank details, where one vendor may have multiple bank accounts.",
+          "BANKS": "identifier - Specifies the bank country, which forms a composite identifier when combined with the bank key and account number.",
+          "BANKL": "identifier - Provides the routing key, required together with bank country and account number to identify the specific account.",
+          "BANKN": "identifier - Holds the bank account number, which combined with bank country and bank key identifies the account.",
+          "BKONT": "context - A control key field with extremely low cardinality (0.1% distinct) useful only as background context.",
+          "KOINH": "name - Contains the account holder name used for exact and fuzzy name matching. NOT used for matching: this table has no location columns to confirm a name match.",
+          "IBAN": "identifier - Serves as a standalone globally unique identifier for international bank accounts (97.6% distinct)."
+        }
+      },
+      "rule_scope": "UNIVERSAL",
+      "industry": null,
+      "created_at": "2026-09-24T19:35:23.638021+00:00",
+      "created_by": "google:gemini-3.6-flash",
+      "client_id": "preflight-test2",
+      "reuse_count": 0
+    },
+    {
+      "table": "LFM1",
+      "signature": "805ff534788440f0",
+      "columns": [
+        "LIFNR",
+        "EKORG",
+        "WAERS",
+        "ZTERM",
+        "INCO1",
+        "MINBW",
+        "SPERM",
+        "LOEVM"
+      ],
+      "rules": {
+        "key": [
+          "LIFNR"
+        ],
+        "key_unique": true,
+        "name": null,
+        "identifiers": [],
+        "location": [],
+        "display": [
+          "LIFNR",
+          "EKORG",
+          "WAERS",
+          "ZTERM"
+        ],
+        "label": "vendor purchasing organization records",
+        "rule_scope": "UNIVERSAL",
+        "industry": null,
+        "notes": null,
+        "why": {
+          "LIFNR": "key - Vendor Account Number serving as the primary key reference to the vendor master record.",
+          "EKORG": "context - Purchasing organization context for the vendor terms, having low distinctness (0.4%).",
+          "WAERS": "context - Order currency associated with the purchasing organization terms.",
+          "ZTERM": "context - Purchasing payment terms provided for reviewer comparison."
+        }
+      },
+      "rule_scope": "UNIVERSAL",
+      "industry": null,
+      "created_at": "2026-09-24T19:36:52.294756+00:00",
+      "created_by": "google:gemini-3.6-flash",
+      "client_id": "preflight-test2",
+      "reuse_count": 0
+    },
+    {
+      "table": "MARA",
+      "signature": "3758c23f9b2abff5",
+      "columns": [
+        "MATNR",
+        "MTART",
+        "MBRSH",
+        "MATKL",
+        "MEINS",
+        "BISMT",
+        "EAN11",
+        "NUMTP",
+        "BRGEW",
+        "NTGEW",
+        "GEWEI",
+        "MSTAE",
+        "LVORM",
+        "ERSDA",
+        "ERNAM"
+      ],
+      "rules": {
+        "key": [
+          "MATNR"
+        ],
+        "key_unique": true,
+        "name": null,
+        "identifiers": [
+          [
+            "BISMT"
+          ],
+          [
+            "EAN11"
+          ]
+        ],
+        "location": [],
+        "display": [
+          "MATNR",
+          "MTART",
+          "MATKL",
+          "MEINS",
+          "BISMT",
+          "EAN11",
+          "BRGEW",
+          "MSTAE",
+          "LVORM"
+        ],
+        "label": "materials",
+        "rule_scope": "UNIVERSAL",
+        "industry": null,
+        "notes": null,
+        "why": {
+          "MATNR": "key - Primary key of the material master table with 100% fill rate and 100% uniqueness.",
+          "MTART": "context - Material type classifies items into broad functional groups with only 1.2% distinct values.",
+          "MATKL": "context - Material group categorizes items into merchandise categories with 1.6% distinct values.",
+          "MEINS": "context - Base unit of measure indicates the stocking unit with 0.5% distinct values.",
+          "BISMT": "identifier - Old material number contains legacy predecessor article identifiers with 96.8% distinctness when populated.",
+          "EAN11": "identifier - EAN/GTIN barcode is an industry standard unique entity identifier with 98.1% distinct values.",
+          "BRGEW": "context - Gross weight provides useful physical attribute context during side-by-side review.",
+          "MSTAE": "context - Cross-plant material status shows operational blocks that help reviewers assess duplicate record state.",
+          "LVORM": "context - Deletion indicator indicates whether a record is flagged for deletion, crucial context during duplicate review."
+        }
+      },
+      "rule_scope": "UNIVERSAL",
+      "industry": null,
+      "created_at": "2026-09-24T20:03:14.801030+00:00",
+      "created_by": "google:gemini-3.6-flash",
+      "client_id": "preflight-test3",
+      "reuse_count": 0
+    },
+    {
+      "table": "MARC",
+      "signature": "847dc148ad00cde8",
+      "columns": [
+        "MATNR",
+        "WERKS",
+        "EKGRP",
+        "DISPO",
+        "DISMM",
+        "BESKZ",
+        "PLIFZ",
+        "EISBE",
+        "MINBE",
+        "MAABC",
+        "MMSTA",
+        "LVORM"
+      ],
+      "rules": {
+        "key": [
+          "MATNR",
+          "WERKS"
+        ],
+        "key_unique": true,
+        "name": null,
+        "identifiers": [],
+        "location": [],
+        "display": [
+          "MATNR",
+          "WERKS",
+          "EKGRP",
+          "DISPO",
+          "DISMM",
+          "BESKZ",
+          "PLIFZ"
+        ],
+        "label": "plant materials",
+        "rule_scope": "UNIVERSAL",
+        "industry": null,
+        "notes": null,
+        "why": {
+          "MATNR": "key - Serves as the material key in SAP, forming the primary composite key together with WERKS.",
+          "WERKS": "key - Specifies the plant code and completes the composite primary key alongside MATNR.",
+          "EKGRP": "context - Purchasing group responsible for procurement of the material at this plant.",
+          "DISPO": "context - MRP controller responsible for planning this material at the plant level.",
+          "DISMM": "context - Defines the MRP planning type strategy for plant material control.",
+          "BESKZ": "context - Indicates the procurement type (in-house or external procurement) for this plant material.",
+          "PLIFZ": "context - Planned delivery time in days, providing lead-time operational context.",
+          "EISBE": "context - Safety stock quantity specified for inventory planning at this plant.",
+          "MINBE": "context - Reorder point threshold value used for reorder-point MRP planning.",
+          "MAABC": "context - ABC material classification indicator at plant level."
+        }
+      },
+      "rule_scope": "UNIVERSAL",
+      "industry": null,
+      "created_at": "2026-09-24T20:05:17.920565+00:00",
+      "created_by": "google:gemini-3.6-flash",
+      "client_id": "preflight-test3",
+      "reuse_count": 0
+    },
+    {
+      "table": "MARD",
+      "signature": "82b9b29b67c407f1",
+      "columns": [
+        "MATNR",
+        "WERKS",
+        "LGORT",
+        "LABST",
+        "INSME",
+        "SPEME",
+        "LGPBE",
+        "LVORM"
+      ],
+      "rules": {
+        "key": [
+          "MATNR",
+          "WERKS",
+          "LGORT"
+        ],
+        "key_unique": true,
+        "name": null,
+        "identifiers": [],
+        "location": [],
+        "display": [
+          "MATNR",
+          "WERKS",
+          "LGORT",
+          "LABST",
+          "LGPBE"
+        ],
+        "label": "material storage locations",
+        "rule_scope": "UNIVERSAL",
+        "industry": null,
+        "notes": null,
+        "why": {
+          "MATNR": "key - Material Number is part of the primary key identifying the material in table MARD.",
+          "WERKS": "key - Plant code forms part of the composite primary key identifying the organizational location.",
+          "LGORT": "key - Storage Location forms part of the primary key specifying the stock location.",
+          "LABST": "context - Unrestricted stock quantity provides key operational context for stock evaluation.",
+          "INSME": "context - Quality inspection stock quantity provides secondary stock context.",
+          "SPEME": "context - Blocked stock quantity provides context, though 99.8% of values are identical.",
+          "LGPBE": "context - Storage Bin indicates physical location details within the storage location."
+        }
+      },
+      "rule_scope": "UNIVERSAL",
+      "industry": null,
+      "created_at": "2026-09-24T20:06:10.175116+00:00",
+      "created_by": "google:gemini-3.6-flash",
+      "client_id": "preflight-test3",
+      "reuse_count": 0
+    },
+    {
+      "table": "MBEW",
+      "signature": "9aba4e692f40c969",
+      "columns": [
+        "MATNR",
+        "BWKEY",
+        "VPRSV",
+        "BKLAS",
+        "VERPR",
+        "STPRS",
+        "PEINH",
+        "LBKUM",
+        "SALK3"
+      ],
+      "rules": {
+        "key": [
+          "MATNR",
+          "BWKEY"
+        ],
+        "key_unique": true,
+        "name": null,
+        "identifiers": [],
+        "location": [],
+        "display": [
+          "MATNR",
+          "BWKEY",
+          "VPRSV",
+          "BKLAS",
+          "VERPR",
+          "STPRS",
+          "LBKUM",
+          "SALK3"
+        ],
+        "label": "material valuation records",
+        "rule_scope": "UNIVERSAL",
+        "industry": null,
+        "notes": "MBEW is an SAP standard table for material valuation; records are uniquely identified by Material Number (MATNR) and Valuation Area (BWKEY).",
+        "why": {
+          "MATNR": "key - Material number forms the core business key identifying the material record.",
+          "BWKEY": "key - Valuation area forms the second component of the primary key alongside MATNR.",
+          "VPRSV": "context - Price control indicator ('S' vs 'V') provides important accounting context for valuation comparison.",
+          "BKLAS": "context - Valuation class links the material to general ledger account determination.",
+          "VERPR": "context - Moving average price gives pricing context for comparison between records.",
+          "STPRS": "context - Standard price gives fixed valuation pricing context.",
+          "PEINH": "context - Price unit denominator provides scaling context for standard and moving average prices.",
+          "LBKUM": "context - Total valuated stock quantity provides inventory context.",
+          "SALK3": "context - Total stock value provides monetary context for total inventory on hand."
+        }
+      },
+      "rule_scope": "UNIVERSAL",
+      "industry": null,
+      "created_at": "2026-09-24T20:07:27.469828+00:00",
+      "created_by": "google:gemini-3.6-flash",
+      "client_id": "preflight-test3",
+      "reuse_count": 0
+    },
+    {
+      "table": "MVKE",
+      "signature": "44d5e47dc1982982",
+      "columns": [
+        "MATNR",
+        "VKORG",
+        "VTWEG",
+        "DWERK",
+        "VERSG",
+        "KONDM",
+        "KTGRM",
+        "MTPOS",
+        "MVGR1",
+        "LVORM"
+      ],
+      "rules": {
+        "key": [
+          "MATNR"
+        ],
+        "key_unique": false,
+        "name": null,
+        "identifiers": [],
+        "location": [],
+        "display": [
+          "MATNR",
+          "VKORG",
+          "VTWEG",
+          "DWERK",
+          "MTPOS",
+          "LVORM"
+        ],
+        "label": "material sales views",
+        "rule_scope": "UNIVERSAL",
+        "industry": null,
+        "notes": "MVKE contains sales-specific data for materials; entity names and base attributes reside in MARA/MAKT tables.",
+        "why": {
+          "MATNR": "key - Foreign key to MARA identifying the material business object that owns these sales views.",
+          "VKORG": "context - Defines the sales organization for this material record context.",
+          "VTWEG": "context - Defines the distribution channel context for the sales view.",
+          "DWERK": "context - Delivering plant assignment provides key operational context for reviewers.",
+          "MTPOS": "context - Item category group controlling sales order processing behavior, useful reviewer context.",
+          "LVORM": "context - Sales level deletion flag indicating record status during side-by-side review."
+        }
+      },
+      "rule_scope": "UNIVERSAL",
+      "industry": null,
+      "created_at": "2026-09-24T20:08:47.274531+00:00",
+      "created_by": "google:gemini-3.6-flash",
+      "client_id": "preflight-test3",
+      "reuse_count": 0
+    }
+  ]
+}

@@ -1,0 +1,251 @@
+{
+  "version": 1,
+  "tables": {
+    "LFA1": {
+      "table": "LFA1",
+      "signature": "bdc8f8710a218a7d",
+      "columns": [
+        "LIFNR",
+        "KTOKK",
+        "NAME1",
+        "NAME2",
+        "SORTL",
+        "STRAS",
+        "ORT01",
+        "PSTLZ",
+        "LAND1",
+        "SPRAS",
+        "TELF1",
+        "SMTP_ADDR",
+        "STCD1",
+        "LOEVM",
+        "SPERM",
+        "ERDAT"
+      ],
+      "rules": {
+        "key": [
+          "LIFNR"
+        ],
+        "key_unique": true,
+        "name": "NAME1",
+        "identifiers": [
+          [
+            "TELF1"
+          ],
+          [
+            "SMTP_ADDR"
+          ],
+          [
+            "STCD1"
+          ]
+        ],
+        "location": [
+          "STRAS",
+          "ORT01",
+          "PSTLZ",
+          "LAND1"
+        ],
+        "display": [
+          "LIFNR",
+          "KTOKK",
+          "NAME1",
+          "STRAS",
+          "ORT01",
+          "PSTLZ",
+          "LAND1",
+          "SPRAS",
+          "TELF1",
+          "SMTP_ADDR"
+        ],
+        "label": "records",
+        "rule_scope": "INDUSTRY_SPECIFIC",
+        "industry": null,
+        "notes": null,
+        "why": {
+          "LIFNR": "key - The dictionary defines this as the Primary Key with 100% distinct values, making it the unique business identifier for each vendor row.",
+          "KTOKK": "context - With only 0.4% distinct values, this is a classification code (Account Group) rather than an identifier, useful for context but not for matching.",
+          "NAME1": "name - This is the primary vendor name field, 98% filled and 99.3% distinct, serving as the main entity name for fuzzy matching.",
+          "STRAS": "location - This is the street address field, 100% filled, which corroborates name matches by providing specific location details.",
+          "ORT01": "location - This is the city field, 100% filled, providing geographic context to support address-based matching.",
+          "PSTLZ": "location - This is the postal code field, 100% filled, which helps narrow down location matches alongside street and city.",
+          "LAND1": "location - This is the country code, 99% filled, providing the broadest geographic context for the vendor's location.",
+          "SPRAS": "context - This is a language code with very low distinctness (0.6%), serving only as administrative context and not for matching.",
+          "TELF1": "identifier - This is the main telephone number, 100% filled and 100% distinct, acting as a strong unique identifier for the vendor entity.",
+          "SMTP_ADDR": "identifier - This is the email address, 100% filled and 100% distinct, serving as a strong unique identifier for the vendor entity.",
+          "STCD1": "identifier - This is the Tax/VAT number, 100% filled and 99% distinct, which is a legal entity-specific identifier for the vendor.",
+          "ERDAT": "context - This is the creation date, which is metadata about the record's history rather than an attribute of the vendor entity itself."
+        }
+      },
+      "rule_scope": "INDUSTRY_SPECIFIC",
+      "industry": null,
+      "created_at": "2026-09-18T20:05:31.102905+00:00",
+      "created_by": "google:gemini-3.6-flash -> groq:qwen/qwen3.8-27b -> groq:openai/gpt-oss-20b",
+      "client_id": "acme-retail",
+      "reuse_count": 14,
+      "last_used_at": "2026-09-30T05:40:45.257211+00:00"
+    },
+    "LFB1": {
+      "table": "LFB1",
+      "signature": "6bb8c88737c62938",
+      "columns": [
+        "LIFNR",
+        "BUKRS",
+        "AKONT",
+        "ZTERM",
+        "ZWELS",
+        "HBKID",
+        "SPERR",
+        "LOEVM"
+      ],
+      "rules": {
+        "key": [
+          "LIFNR",
+          "BUKRS"
+        ],
+        "key_unique": true,
+        "name": null,
+        "identifiers": [],
+        "location": [],
+        "display": [
+          "LIFNR",
+          "BUKRS",
+          "AKONT",
+          "ZTERM",
+          "ZWELS",
+          "HBKID"
+        ],
+        "label": "records",
+        "rule_scope": "INDUSTRY_SPECIFIC",
+        "industry": null,
+        "notes": null,
+        "why": {
+          "LIFNR": "key - The dictionary identifies this as the Vendor Account Number and foreign key to the vendor master, making it the business object identifier for this table.",
+          "BUKRS": "key - The dictionary defines this as the Company Code, which combined with the Vendor Account Number uniquely identifies the specific financial record in this company-code-specific table.",
+          "AKONT": "context - The dictionary describes this as the GL reconciliation account, a financial setting that varies by vendor but is not a unique identifier for the vendor entity itself.",
+          "ZTERM": "context - The dictionary identifies this as default payment terms, a financial configuration attribute used for context rather than entity identification.",
+          "ZWELS": "context - The dictionary describes this as allowed payment methods, a financial setting that is partially filled and low-variance, serving only as context.",
+          "HBKID": "context - The dictionary defines this as the default house bank, a financial routing detail that is not unique to the vendor and serves as context."
+        }
+      },
+      "rule_scope": "INDUSTRY_SPECIFIC",
+      "industry": null,
+      "created_at": "2026-09-18T20:06:25.680489+00:00",
+      "created_by": "google:gemini-3.6-flash -> groq:qwen/qwen3.8-27b -> groq:openai/gpt-oss-20b",
+      "client_id": "acme-retail",
+      "reuse_count": 12,
+      "last_used_at": "2026-09-21T12:04:46.539530+00:00"
+    },
+    "LFBK": {
+      "table": "LFBK",
+      "signature": "b053e3ee3441be98",
+      "columns": [
+        "LIFNR",
+        "BANKS",
+        "BANKL",
+        "BANKN",
+        "BKONT",
+        "KOINH",
+        "IBAN"
+      ],
+      "rules": {
+        "key": [
+          "LIFNR"
+        ],
+        "key_unique": false,
+        "name": null,
+        "identifiers": [
+          [
+            "BANKL"
+          ],
+          [
+            "BANKN"
+          ],
+          [
+            "IBAN"
+          ]
+        ],
+        "location": [],
+        "display": [
+          "LIFNR",
+          "BANKS",
+          "BANKL",
+          "BANKN",
+          "BKONT",
+          "KOINH",
+          "IBAN"
+        ],
+        "label": "records",
+        "rule_scope": "INDUSTRY_SPECIFIC",
+        "industry": null,
+        "notes": null,
+        "why": {
+          "LIFNR": "key - The dictionary identifies this as a foreign key to the vendor master (LFA1), and the 80.4% distinct rate confirms that one vendor legitimately owns multiple bank accounts, making it the business key for grouping rows.",
+          "BANKS": "context - not used for matching: only 1.1% of its filled values are distinct, so one value covers many records and cannot identify one. (The rule said: identifier - As a 3-character country code with only 1.1% distinct values, it is a classification field that only identifies a specific bank account when combined with the bank key and account number, so it must be grouped with them.)",
+          "BANKL": "identifier - The routing/bank key is part of the composite identifier for a bank account; while highly distinct, it is not unique on its own (933 rows vs 100% distinct is a statistical artifact of the small sample, but logically it identifies the bank branch, not the specific account), so it belongs in the same identifier group as the country and account number.",
+          "BANKN": "identifier - The bank account number is the specific account identifier that, together with the bank country and bank key, uniquely identifies the bank account; it is not unique in the table alone, so it must be matched as part of the composite identifier group.",
+          "BKONT": "context - With only 0.2% distinct values, this control key is a low-cardinality classification field (likely indicating primary vs. secondary accounts) that does not identify a specific entity and is best used as context for the reviewer.",
+          "KOINH": "name - The account holder name is the primary descriptive field for the bank account entity, with 79.2% distinct values and 98.1% fill rate, making it the best candidate for name matching to corroborate the bank account identifiers. NOT used for matching: this table has no location columns to confirm a name match.",
+          "IBAN": "identifier - The IBAN is a strong standalone identifier for the bank account, but with only 28.7% fill rate, it is not reliable as the sole identifier; however, when present, it is entity-specific and should be treated as an identifier to catch duplicates that the composite bank key/account number might miss due to data entry variations."
+        }
+      },
+      "rule_scope": "INDUSTRY_SPECIFIC",
+      "industry": null,
+      "created_at": "2026-09-18T20:06:32.008048+00:00",
+      "created_by": "google:gemini-3.6-flash -> groq:qwen/qwen3.8-27b -> groq:openai/gpt-oss-20b",
+      "client_id": "acme-retail",
+      "reuse_count": 12,
+      "last_used_at": "2026-09-21T12:04:46.397584+00:00"
+    },
+    "LFM1": {
+      "table": "LFM1",
+      "signature": "805ff534788440f0",
+      "columns": [
+        "LIFNR",
+        "EKORG",
+        "WAERS",
+        "ZTERM",
+        "INCO1",
+        "MINBW",
+        "SPERM",
+        "LOEVM"
+      ],
+      "rules": {
+        "key": [
+          "LIFNR",
+          "EKORG"
+        ],
+        "key_unique": false,
+        "name": null,
+        "identifiers": [],
+        "location": [],
+        "display": [
+          "LIFNR",
+          "EKORG",
+          "WAERS",
+          "ZTERM",
+          "INCO1",
+          "MINBW"
+        ],
+        "label": "records",
+        "rule_scope": "INDUSTRY_SPECIFIC",
+        "industry": null,
+        "notes": null,
+        "why": {
+          "LIFNR": "key - The dictionary defines this as the Vendor Account Number, which is the business object this table describes, and the 76.3% distinct rate confirms it identifies specific vendors rather than classifying them.",
+          "EKORG": "key - The dictionary identifies this as the Purchasing Organization, and the 0.3% distinct rate indicates it is a partitioning attribute where one vendor legitimately has multiple rows for different organizations.",
+          "WAERS": "context - The dictionary describes this as the Order Currency, and the 1.1% distinct rate shows it is a standard classification code rather than an identifier or name.",
+          "ZTERM": "context - The dictionary defines this as Payment Terms, and the 0.6% distinct rate confirms it is a low-cardinality attribute used for classification rather than entity identification.",
+          "INCO1": "context - The dictionary identifies this as Incoterms Part 1, and the 0.6% distinct rate indicates it is a standard trade term code that does not help distinguish duplicate vendor records.",
+          "MINBW": "context - The dictionary describes this as Minimum Order Value, and the 0.5% distinct rate shows it is a numeric threshold that varies by vendor but is not a unique identifier."
+        }
+      },
+      "rule_scope": "INDUSTRY_SPECIFIC",
+      "industry": null,
+      "created_at": "2026-09-18T20:07:02.905200+00:00",
+      "created_by": "google:gemini-3.6-flash -> groq:qwen/qwen3.8-27b -> groq:openai/gpt-oss-20b",
+      "client_id": "acme-retail",
+      "reuse_count": 12,
+      "last_used_at": "2026-09-21T12:04:46.638895+00:00"
+    }
+  }
+}

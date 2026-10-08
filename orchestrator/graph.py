@@ -1,0 +1,382 @@
+"""
+Table-scoped Explorer graph - BATCH design.
+
+Change: instead of iterative tool-calling (many round-trips), we now:
+  1. Profile the WHOLE table upfront (ydata-profiling, sanitized)
+  2. ONE Planner call proposes a batch of checks (structured output)
+  3. Execute ALL checks locally (sandboxed, zero LLM involvement)
+  4. ONE Reflector call judges ALL results at once (structured output)
+
+The graph is linear except for ONE bounded loop, execute_all -> repair_batch -> execute_all:
+checks that failed to run (sandbox error or pre-flight rejection) go back to the planner together,
+in a single call, and only the rewritten ones re-run. The loop ends on a counter
+(Config.MAX_REPAIR_ROUNDS, 0 = off), never on a decision of the model. We no longer use
+ToolNode/tool-calling here since batch structured output doesn't need it.
+
+LLM calls per table: 2 (1 planner + 1 reflector) - constant, regardless of column count -
+plus at most MAX_REPAIR_ROUNDS repair calls, and only when a check failed.
+"""
+
+from typing import TypedDict, List, Dict, Any
+import pandas as pd
+from langchain_core.messages import SystemMessage, HumanMessage
+from langgraph.graph import StateGraph, END
+
+from src.agents.schemas import CheckPlan, ReflectionBatch
+from src.agents.llm.llm_providers import LLMChainExhaustedError
+from orchestrator.preflight import other_tables_read
+from orchestrator.repair import apply_repairs, build_repair_prompt, failed_indices
+from orchestrator.check_executor import execute_checks, extract_detail_rows, sandbox_session
+from src.agents.config import Config
+from src.agents.metrics import metrics
+from src.agents.logging_config import get_logger
+
+logger = get_logger("graph")
+
+PLANNER_SYSTEM_PROMPT = """You are an expert data quality exploration agent for SAP data migration \
+and governance projects. You are given a statistical profile of an ENTIRE table (aggregated stats and \
+masked top-values only - never raw data). Propose a batch of pandas checks covering columns likely to have issues.
+
+BUILT-IN SAP RULES: a deterministic rule engine has already run the standard SAP checks listed in the user \
+message (deletion flags/blocks, dormancy, mandatory fields, country keys, postal-code and tax-number formats by \
+country, orphan records, flags not carried to org-level rows). Never propose a check that repeats one of them. \
+Use your checks for what fixed rules cannot know: client-specific value sets and conventions, distribution \
+anomalies, text hygiene, placeholder values, and cross-field or cross-table logic not already covered.
+
+Structure checks across the FOUR MAJOR DATA PROFILING PILLARS:
+1. ACTIVENESS:
+   - Check if records are actively used or dormant/obsolete.
+   - Deletion flags, blocks and dormancy (old ERDAT with no org-level extension) are built-in rules - only propose
+     activeness checks they do not cover.
+   - Tag category="ACTIVENESS".
+
+2. DUPLICATE:
+   - Do NOT propose any DUPLICATE checks. Duplicate records are detected separately by a built-in,
+     deterministic matching engine; any DUPLICATE check you propose is discarded.
+
+3. COMPLETENESS:
+   - Standard SAP mandatory fields and tax numbers are built-in rules; look for blanks in other fields that matter here.
+   - Classify each completeness issue as either:
+     * fix_type="AUTO_FIXABLE" with auto_fix_value, ONLY for a harmless single default (e.g. a missing language key)
+     * fix_type="MANUAL_FIX" for anything financial or identifying (reconciliation account, payment terms/methods,
+       bank data, tax numbers) - these must come from the business, never from a guessed default
+   - Tag category="COMPLETENESS".
+   - Completeness means a value in THIS table is blank. A missing record in ANOTHER table (e.g. "vendor has no
+     row in LFBK") is a relationship check: tag it CORRECTNESS with sub_type="RELATIONSHIP_INTEGRITY" instead.
+
+4. CORRECTNESS & STATISTICAL ANOMALIES:
+   - Format validation, invalid country codes (ISO length != 2), invalid special characters in names (e.g. '#', '$').
+   - Built-in rules already check amount/quantity outliers and negatives, rare codes, currency keys, name/text
+     hygiene and e-mail/phone formats. Codes such as payment terms (ZTERM) are KEYS, not numbers of days - never
+     compute numeric statistics on them. Look for anomalies the built-in rules cannot see (cross-field logic,
+     client-specific conventions).
+   - NEVER hardcode a list of "valid" or "standard" values for a code, key or group column (account groups,
+     payment terms, plants, types, ...). Valid codes are configured per client and you cannot see that
+     configuration, so such a list is a guess and flags legitimate records. Judge a code only by evidence in the
+     data (very rare value, format or length unlike the rest of the column) or against another table's column.
+   - Tag category="CORRECTNESS", and set is_anomaly=True if it is a statistical distribution outlier.
+   - Also set `sub_type` for every CORRECTNESS check:
+     * sub_type="VALUE_ERROR" for a single-field format/value/outlier problem (a "corrected value" makes sense here).
+     * sub_type="RELATIONSHIP_INTEGRITY" for a cross-table/referential check (e.g. "vendor exists in LFB1 but has no
+       row in LFA1") - there is no single corrected value for these, only a business decision, so never suggest one.
+
+RULE SCOPE CLASSIFICATION (set rule_scope for each check):
+- UNIVERSAL: Standard SAP integrity mandatory across all implementations (e.g. Reconciliation account present, Tax uniqueness, primary key).
+- INDUSTRY_SPECIFIC: Rules specific to an industry (e.g. Banking & Financial Services, Healthcare & Biotech, Manufacturing, Consumer & Retail, Energy & Utilities). Specify the industry name in `industry`.
+- CLIENT_SPECIFIC: Custom client naming conventions and internal code patterns (never a list of allowed codes you cannot see).
+
+For EACH check, provide TWO code fields:
+1. `code` (REQUIRED): must set `result` to an AGGREGATE value (count/pct/bool/small dict).
+   This is sent to an LLM for review - never include raw row values here.
+
+MISSING VALUES: empty cells are NaN (a float), so a string operation on one crashes the check (`x.startswith(...)`, \
+`'.' in x`, `len(x)`). In `code` and `detail_code`, never call a string method or `in` on a raw column value: use \
+the vectorized `.str` accessor with `na=False` (e.g. `df['IBAN'].str.startswith('DE', na=False)`), or `.dropna()` / \
+`.astype(str)` first, and decide explicitly whether a blank counts as a defect for this check.
+
+2. `detail_code` (STRONGLY RECOMMENDED): pandas code that sets `result` to a list of dicts, one per offending row.
+   Keys:
+   - row_index (int): dataframe index
+   - key_field (str): name of the table's natural key column - one of THIS table's columns as listed in the profile
+   - key_value: value of key field for this row
+   - issue_detail (str): specific description of the issue for THIS row
+
+NAMES: use ONLY table names and column names that are listed in this prompt (this table's profile, and the
+"Other registered tables" list with their columns). The names in the example below (<OTHER_TABLE>, <KEY>,
+<NAME_COLUMN>) are PLACEHOLDERS - never copy a table or column name from an example. If no other table has a
+column that matches a key of this table, skip the cross-table lookup and build issue_detail from this table alone.
+The sandbox has only `pd`, `np`, `re`, `datetime`, `df`, `tables` and basic builtins (len, str, int, float, set,
+list, dict, sorted, sum, min, max, zip, enumerate, range, any, all, isinstance): `globals()`, `locals()`, `vars()`,
+`eval`, `open` and similar do NOT exist, so never call them (to test whether a name exists, define it first).
+
+CROSS-TABLE ENRICHMENT (make issue_detail actionable, not just an identifier): your `detail_code` has access to
+`tables['<OTHER_TABLE>']` for EVERY other registered table (a dict of full DataFrames, keyed by table name), not
+just `df` (the current table). PERFORMANCE - detail_code runs under a strict wall-clock timeout: first narrow to the
+offending rows and slice to at most 50 of them (e.g. `subset = df[mask].head(50)`), and only THEN do any per-row
+string building or cross-table lookups on that small subset - never enrich all matching rows before capping, and
+build lookup dicts (`.to_dict()`) once outside any loop, never inside one. When a row references a business key
+that also exists in another table (the same key column appears in both tables' column lists), look up
+human-readable context BEFORE building issue_detail (placeholders - substitute real names from this prompt):
+    name_lookup = tables['<OTHER_TABLE>'].set_index('<KEY>')['<NAME_COLUMN>'].to_dict()
+    entity_name = name_lookup.get(row['<KEY>'], 'Unknown')
+Build each lookup dict ONCE outside any loop with `.to_dict()`, and ALWAYS read it with `.get(key, 'Unknown')`
+(never direct indexing) since the key may not exist in the other table. Compose issue_detail as a business-readable
+sentence, not a bare code: e.g. 'Record: <key value> - <name> | <field>: <current value> (expected/common: <value>) | '
+'Suggested Action: Confirm with the data owner whether this is intentional.' Include whatever of key, name, current
+value, expected/reference value, and a suggested action is actually available from the current table plus one
+cross-table lookup - do not invent fields that aren't there.
+
+Cap detail_rows at around 50 rows (use .head(50)).
+Inside code use ONLY single quotes (') for string literals - never double quotes, and no f-strings; build strings with + and str().
+"""
+
+# The planner's rules for writing `code` / `detail_code`, reused verbatim so a repair follows the same ones.
+_CODE_RULES = PLANNER_SYSTEM_PROMPT[PLANNER_SYSTEM_PROMPT.index("For EACH check, provide TWO code fields"):]
+
+REPAIR_SYSTEM_PROMPT = """You fix pandas data quality checks that failed to run, for an SAP data migration project. \
+You get the table's columns and dtypes and, for each failed check, its code and the error it produced (or the \
+reason it was rejected before running). Return one corrected check per failed check, in the same order, keeping its \
+column, category and hypothesis. Fix only what the error says; do not add checks, and do not change what the check \
+is testing. The error may be a one-line pre-flight explanation: follow it literally.
+
+""" + _CODE_RULES
+
+REFLECTOR_SYSTEM_PROMPT = """You are reviewing outcomes of MULTIPLE data quality checks that \
+just ran, in one batch across Activeness, Completeness, and Correctness pillars. \
+For EACH result (identified by check_index), decide if it's a genuine issue, its severity/confidence, \
+a one-line summary, rule_scope, fix_type, auto_fix_value, is_anomaly, and whether it would \
+generalize to other similar datasets/clients (reusable). For CORRECTNESS results, also confirm or set \
+sub_type: VALUE_ERROR for a single wrong field value, RELATIONSHIP_INTEGRITY for a cross-table/referential \
+mismatch (no single corrected value applies to those).
+Each check's category is fixed by the check itself - echo it, never reclassify it. Base each summary ONLY on \
+that check_index's own column, hypothesis and result value; never mention numbers or fields from another check."""
+
+
+class TableExplorerState(TypedDict):
+    table_name: str
+    seed_prompt: str
+    df: pd.DataFrame
+    all_tables: Dict[str, pd.DataFrame]
+    proposed_checks: List[Any]
+    check_results: List[Dict[str, Any]]
+    findings: List[Dict[str, Any]]
+    rule_coverage: Any  # sap_rules.RuleCoverage - what the deterministic SAP rules already checked
+    repair_round: int   # repair rounds used so far (bounded by Config.MAX_REPAIR_ROUNDS)
+    to_run: Any         # None = execute every check; a list = re-run only these check indices
+    known_checks: Any   # {(COLUMN, category)} this client already has findings for on this table (skip them)
+
+
+def build_explorer_graph(planner_structured, reflector_structured, repair_structured=None):
+    """
+    planner_structured: LLM wrapped with .with_structured_output(CheckPlan)
+    reflector_structured: LLM wrapped with .with_structured_output(ReflectionBatch)
+    repair_structured: LLM wrapped with .with_structured_output(CheckRepair); None = no repair loop
+    """
+
+    def node_plan_batch(state: TableExplorerState) -> Dict[str, Any]:
+        plan: CheckPlan = planner_structured.invoke([
+            SystemMessage(content=PLANNER_SYSTEM_PROMPT),
+            HumanMessage(content=state["seed_prompt"]),
+        ])
+        metrics.planner_llm_calls += 1
+
+        # Duplicates come from duplicate_detector.py (deterministic, no LLM) -
+        # drop any DUPLICATE check the planner proposed anyway.
+        checks = [c for c in plan.checks if c.category != "DUPLICATE"]
+        if len(checks) < len(plan.checks):
+            logger.info("Discarded %d planner DUPLICATE check(s) for table %s (handled by duplicate_detector)",
+                        len(plan.checks) - len(checks), state["table_name"])
+        # A COMPLETENESS check that looks something up in another table ("vendor has no row in
+        # LFBK") tests a relationship, not a blank value: there is nothing to type into the flagged
+        # column, only a business decision. The prompt says so, but models ignore it, so the
+        # category follows what the code actually does.
+        reclassified = []
+        for i, c in enumerate(checks):
+            if c.category != "COMPLETENESS":
+                continue
+            others = other_tables_read(c.code, state["table_name"])
+            if c.compare_table and c.compare_table.upper() != state["table_name"].upper():
+                others = sorted(set(others) | {c.compare_table})
+            if others:
+                checks[i] = c.model_copy(update={"category": "CORRECTNESS", "sub_type": "RELATIONSHIP_INTEGRITY",
+                                                 "fix_type": None, "auto_fix_value": None, "is_anomaly": False})
+                reclassified.append(f"{c.column} (reads {', '.join(others)})")
+        if reclassified:
+            logger.info("Reclassified %d planner COMPLETENESS check(s) for table %s as CORRECTNESS/"
+                        "RELATIONSHIP_INTEGRITY: %s", len(reclassified), state["table_name"], "; ".join(reclassified))
+        # A check on a column and pillar this client already has a finding for (an earlier run, same
+        # data) would just create that finding a second time. The prompt says so too; models ignore it.
+        known = state.get("known_checks") or set()
+        if known:
+            fresh = [c for c in checks if (c.column.upper(), c.category) not in known]
+            if len(fresh) < len(checks):
+                dropped = [f"{c.column}/{c.category}" for c in checks if c not in fresh]
+                logger.info("Discarded %d planner check(s) for table %s the client already has findings for: %s",
+                            len(dropped), state["table_name"], ", ".join(dropped))
+                metrics.known_findings_skipped += len(dropped)
+            checks = fresh
+        # Same for checks that repeat a built-in SAP rule on the same column and
+        # pillar: the prompt asks the planner not to, but models ignore it.
+        coverage = state.get("rule_coverage")
+        if coverage is not None:
+            kept = [c for c in checks if not coverage.covers(c.column.upper(), c.category, c.sub_type)]
+            if len(kept) < len(checks):
+                dropped = [f"{c.column}/{c.category}" for c in checks if c not in kept]
+                logger.info("Discarded %d planner check(s) for table %s already covered by SAP rules: %s",
+                            len(dropped), state["table_name"], ", ".join(dropped))
+                metrics.planner_checks_covered_by_rules += len(dropped)
+            checks = kept
+        checks = checks[:Config.MAX_TOTAL_CHECKS_PER_TABLE]
+
+        logger.info("Planner proposed %d check(s) for table %s", len(checks), state["table_name"])
+        return {"proposed_checks": checks}
+
+    def node_execute_all(state: TableExplorerState) -> Dict[str, Any]:
+        to_run = state.get("to_run")
+        if to_run is None:  # first pass: every check
+            results = execute_checks(state["proposed_checks"], state["df"], state["all_tables"])
+            logger.info("Executed %d check(s) for table %s (%d succeeded)",
+                        len(results), state["table_name"], sum(1 for r in results if r["success"]))
+            return {"check_results": results, "to_run": None}
+
+        # After a repair round: re-run only the rewritten checks, keep every other result as it was.
+        rerun = execute_checks([state["proposed_checks"][i] for i in to_run], state["df"], state["all_tables"])
+        merged = list(state["check_results"])
+        for i, result in zip(to_run, rerun):
+            result["check_index"] = i
+            merged[i] = result
+        fixed = sum(1 for r in rerun if r["success"])
+        metrics.checks_repaired += fixed
+        logger.info("Re-ran %d repaired check(s) for table %s (%d now succeed)", len(rerun), state["table_name"], fixed)
+        return {"check_results": merged, "to_run": None}
+
+    def route_after_execute(state: TableExplorerState) -> str:
+        """The loop's only branch: repair while checks are failing and the round budget is left."""
+        if (repair_structured is not None and state.get("repair_round", 0) < Config.MAX_REPAIR_ROUNDS
+                and failed_indices(state["check_results"])):
+            return "repair"
+        return "reflect"
+
+    def node_repair_batch(state: TableExplorerState) -> Dict[str, Any]:
+        checks, results = state["proposed_checks"], state["check_results"]
+        indices = failed_indices(results)
+        round_no = state.get("repair_round", 0) + 1
+        # An unusable repair must not loop again: stop the budget, keep what already succeeded.
+        stop = {"repair_round": Config.MAX_REPAIR_ROUNDS, "to_run": []}
+        try:
+            plan = repair_structured.invoke([
+                SystemMessage(content=REPAIR_SYSTEM_PROMPT),
+                HumanMessage(content=build_repair_prompt(state["table_name"], state["df"], state["all_tables"],
+                                                         checks, results, indices)),
+            ])
+        except LLMChainExhaustedError as exc:
+            logger.warning("Repair call failed for table %s - continuing with the checks that ran: %s",
+                           state["table_name"], exc)
+            return stop
+        metrics.repair_llm_calls += 1
+
+        updated, changed = apply_repairs(checks, indices, plan.checks)
+        logger.info("Repair round %d for table %s: %d failed check(s) sent back, %d rewritten",
+                    round_no, state["table_name"], len(indices), len(changed))
+        if not changed:
+            return stop
+        return {"proposed_checks": updated, "to_run": changed, "repair_round": round_no}
+
+    def node_reflect_batch(state: TableExplorerState) -> Dict[str, Any]:
+        successful = [r for r in state["check_results"] if r["success"]]
+        if not successful:
+            logger.warning("No successful checks to reflect on for table %s", state["table_name"])
+            return {"findings": []}
+
+        proposed = state["proposed_checks"]
+        summary_lines = [
+            f"[{r['check_index']}] category={proposed[r['check_index']].category} column={r['column']} "
+            f"hypothesis=\"{r['hypothesis']}\" result={r['result']}"
+            for r in successful
+        ]
+        prompt = "Evaluate EACH check result below. Return a judgment per check_index.\n\n" + "\n".join(summary_lines)
+
+        batch: ReflectionBatch = reflector_structured.invoke([
+            SystemMessage(content=REFLECTOR_SYSTEM_PROMPT),
+            HumanMessage(content=prompt),
+        ])
+        metrics.reflector_llm_calls += 1
+
+        results_by_index = {r["check_index"]: r for r in successful}
+        checks_by_index = {i: c for i, c in enumerate(state["proposed_checks"])}
+        findings = []
+
+        for j in batch.judgments:
+            r = results_by_index.get(j.check_index)
+            check = checks_by_index.get(j.check_index)
+            if r is None or not j.is_issue:
+                continue
+
+            # The category belongs to the check the planner designed (its code tests
+            # that pillar). FindingJudgment.category defaults to CORRECTNESS, so
+            # letting the reflector win silently relabeled checks - e.g. a KOINH
+            # completeness check stored as a DUPLICATE finding.
+            category = check.category if check else (j.category or "CORRECTNESS")
+            if category == "DUPLICATE":
+                continue
+            rule_scope = j.rule_scope or (check.rule_scope if check else "UNIVERSAL")
+            industry = j.industry or (check.industry if check else None)
+            fix_type = j.fix_type or (check.fix_type if check else None)
+            auto_fix_value = j.auto_fix_value or (check.auto_fix_value if check else None)
+            is_anomaly = bool(j.is_anomaly or (check.is_anomaly if check else False))
+            sub_type = j.sub_type or (check.sub_type if check else None)
+
+            findings.append({
+                "table": state["table_name"], "column": r["column"],
+                "hypothesis": r["hypothesis"], "check_code": r["check_code"],
+                "summary": j.summary, "severity": j.severity,
+                "confidence": j.confidence, "reusable": j.reusable,
+                "category": category, "rule_scope": rule_scope,
+                "industry": industry, "fix_type": fix_type,
+                "auto_fix_value": auto_fix_value, "is_anomaly": is_anomaly,
+                "sub_type": sub_type,
+                "detail_code": check.detail_code if check else None,   # kept so a promoted skill can list its rows too
+                "raw_tool_result": str(r["result"]),
+                "_check_index": r["check_index"],
+            })
+
+        # for each confirmed finding, extract row-level detail locally (one sandbox worker for all)
+        for finding in findings:
+            finding["detail_rows"] = []
+        with_detail = [(f, checks_by_index[f["_check_index"]]) for f in findings
+                       if f.get("_check_index") in checks_by_index and checks_by_index[f["_check_index"]].detail_code]
+        if with_detail:
+            with sandbox_session(state["df"], state["all_tables"]) as box:
+                for finding, check in with_detail:
+                    finding["detail_rows"] = extract_detail_rows(check, state["df"], state["all_tables"], box=box)
+
+        logger.info("Reflection complete for table %s - %d finding(s) confirmed",
+                    state["table_name"], len(findings))
+        return {"findings": findings}
+
+    def node_finalize(state: TableExplorerState) -> Dict[str, Any]:
+        return {}
+
+    def node_human_review(state: TableExplorerState) -> Dict[str, Any]:
+        logger.info("[human_review STUB] %d finding(s) pending review for table %s (not interactive yet)",
+                    len(state["findings"]), state["table_name"])
+        return {}
+
+    graph = StateGraph(TableExplorerState)
+    graph.add_node("plan_batch", node_plan_batch)
+    graph.add_node("execute_all", node_execute_all)
+    graph.add_node("repair_batch", node_repair_batch)
+    graph.add_node("reflect_batch", node_reflect_batch)
+    graph.add_node("finalize", node_finalize)
+    graph.add_node("human_review", node_human_review)
+
+    graph.set_entry_point("plan_batch")
+    graph.add_edge("plan_batch", "execute_all")
+    graph.add_conditional_edges("execute_all", route_after_execute,
+                                {"repair": "repair_batch", "reflect": "reflect_batch"})
+    graph.add_edge("repair_batch", "execute_all")
+    graph.add_edge("reflect_batch", "finalize")
+    graph.add_edge("finalize", "human_review")
+    graph.add_edge("human_review", END)
+
+    return graph.compile()
