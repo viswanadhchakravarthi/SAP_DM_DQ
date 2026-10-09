@@ -2009,6 +2009,21 @@ td.col-name { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white
 .grouped-records-table td.col-summary .grouped-detail { overflow-wrap: anywhere; }
 .grouped-records-table td.grouped-cell { white-space: normal; }
 
+/* Layout fixes: one detail-modal width for every finding type (app.js still toggles .modal-wide, now a no-op);
+   flagged-field columns are capped and wrap; the Disposition column stays pinned at the right edge of the
+   grouped grid so it is reachable without scrolling to the far end; Name gets room for typical vendor names. */
+#detailModal .modal-content { max-width: 1280px; width: 96%; }
+.records-compact .col-name { width: 240px; }
+td.col-name { max-width: 240px; }
+.grouped-records-table th:not(.col-summary):not(.col-name):not(.col-key):not(.col-row):not(:last-child),
+.grouped-records-table td.grouped-cell { min-width: 110px; max-width: 180px; overflow-wrap: anywhere; }
+.grouped-records-table th { white-space: normal; }
+.grouped-records-table th:last-child,
+.grouped-records-table td.dispo-matrix-cell {
+  position: sticky; right: 0; background: #fff; z-index: 1;
+  box-shadow: -6px 0 8px -6px rgba(15, 23, 42, 0.18);
+}
+
 /* Proposed value (City / Region from the postal code) with one-click Apply */
 .inline-suggestion-box {
   display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 4px 0;
