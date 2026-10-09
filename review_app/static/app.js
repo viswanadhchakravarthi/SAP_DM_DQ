@@ -612,7 +612,7 @@ function renderGroupedDetails(flaggedFields, record) {
   const multi = flaggedFields.length > 1;
   const text = flaggedFields.map((f) => {
     const item = record.cells[f.key];
-    return `<div class="grouped-detail">${multi ? `<strong>${escapeHtml(f.label)}:</strong> ` : ""}${linkifyTableColumnRefs(escapeHtml(item.issue_detail || ""))}</div>`;
+    return `<div class="grouped-detail defect-text">${multi ? `<strong>${escapeHtml(f.label)}:</strong> ` : ""}${linkifyTableColumnRefs(escapeHtml(item.issue_detail || ""))}</div>`;
   }).join("");
   // Several blank fields with proposed values on one record (City + Region from the same postal code):
   // accept them together. Each stays its own decision, undone one by one with ↺.
@@ -1304,7 +1304,7 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, helperCols = []) {
   const inlineCorrected = useMatrix ? flaggedFieldStatusHtml(item, fieldName, !!cfg.inlineCorrectedInput)
     : (cfg.inlineCorrectedInput ? renderInlineCorrected(item, disabled, fieldName) : "");
 
-  const detailsCell = linkifyTableColumnRefs(escapeHtml(item.issue_detail || "")) + (targetHelperCol ? "" : inlineCorrected);
+  const detailsCell = `<span${isSynthetic ? "" : ' class="defect-text"'}>${linkifyTableColumnRefs(escapeHtml(item.issue_detail || ""))}</span>` + (targetHelperCol ? "" : inlineCorrected);
 
   const whyButton = !isSynthetic && item.id
     ? `<div><button type="button" class="btn-why" data-why-item="${escapeHtml(item.id)}" aria-expanded="false">Why flagged?</button></div>` : "";

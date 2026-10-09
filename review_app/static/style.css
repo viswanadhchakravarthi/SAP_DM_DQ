@@ -1989,6 +1989,9 @@ tr.why-row > td { background: #f8fafc; padding: 0; }
 
 .recommendation-note.recommendation-shared { color: #92400e; background: #fffbeb; border-color: #fcd34d; }
 
+/* The reason text in the Details column repeats what "Why flagged?" explains; hidden for now (delete this rule to show it again) */
+.defect-text { display: none; }
+
 /* Proposed value (City / Region from the postal code) with one-click Apply */
 .inline-suggestion-box {
   display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 4px 0;
