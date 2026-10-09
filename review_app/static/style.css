@@ -2017,7 +2017,14 @@ td.col-name { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white
 td.col-name { max-width: 240px; }
 .grouped-records-table th:not(.col-summary):not(.col-name):not(.col-key):not(.col-row):not(:last-child),
 .grouped-records-table td.grouped-cell { min-width: 110px; max-width: 180px; overflow-wrap: anywhere; }
-.grouped-records-table th { white-space: normal; }
+/* Row / Key / Name / Defect Summary headers never wrap, and the summary column keeps a floor width however
+   many flagged-field and helper columns the table has (otherwise auto layout squeezes it to one character). */
+.grouped-records-table th.col-row, .grouped-records-table th.col-key,
+.grouped-records-table th.col-name, .grouped-records-table th.col-summary { white-space: nowrap; }
+.grouped-records-table th.col-summary, .grouped-records-table td.col-summary { min-width: 260px; width: 320px; }
+.grouped-records-table th.col-key, .grouped-records-table td.col-key { min-width: 110px; }
+.grouped-records-table th:not(.col-summary):not(.col-name):not(.col-key):not(.col-row) { white-space: normal; }
+.grouped-records-table td.helper-col { min-width: 110px; max-width: 180px; white-space: normal; overflow-wrap: anywhere; }
 .grouped-records-table th:last-child,
 .grouped-records-table td.dispo-matrix-cell {
   position: sticky; right: 0; background: #fff; z-index: 1;
