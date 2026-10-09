@@ -563,7 +563,6 @@ function renderGroupedRecordsTable(data) {
   const keyFieldNames = (data.records.find((r) => r.key_field) || {}).key_field || "";
   const staleNote = data.stale
     ? `<p class="hint-text helper-note">${escapeHtml(data.stale_note || "")}</p>` : "";
-  const nameColumn = data.name_column || null;
   // Every pending proposed value in the grid, for "Apply all" (one call per finding).
   const pendingCells = data.records.flatMap((r) => Object.values(r.cells)).filter(pendingSuggestion);
   const suggestionFindings = [...new Set(pendingCells.map((c) => c.finding_id))];
@@ -578,9 +577,8 @@ function renderGroupedRecordsTable(data) {
       <table class="items-table grouped-records-table">
         <thead>
           <tr>
-            <th class="col-row">Row</th><th class="col-key">Key${keyFieldNames ? `<div class="hint-text">${wrapTableColumnRef(data.table_name, keyFieldNames, "")}</div>` : ""}</th>
-            ${nameColumn ? `<th class="col-name">Name<div class="hint-text">${wrapTableColumnRef(data.table_name, nameColumn, "")}</div></th>` : ""}
-            <th class="col-summary">Defect Summary</th>
+            <th>Row</th><th>Key Field${keyFieldNames ? `<div class="hint-text">${wrapTableColumnRef(data.table_name, keyFieldNames, "")}</div>` : ""}</th>
+            <th>Details</th>
             ${data.fields.map((f) => `<th title="${escapeHtml(f.hypothesis || "")}">${escapeHtml(f.label)}</th>`).join("")}
             ${helperCols.map(helperHeader).join("")}
             <th>Disposition</th>
@@ -595,10 +593,9 @@ function renderGroupedRecordsTable(data) {
             const flaggedFields = data.fields.filter((f) => r.cells[f.key]);
             return `
               <tr>
-                <td class="col-row">${escapeHtml(r.row_index ?? "-")}</td>
-                <td class="col-key">${escapeHtml(r.key_value || "")}</td>
-                ${nameColumn ? nameCellHtml(r.name) : ""}
-                <td class="col-summary">${renderGroupedDetails(flaggedFields, r, data.table_name)}</td>
+                <td>${escapeHtml(r.row_index ?? "-")}</td>
+                <td>${escapeHtml(r.key_value || "")}</td>
+                <td>${renderGroupedDetails(flaggedFields, r)}</td>
                 ${data.fields.map((f) => renderCompactStatusCell(r.cells[f.key], f.label, values[f.column_name], editor)).join("")}
                 ${helperCols.map((c) => `<td class="helper-col">${values[c.name] ? escapeHtml(values[c.name]) : '<span class="blank-cell">—</span>'}</td>`).join("")}
                 <td class="dispo-matrix-cell">${renderDispositionMatrix(r, flaggedFields, groupedWorkflow().dispositions)}</td>
@@ -611,12 +608,11 @@ function renderGroupedRecordsTable(data) {
 
 // One entry per flagged field: its reason text plus a "Why flagged?" button (same explanation panel
 // as the single-field view; it is per record item, so a record flagged on several fields gets one each).
-function renderGroupedDetails(flaggedFields, record, tableName) {
+function renderGroupedDetails(flaggedFields, record) {
   const multi = flaggedFields.length > 1;
   const text = flaggedFields.map((f) => {
     const item = record.cells[f.key];
-    const summary = cleanDefectSummary(item.issue_detail, record.key_value, record.name, tableName);
-    return `<div class="grouped-detail" title="${escapeHtml(item.issue_detail || "")}">${multi ? `<strong>${escapeHtml(f.label)}:</strong> ` : ""}${linkifyTableColumnRefs(escapeHtml(summary))}</div>`;
+    return `<div class="grouped-detail">${multi ? `<strong>${escapeHtml(f.label)}:</strong> ` : ""}${linkifyTableColumnRefs(escapeHtml(item.issue_detail || ""))}</div>`;
   }).join("");
   // Several blank fields with proposed values on one record (City + Region from the same postal code):
   // accept them together. Each stays its own decision, undone one by one with ↺.
@@ -1130,37 +1126,8 @@ function verdictButton(itemId, verdict, label, requiresCorrectedInput) {
 }
 
 // ---------------------------------------------------------------------------
-// Compact records table: the key and name have their own columns, so the defect text drops them, and a
-// proposed value (City / Region inferred from the postal code) is accepted in one click.
+// Proposed value (City / Region inferred from the postal code), accepted in one click.
 // ---------------------------------------------------------------------------
-
-function escapeRegExp(s) {
-  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-// The diagnostic part of a record's reason text, without what the Key / Name columns already show:
-// "0000001 - ...", "Vendor 0000001: ...", "Acme (0000001) is mandatory but blank", "... in table LFA1".
-function cleanDefectSummary(detailText, keyValue, nameValue, tableName) {
-  const original = String(detailText || "").trim();
-  let text = original;
-  const key = String(keyValue || "").trim();
-  const name = String(nameValue || "").trim();
-  if (key && name) {
-    text = text.replace(new RegExp(`^${escapeRegExp(name)}\\s*\\(${escapeRegExp(key)}\\)\\s+is mandatory but blank\\.?`, "i"),
-      "Mandatory field is blank");
-  }
-  if (key) {
-    text = text.replace(new RegExp(`^(?:[A-Za-z]+\\s+)?${escapeRegExp(key)}(?:\\s*\\([^)]*\\))?\\s*[-:–]\\s+`, ""), "");
-  }
-  if (name) text = text.replace(new RegExp(`^${escapeRegExp(name)}\\s*[-:–]\\s+`, "i"), "");
-  if (tableName) {
-    const t = escapeRegExp(tableName);
-    text = text.replace(new RegExp(`\\bmandatory in ${t}\\b`, "g"), "mandatory")
-      .replace(new RegExp(`\\s+in table ${t}\\b`, "g"), "");
-  }
-  text = text.trim();
-  return text ? text.charAt(0).toUpperCase() + text.slice(1) : original;
-}
 
 const SUGGESTION_SOURCES = {
   dataset: "the client's own verified records (same country and postal code)",
@@ -1262,20 +1229,9 @@ function attachSuggestionHandlers(container, refresh) {
       Number(btn.dataset.applyCount), refresh)));
 }
 
-function nameCellHtml(name) {
-  return name
-    ? `<td class="col-name" title="${escapeHtml(name)}">${escapeHtml(name)}</td>`
-    : '<td class="col-name"><span class="blank-cell">—</span></td>';
-}
-
 function renderWorkflowItemsTable(finding, items, isSynthetic, workflowKey) {
   const cfg = PILLAR_WORKFLOWS[workflowKey];
   const helperCols = isSynthetic ? [] : helperColumnsFor(finding.id);
-  const helper = HELPER_CACHE[finding.id];
-  const nameColumn = !isSynthetic && helper && !helper.stale ? helper.name_column : null;
-  // The flagged value / proposed value / corrected value gets its own column, unless the reviewer
-  // chose the flagged field as a helper column (then it is edited in that column, as before).
-  const valueColumn = usesMatrix(cfg) && !isSynthetic && !helperCols.some((c) => c.name === finding.column_name);
   const suggestions = isSynthetic ? 0 : items.filter(pendingSuggestion).length;
   // Completeness: key column names once in the header, values only in the cells - same as the
   // grouped multi-field view.
@@ -1296,20 +1252,15 @@ function renderWorkflowItemsTable(finding, items, isSynthetic, workflowKey) {
       ${defaultHint}
       ${applyAllBar([finding.id], suggestions)}
       ${isSynthetic ? "" : helperNote(finding.id)}
-      <table class="items-table records-compact">
+      <table class="items-table">
         <thead>
           <tr>
-            <th class="col-row">Row</th><th class="col-key">Key${keyNamesInHeader ? `<div class="hint-text">${wrapTableColumnRef(finding.table_name, keyNamesInHeader, "")}</div>` : ""}</th>
-            ${nameColumn ? `<th class="col-name">Name<div class="hint-text">${wrapTableColumnRef(finding.table_name, nameColumn, "")}</div></th>` : ""}
-            <th class="col-summary">Defect Summary</th>
-            ${valueColumn ? `<th class="col-value">Value / Suggestion<div class="hint-text">${wrapTableColumnRef(finding.table_name, finding.column_name, "")}</div></th>` : ""}
-            ${helperCols.map(helperHeader).join("")}
-            <th class="col-actions">Disposition</th>
+            <th>Row</th><th>Key Field${keyNamesInHeader ? `<div class="hint-text">${wrapTableColumnRef(finding.table_name, keyNamesInHeader, "")}</div>` : ""}</th><th>Details</th>${helperCols.map(helperHeader).join("")}
+            <th>Disposition</th>
           </tr>
         </thead>
         <tbody>
-          ${items.map((item) => renderWorkflowRow(finding, item, isSynthetic, cfg, helperCols,
-            { nameColumn, valueColumn, name: nameColumn ? helper.names?.[item.id] : "" })).join("")}
+          ${items.map((item) => renderWorkflowRow(finding, item, isSynthetic, cfg, helperCols)).join("")}
         </tbody>
       </table>
       ${isSynthetic ? `<p class="hint-text">This check did not produce row-level detail. Use "Approve Finding" / "Reject Finding" below.</p>` : ""}
@@ -1338,12 +1289,10 @@ function renderInlineCorrected(item, disabled, fieldName) {
     </div>`;
 }
 
-function renderWorkflowRow(finding, item, isSynthetic, cfg, helperCols = [], layout = {}) {
+function renderWorkflowRow(finding, item, isSynthetic, cfg, helperCols = []) {
   const disabled = isSynthetic || item.status !== "PENDING";
   const keyCell = item.key_field ? wrapTableColumnRef(finding.table_name, item.key_field, "") : "";
   const fieldName = finding.column_name || "value";
-  const summary = isSynthetic ? item.issue_detail
-    : cleanDefectSummary(item.issue_detail, item.key_value, layout.name, finding.table_name);
 
   // finding.column_name is the same field for every row of a Completeness finding (one finding =
   // one column), so if it's among the chosen helper columns, edit it there; otherwise fall back
@@ -1355,8 +1304,7 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, helperCols = [], lay
   const inlineCorrected = useMatrix ? flaggedFieldStatusHtml(item, fieldName, !!cfg.inlineCorrectedInput)
     : (cfg.inlineCorrectedInput ? renderInlineCorrected(item, disabled, fieldName) : "");
 
-  const detailsCell = `<span title="${escapeHtml(item.issue_detail || "")}">${linkifyTableColumnRefs(escapeHtml(summary || ""))}</span>`
-    + (targetHelperCol || layout.valueColumn ? "" : inlineCorrected);
+  const detailsCell = linkifyTableColumnRefs(escapeHtml(item.issue_detail || "")) + (targetHelperCol ? "" : inlineCorrected);
 
   const whyButton = !isSynthetic && item.id
     ? `<div><button type="button" class="btn-why" data-why-item="${escapeHtml(item.id)}" aria-expanded="false">Why flagged?</button></div>` : "";
@@ -1388,11 +1336,9 @@ function renderWorkflowRow(finding, item, isSynthetic, cfg, helperCols = [], lay
 
   return `
     <tr data-item-id="${escapeHtml(item.id || "")}" class="item-row status-${escapeHtml(item.status)}${isSynthetic ? " synthetic-row" : ""}">
-      <td class="col-row">${escapeHtml(item.row_index ?? "-")}</td>
-      <td class="col-key">${useMatrix ? escapeHtml(item.key_value || "") : `${keyCell}${item.key_value ? `: ${escapeHtml(item.key_value)}` : ""}`}</td>
-      ${layout.nameColumn ? nameCellHtml(layout.name) : ""}
-      <td class="col-summary">${detailsCell}${whyButton}</td>
-      ${layout.valueColumn ? `<td class="col-value">${cfg.inlineCorrectedInput ? "" : flaggedValueHtml(HELPER_CACHE[finding.id]?.rows?.[item.id]?.[fieldName])}${inlineCorrected}</td>` : ""}
+      <td>${escapeHtml(item.row_index ?? "-")}</td>
+      <td>${useMatrix ? escapeHtml(item.key_value || "") : `${keyCell}${item.key_value ? `: ${escapeHtml(item.key_value)}` : ""}`}</td>
+      <td>${detailsCell}${whyButton}</td>
       ${helperCols.map((c) => c === targetHelperCol
         ? `<td class="helper-col helper-col-editable">${cfg.inlineCorrectedInput ? "" : flaggedValueHtml(HELPER_CACHE[finding.id]?.rows?.[item.id]?.[c.name])}${inlineCorrected}</td>`
         : helperCell(finding.id, item.id, c)).join("")}
