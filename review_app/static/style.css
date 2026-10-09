@@ -2024,6 +2024,10 @@ td.col-name { max-width: 240px; }
 .grouped-records-table th.col-summary, .grouped-records-table td.col-summary { min-width: 260px; width: 320px; }
 .grouped-records-table th.col-key, .grouped-records-table td.col-key { min-width: 110px; }
 .grouped-records-table th:not(.col-summary):not(.col-name):not(.col-key):not(.col-row) { white-space: normal; }
+/* Compact (fixed-layout) table: the summary column had no width, so it received whatever was left after the
+   fixed ones - zero once ~8+ helper columns were chosen. A declared width makes the table grow instead. */
+.records-compact th.col-summary { width: 320px; min-width: 260px; white-space: nowrap; }
+.records-compact th.col-row, .records-compact th.col-key, .records-compact th.col-name { white-space: nowrap; }
 .grouped-records-table td.helper-col { min-width: 110px; max-width: 180px; white-space: normal; overflow-wrap: anywhere; }
 .grouped-records-table th:last-child,
 .grouped-records-table td.dispo-matrix-cell {
